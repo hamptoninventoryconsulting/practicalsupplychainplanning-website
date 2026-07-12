@@ -1,0 +1,27 @@
+/**
+ * Brand colour tokens — Practical Supply Chain Planning style guide
+ * Cyan: #21dbf9 (R33 G219 B249)
+ * Gray:  #999999 (R153 G153 B153)
+ */
+:root {
+  --color-brand-cyan: #21dbf9;
+  --color-brand-gray: #999999;
+
+  --color-text: #1f2937;
+  --color-text-muted: var(--color-brand-gray);
+  --color-background: #f5f6f7;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f0f2f4;
+  --color-border: #dde1e6;
+
+  --color-primary: var(--color-brand-cyan);
+  --color-secondary: var(--color-brand-gray);
+  --color-accent: var(--color-brand-cyan);
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  --max-width: 56rem;
+  --page-padding: 2.5rem;
+  --card-radius: 0.5rem;
+  --header-logo-max-height: 5rem;
+}
