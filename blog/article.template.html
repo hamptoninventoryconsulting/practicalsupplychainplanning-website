@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{SEARCH_TITLE}}</title>
+    <meta name="description" content="{{SEARCH_DESCRIPTION}}" />
+    <link rel="canonical" href="{{CANONICAL_URL}}" />
+    <meta property="og:title" content="{{OG_TITLE}}" />
+    <meta property="og:description" content="{{OG_DESCRIPTION}}" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="{{OG_URL}}" />
+    <meta property="og:image" content="{{OG_IMAGE}}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="{{OG_TITLE}}" />
+    <meta name="twitter:description" content="{{OG_DESCRIPTION}}" />
+    <meta name="twitter:image" content="{{OG_IMAGE}}" />
+    <link rel="icon" href="/assets/brand/favicon.png" type="image/png" />
+    <link rel="stylesheet" href="/assets/styles.css?v=6" />
+    <script type="application/ld+json">
+{{SCHEMA_JSON_LD}}
+    </script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a class="site-header__link" href="/">
+          <img
+            class="site-header__logo"
+            src="/assets/brand/logo.jpg?v=2"
+            alt="Practical Supply Chain Planning"
+          />
+        </a>
+      </div>
+    </header>
+
+    <main>
+      <p><a href="/blog/">← Back to Blog</a></p>
+
+      <article>
+        <img
+          src="/images/{{FEATURED_IMAGE_FILENAME}}"
+          alt="{{ARTICLE_TITLE}}"
+        />
+
+        <h1 class="page-title">{{ARTICLE_TITLE}}</h1>
+        <p class="tagline">{{SUMMARY}}</p>
+
+        <p class="founder__role">
+          By {{AUTHOR}} · {{PUBLISHER}} · {{PUBLISHED_DATE}}
+          · {{READING_TIME}}
+        </p>
+
+        <section class="card">
+          <div class="content">
+            {{BODY_HTML}}
+          </div>
+        </section>
+      </article>
+    </main>
+  </body>
+</html>

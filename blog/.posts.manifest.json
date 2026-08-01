@@ -1,0 +1,11 @@
+{
+  "posts": [
+    {
+      "slug": "how-lot-size-affects-stock-turnover",
+      "title": "How Lot Size Affects Stock Turnover",
+      "summary": "Lot size is the quantity ordered or produced in one batch, and it has a direct effect on how long inventory stays in the business. Smaller lots can improve stock turnover, while larger lots may reduce ordering and handling effort but can leave more stock sitting in storage.",
+      "published_datetime": "2026-08-01 23:53:00.841288",
+      "featured_image_filename": "IMG000003.webp"
+    }
+  ]
+}
