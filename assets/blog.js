@@ -73,6 +73,7 @@
     var publishedRaw = String(post.published_datetime || "").trim();
     var published = formatPublishedDate(publishedRaw);
     var reading = formatReadingTime(post.reading_time);
+    var author = String(post.author || "").trim();
     var href = "/blog/" + encodeURIComponent(slug) + "/";
     var metaParts = [];
 
@@ -90,6 +91,14 @@
       metaParts.push(
         '<span class="blog-post-card__meta-item">' +
           escapeHtml(reading) +
+          "</span>"
+      );
+    }
+
+    if (author) {
+      metaParts.push(
+        '<span class="blog-post-card__meta-item">' +
+          escapeHtml(author) +
           "</span>"
       );
     }
@@ -137,7 +146,7 @@
     container.innerHTML = posts.map(buildCard).join("");
   }
 
-  function loadReadingTime(post) {
+  function loadArticleMeta(post) {
     var slug = String(post.slug || "").trim();
 
     if (!slug) {
@@ -153,10 +162,15 @@
         }
 
         return response.text().then(function (html) {
-          var match = html.match(/data-reading-time="([^"]+)"/i);
+          var readingMatch = html.match(/data-reading-time="([^"]+)"/i);
+          var authorMatch = html.match(/data-author="([^"]+)"/i);
 
-          if (match) {
-            post.reading_time = match[1];
+          if (readingMatch) {
+            post.reading_time = readingMatch[1];
+          }
+
+          if (authorMatch) {
+            post.author = authorMatch[1];
           }
 
           return post;
@@ -193,7 +207,7 @@
           );
         });
 
-        return Promise.all(posts.map(loadReadingTime)).then(function (enriched) {
+        return Promise.all(posts.map(loadArticleMeta)).then(function (enriched) {
           renderPosts(container, enriched);
           container.setAttribute("data-enhanced", "true");
         });
