@@ -9,7 +9,7 @@
       content="Practical articles on inventory planning, supply chain decisions, and operational planning."
     />
     <link rel="icon" href="/assets/brand/favicon.png" type="image/png" />
-    <link rel="stylesheet" href="/assets/styles.css?v=7" />
+    <link rel="stylesheet" href="/assets/styles.css?v=11" />
   </head>
   <body>
     <header class="site-header">
@@ -49,7 +49,11 @@
         operational planning.
       </p>
 
-      {{BLOG_POSTS}}
+      <div id="blog-posts" class="blog-list">
+        {{BLOG_POSTS}}
+      </div>
     </main>
+
+    <script src="/assets/blog.js?v=2" defer></script>
   </body>
 </html>

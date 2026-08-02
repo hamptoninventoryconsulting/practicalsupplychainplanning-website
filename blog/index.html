@@ -9,7 +9,7 @@
       content="Practical articles on inventory planning, supply chain decisions, and operational planning."
     />
     <link rel="icon" href="/assets/brand/favicon.png" type="image/png" />
-    <link rel="stylesheet" href="/assets/styles.css?v=7" />
+    <link rel="stylesheet" href="/assets/styles.css?v=11" />
   </head>
   <body>
     <header class="site-header">
@@ -49,16 +49,45 @@
         operational planning.
       </p>
 
-      <section class="card blog-card">
-        <h2 class="card__title">
-          <a href="/blog/how-lot-size-affects-stock-turnover/">How Lot Size Affects Stock Turnover</a>
-        </h2>
-        <p class="founder__role">2026-08-01 23:53:00.841288</p>
-        <div class="content">
-          <p>Lot size is the quantity ordered or produced in one batch, and it has a direct effect on how long inventory stays in the business. Smaller lots can improve stock turnover, while larger lots may reduce ordering and handling effort but can leave more stock sitting in storage.</p>
-        </div>
-        <p><a href="/blog/how-lot-size-affects-stock-turnover/">Read article</a></p>
-      </section>
+      <div id="blog-posts" class="blog-list">
+        <a
+          class="blog-post-card"
+          href="/blog/how-lot-size-affects-stock-turnover/"
+        >
+          <div class="blog-post-card__media">
+            <img
+              class="blog-post-card__image"
+              src="/images/IMG000003.webp"
+              alt=""
+              width="220"
+              height="160"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+          <div class="blog-post-card__body">
+            <h2 class="blog-post-card__title">
+              How Lot Size Affects Stock Turnover
+            </h2>
+            <p class="blog-post-card__summary">
+              Lot size is the quantity ordered or produced in one batch, and it
+              has a direct effect on how long inventory stays in the business.
+              Smaller lots can improve stock turnover, while larger lots may
+              reduce ordering and handling effort but can leave more stock
+              sitting in storage.
+            </p>
+            <p class="blog-post-card__meta">
+              <time class="blog-post-card__meta-item" datetime="2026-08-01"
+                >1 August 2026</time
+              ><span class="blog-post-card__meta-sep" aria-hidden="true">•</span
+              ><span class="blog-post-card__meta-item">5 min read</span>
+            </p>
+            <span class="blog-post-card__cta">Read Article →</span>
+          </div>
+        </a>
+      </div>
     </main>
+
+    <script src="/assets/blog.js?v=2" defer></script>
   </body>
 </html>
