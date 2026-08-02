@@ -200,6 +200,12 @@ main {
   cursor: pointer;
 }
 
+.article-share__button--icon-only {
+  min-width: 2.25rem;
+  padding-left: 0.65rem;
+  padding-right: 0.65rem;
+}
+
 .article-share__button:hover {
   border-color: var(--color-brand-gray);
   color: var(--color-text);
