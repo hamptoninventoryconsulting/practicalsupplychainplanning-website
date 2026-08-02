@@ -98,7 +98,7 @@
       ? '<div class="blog-post-card__media">' +
         '<img class="blog-post-card__image" src="/images/' +
         escapeHtml(image) +
-        '" alt="" width="220" height="160" loading="lazy" decoding="async" />' +
+        '" alt="" width="240" height="175" loading="lazy" decoding="async" />' +
         "</div>"
       : "";
 
