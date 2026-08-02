@@ -16,7 +16,7 @@
     <meta name="twitter:description" content="{{OG_DESCRIPTION}}" />
     <meta name="twitter:image" content="{{OG_IMAGE}}" />
     <link rel="icon" href="/assets/brand/favicon.png" type="image/png" />
-    <link rel="stylesheet" href="/assets/styles.css?v=7" />
+    <link rel="stylesheet" href="/assets/styles.css?v=8" />
     <script type="application/ld+json">
 {{SCHEMA_JSON_LD}}
     </script>
@@ -56,25 +56,92 @@
       <p><a href="/blog/">← Back to Blog</a></p>
 
       <article>
-        <img
-          src="/images/{{FEATURED_IMAGE_FILENAME}}"
-          alt="{{ARTICLE_TITLE}}"
-        />
+        <header class="article-header">
+          <img
+            class="article-hero"
+            src="/images/{{FEATURED_IMAGE_FILENAME}}"
+            alt="{{ARTICLE_TITLE}}"
+          />
 
-        <h1 class="page-title">{{ARTICLE_TITLE}}</h1>
-        <p class="tagline">{{SUMMARY}}</p>
+          <h1 class="page-title">{{ARTICLE_TITLE}}</h1>
+          <p class="tagline">{{SUMMARY}}</p>
 
-        <p class="founder__role">
-          By {{AUTHOR}} · {{PUBLISHER}} · {{PUBLISHED_DATE}}
-          · {{READING_TIME}}
-        </p>
+          <p
+            class="article-meta"
+            id="article-meta"
+            data-published="{{PUBLISHED_DATE}}"
+            data-reading-time="{{READING_TIME}}"
+            data-author="{{AUTHOR}}"
+          ></p>
 
-        <section class="card">
+          <section class="article-share" aria-labelledby="article-share-heading">
+            <h2 class="article-share__title" id="article-share-heading">
+              Share this article
+            </h2>
+            <div class="article-share__actions">
+              <a
+                class="article-share__button"
+                data-share="linkedin"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Share this article on LinkedIn"
+                >LinkedIn</a
+              >
+              <a
+                class="article-share__button"
+                data-share="x"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Share this article on X"
+                >X</a
+              >
+              <a
+                class="article-share__button"
+                data-share="email"
+                href="#"
+                aria-label="Share this article by email"
+                >Email</a
+              >
+              <a
+                class="article-share__button"
+                data-share="whatsapp"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Share this article on WhatsApp"
+                >WhatsApp</a
+              >
+              <button
+                type="button"
+                class="article-share__button"
+                id="copy-link-button"
+                aria-label="Copy article link to clipboard"
+              >
+                Copy Link
+              </button>
+            </div>
+            <p
+              class="article-share__feedback"
+              id="copy-link-feedback"
+              role="status"
+              aria-live="polite"
+              hidden
+            ></p>
+          </section>
+
+          <hr class="article-divider" />
+        </header>
+
+        <section class="card article-body">
           <div class="content">
             {{BODY_HTML}}
           </div>
         </section>
       </article>
     </main>
+
+    <script src="/assets/article.js?v=3" defer></script>
   </body>
 </html>
