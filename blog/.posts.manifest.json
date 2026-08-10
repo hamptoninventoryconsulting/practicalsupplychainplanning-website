@@ -1,6 +1,15 @@
 {
   "posts": [
     {
+      "slug": "why-supply-chain-planning-needs-a-stronger-professional-identity",
+      "title": "Why Supply Chain Planning Needs a Stronger Professional Identity",
+      "summary": "Many people enter supply chain planning through operations, purchasing, warehousing or production rather than through a formal planning pathway. Practical experience is valuable, but planners also need a shared body of knowledge that helps them understand why planning decisions are made, not just how to complete the tasks in front of them.",
+      "published_datetime": "2026-08-10 11:00:09.750555",
+      "featured_image_filename": "IMG000002.webp",
+      "author": "Daniel Hampton",
+      "reading_time": "9 min read"
+    },
+    {
       "slug": "why-mobile-testing-matters-for-day-to-day-supply-chain-communication",
       "title": "Why Mobile Testing Matters for Day-to-Day Supply Chain Communication",
       "summary": "Mobile devices are often how warehouse, transport and operations teams receive and act on information. Testing communication on the device itself helps confirm that messages and functions work in the conditions where people will actually use them.",
