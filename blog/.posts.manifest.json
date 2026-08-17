@@ -1,6 +1,15 @@
 {
   "posts": [
     {
+      "slug": "cleaning-sales-history-for-a-more-robust-forecast",
+      "title": "Cleaning Sales History for a More Robust Forecast",
+      "summary": "Unusual sales observations should not be removed simply because they look like outliers. The useful question is what caused the observation, whether that cause is likely to repeat, and which treatment will give the most realistic representation of future demand.",
+      "published_datetime": "2026-08-17 10:45:18.963891",
+      "featured_image_filename": "IMG000004.webp",
+      "author": "Daniel Hampton",
+      "reading_time": "7 min read"
+    },
+    {
       "slug": "supplier-difot-measure-the-delivery-that-actually-matters",
       "title": "Supplier DIFOT: Measure the Delivery That Actually Matters",
       "summary": "Supplier DIFOT is only useful when it compares delivery performance against a clear, preserved commitment and an agreed delivery point. This article explains why original PO dates and quantities matter, when an accepted delay should not count as a miss, and how Incoterms can create very different views of the same delivery.",

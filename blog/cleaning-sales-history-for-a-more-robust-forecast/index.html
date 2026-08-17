@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cleaning Sales History for a More Robust Forecast</title>
+    <meta name="description" content="Unusual sales observations should not be removed simply because they look like outliers. The useful question is what caused the observation, whether that cause is likely to repeat, and which treatment will give the most realistic representation of future demand." />
+    <link rel="canonical" href="https://practicalsupplychainplanning.com/blog/cleaning-sales-history-for-a-more-robust-forecast/" />
+    <meta property="og:title" content="Cleaning Sales History for a More Robust Forecast" />
+    <meta property="og:description" content="Unusual sales observations should not be removed simply because they look like outliers. The useful question is what caused the observation, whether that cause is likely to repeat, and which treatment will give the most realistic representation of future demand." />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://practicalsupplychainplanning.com/blog/cleaning-sales-history-for-a-more-robust-forecast/" />
+    <meta property="og:image" content="https://practicalsupplychainplanning.com/images/IMG000004.webp" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Cleaning Sales History for a More Robust Forecast" />
+    <meta name="twitter:description" content="Unusual sales observations should not be removed simply because they look like outliers. The useful question is what caused the observation, whether that cause is likely to repeat, and which treatment will give the most realistic representation of future demand." />
+    <meta name="twitter:image" content="https://practicalsupplychainplanning.com/images/IMG000004.webp" />
+    <link rel="icon" href="/assets/brand/favicon.png" type="image/png" />
+    <link rel="stylesheet" href="/assets/styles.css?v=10" />
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Cleaning Sales History for a More Robust Forecast",
+  "description": "Unusual sales observations should not be removed simply because they look like outliers. The useful question is what caused the observation, whether that cause is likely to repeat, and which treatment will give the most realistic representation of future demand.",
+  "author": {
+    "@type": "Person",
+    "name": "Daniel Hampton"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Practical Supply Chain Planning"
+  },
+  "datePublished": "2026-08-17 10:45:18.963891",
+  "inLanguage": "English",
+  "keywords": "cleaning sales history for a more robust forecast, inventory planning",
+  "image": "https://practicalsupplychainplanning.com/images/IMG000004.webp",
+  "mainEntityOfPage": "https://practicalsupplychainplanning.com/blog/cleaning-sales-history-for-a-more-robust-forecast/",
+  "about": "Sales and Customer Operations"
+}
+    </script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a class="site-header__link" href="/">
+          <img
+            class="site-header__logo"
+            src="/assets/brand/logo.jpg?v=2"
+            alt="Practical Supply Chain Planning"
+          />
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul class="site-nav__list">
+            <li>
+              <a class="site-nav__link" href="/">Home</a>
+            </li>
+            <li>
+              <a
+                class="site-nav__link site-nav__link--active"
+                href="/blog/"
+                aria-current="page"
+                >Blog</a
+              >
+            </li>
+            <li>
+              <a class="site-nav__link" href="/about/">About</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <p><a href="/blog/">← Back to Blog</a></p>
+
+      <article>
+        <header class="article-header">
+          <img
+            class="article-hero"
+            src="/images/IMG000004.webp"
+            alt="Cleaning Sales History for a More Robust Forecast"
+          />
+
+          <h1 class="page-title">Cleaning Sales History for a More Robust Forecast</h1>
+          <p class="tagline">Unusual sales observations should not be removed simply because they look like outliers. The useful question is what caused the observation, whether that cause is likely to repeat, and which treatment will give the most realistic representation of future demand.</p>
+
+          <p
+            class="article-meta"
+            id="article-meta"
+            data-published="2026-08-17 10:45:18.963891"
+            data-reading-time="7 minutes"
+            data-author="Daniel Hampton"
+          ></p>
+
+          <section class="article-share" aria-labelledby="article-share-heading">
+            <h2 class="article-share__title" id="article-share-heading">
+              Share this article
+            </h2>
+            <div class="article-share__actions">
+              <a
+                class="article-share__button"
+                data-share="linkedin"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Share this article on LinkedIn"
+              >
+                <span class="article-share__icon" aria-hidden="true">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"
+                    />
+                    <rect width="4" height="12" x="2" y="9" />
+                    <circle cx="4" cy="4" r="2" />
+                  </svg>
+                </span>
+                <span class="article-share__label">LinkedIn</span>
+              </a>
+              <a
+                class="article-share__button article-share__button--icon-only"
+                data-share="x"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Share this article on X"
+              >
+                <span class="article-share__icon" aria-hidden="true">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+                    />
+                  </svg>
+                </span>
+              </a>
+              <a
+                class="article-share__button"
+                data-share="email"
+                href="#"
+                aria-label="Share this article by email"
+              >
+                <span class="article-share__icon" aria-hidden="true">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"
+                    />
+                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                  </svg>
+                </span>
+                <span class="article-share__label">Email</span>
+              </a>
+              <a
+                class="article-share__button"
+                data-share="whatsapp"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Share this article on WhatsApp"
+              >
+                <span class="article-share__icon" aria-hidden="true">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"
+                    />
+                  </svg>
+                </span>
+                <span class="article-share__label">WhatsApp</span>
+              </a>
+              <button
+                type="button"
+                class="article-share__button"
+                id="copy-link-button"
+                aria-label="Copy article link to clipboard"
+              >
+                <span class="article-share__icon" aria-hidden="true">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+                    />
+                    <path
+                      d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+                    />
+                  </svg>
+                </span>
+                <span class="article-share__label">Copy Link</span>
+              </button>
+            </div>
+            <p
+              class="article-share__feedback"
+              id="copy-link-feedback"
+              role="status"
+              aria-live="polite"
+              hidden
+            ></p>
+          </section>
+
+          <hr class="article-divider" />
+        </header>
+
+        <section class="card article-body">
+          <div class="content">
+            <h1>Cleaning Sales History for a More Robust Forecast</h1>
+<p>A forecast can be distorted in two very different ways.</p>
+<p>A planner may leave an unusual sale in the history and forecast demand that is unlikely to happen again. Or they may remove a large or small observation that looks strange, only to remove a genuine part of the item&#x27;s normal demand pattern.</p>
+<p>That is why cleaning sales history is not really about making the data look tidy. The objective is to create the most robust representation of demand for forecasting.</p>
+<h2>A large deviation is not automatically a bad data point</h2>
+<p>It is tempting to identify statistical outliers and remove or adjust them. But an observation can be unusual and still be completely normal for that item.</p>
+<p>Consider an intermittent-demand item with this history:</p>
+<p>**0 → 0 → 0 → 500 → 0 → 0 → 0 → 400**</p>
+<p>The sales of 500 and 400 are very different from the surrounding periods, but that does not make them mistakes. The item may genuinely sell in occasional large quantities with long gaps between orders. If that is its normal pattern, removing the large sales would make the forecast less representative, not more.</p>
+<p>Now consider a higher-volume item with a history like this:</p>
+<p>**300,000 → 285,000 → 310,000 → 0 → 295,000 → 305,000**</p>
+<p>If the zero resulted from a temporary business shutdown, it is real sales history, but it may not represent the demand expected during the forecast horizon. Allowing it to reduce the forecast could create a misleading view of future demand.</p>
+<p>The size of the deviation does not tell you what to do with it. The cause does.</p>
+<h2>Start with why the observation happened</h2>
+<p>When an unusual sale is identified, the most useful question is:</p>
+<p>&gt; **Is the event that caused this observation likely to occur again within the forecast horizon?**</p>
+<p>This shifts the discussion away from whether a number looks statistically strange and toward whether it contains useful information about the future.</p>
+<p>Take a customer that normally orders 100 units each month. Their buyer goes on leave, misses one monthly order, and then places an order for 200 units when they return.</p>
+<p>The 200-unit order is genuine. It happened and should remain in the actual sales record. But it may not mean the customer&#x27;s monthly demand has doubled. If the missed-order event is unlikely to repeat, treating the full 200 units as ordinary monthly demand may lead to over-forecasting.</p>
+<p>The opposite can also happen. A customer may place a large project order every six months. That order may look like an outlier in a monthly sales history, but if the project cycle is expected to continue, it is relevant demand. Removing it simply because it is large could lead to under-forecasting.</p>
+<p>The question is not whether the sale was real. The question is whether the circumstances behind it help predict what comes next.</p>
+<h2>Sales are not always the same as demand</h2>
+<p>One of the most common traps is treating sales history as a perfect record of customer demand.</p>
+<p>Suppose an item normally sells around 100 units each week, but it was out of stock for three weeks:</p>
+<p>**98 → 105 → 102 → 18 → 22 → 15 → 101 → 99**</p>
+<p>The low sales in the middle may look like a drop in demand. In reality, customers may have wanted more than 18, 22 and 15 units, but the business could only sell what was available.</p>
+<p>Those observations describe constrained sales, not necessarily unconstrained demand. If they are used as normal demand without investigation, the forecast may be pulled down just when the item returns to normal availability.</p>
+<p>This does not mean every low-sales period should be adjusted. A genuine loss of demand is possible. The point is to investigate whether availability, customer ordering behaviour, a temporary disruption, or another event explains the result.</p>
+<h2>Three reasonable treatments</h2>
+<p>Once the cause is understood, there are three broad ways to handle an unusual observation.</p>
+<h3>Retain it when it represents future-relevant demand</h3>
+<p>Keep the observation in forecasting history when it is part of the demand pattern likely to continue.</p>
+<p>This can include recurring seasonal demand, regular promotions, recurring customer orders, genuine intermittent demand, or a sustained change in the underlying demand level.</p>
+<p>A history does not need to be smooth to be useful. For some items, uneven demand is the pattern that the forecast needs to recognise.</p>
+<h3>Adjust it when the circumstances are unlikely to repeat</h3>
+<p>An adjustment may be appropriate when the sale was genuine but was caused by an event that is not expected to recur.</p>
+<p>Examples include a missed customer order followed by a catch-up order, a temporary shutdown, a one-off project, an exceptional event, or a short-term operational disruption.</p>
+<p>The purpose is not to hide inconvenient history. It is to avoid allowing a non-repeatable event to disproportionately influence a view of future demand.</p>
+<p>There is a trade-off. Retaining an exceptional high observation may cause over-forecasting. Adjusting an observation that was actually meaningful may cause under-forecasting. That is why the explanation behind the number matters.</p>
+<h3>Investigate when the answer is not clear</h3>
+<p>Sometimes the correct treatment cannot be determined from the sales history alone.</p>
+<p>A large order may be a one-off project, the start of a recurring customer requirement, or a customer bringing forward future purchases. A low sales period may reflect a stockout, reduced demand, or an issue in the sales data.</p>
+<p>In these cases, automatic adjustment is risky. Check whether the data is correct and speak with the people closest to the event, such as sales, customer service, operations, or the account team. The history should not be changed just because it is difficult to explain.</p>
+<h2>Keep actual sales and forecasting history separate</h2>
+<p>Adjusting history for forecasting does not mean rewriting what actually happened.</p>
+<p>It helps to distinguish between two views of history:</p>
+<p>- **Actual sales history:** what the business actually sold. - **Forecasting demand history:** the representation of demand judged most appropriate for generating the forecast.</p>
+<p>This distinction protects the integrity of the original record while allowing planners to apply judgement. The actual 200-unit catch-up order still exists in the sales history. The forecasting history can reflect the fact that it may have represented two months of demand rather than a new monthly requirement of 200 units.</p>
+<p>Keeping these views separate also makes discussions clearer. Finance, sales, and operational reporting may need actual sales. Forecasting needs the best available representation of future demand. They are related, but they do not always serve the same purpose.</p>
+<h2>Questions to ask before changing history</h2>
+<p>Before retaining, adjusting, or excluding an unusual observation from forecasting history, work through a few practical questions:</p>
+<p>| Question | What it helps determine | | --- | --- | | Is the data correct? | Incorrect transactions or data errors should be corrected first. | | What caused the observation? | The cause is more useful than the size of the deviation. | | Is that cause likely to repeat? | Recurrence determines whether the event is relevant to the forecast. | | Does the sale represent underlying demand? | Stockouts and ordering behaviour can make sales differ from demand. | | What is the risk of retaining it? | It may push the forecast too high or too low. | | What is the risk of adjusting it? | An adjustment may remove a genuine demand signal. |</p>
+<p>The final question is the most important: **which treatment gives the most robust forecast for the period ahead?**</p>
+<p>That answer may differ by item, customer, and planning horizon. A recurring six-month project order matters if the forecast covers the next six months. It may be less useful if the business is trying to understand the expected demand next week.</p>
+<h2>Key Takeaways</h2>
+<p>- The objective of cleaning history is not to make it smooth; it is to create a robust representation of demand for forecasting. - An unusual observation is not automatically an outlier that should be removed. - The cause of the observation matters more than the size of the deviation. - Ask whether the event that caused it is likely to repeat during the forecast horizon. - Sales history may be constrained by stockouts or distorted by ordering behaviour, so sales do not always equal underlying demand. - Retain unusual history when it represents the expected demand pattern, adjust it when the cause is unlikely to recur, and investigate when the answer is unclear. - Preserve actual sales history while maintaining a separate forecasting view where judgement is needed.</p>
+          </div>
+        </section>
+      </article>
+    </main>
+
+    <script src="/assets/article.js?v=3" defer></script>
+  </body>
+</html>
