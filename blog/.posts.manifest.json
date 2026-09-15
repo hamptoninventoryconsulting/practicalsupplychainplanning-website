@@ -1,6 +1,15 @@
 {
   "posts": [
     {
+      "slug": "batch-control-why-total-stock-is-not-enough-for-shelf-life-management",
+      "title": "Batch Control: Why Total Stock Is Not Enough for Shelf Life Management",
+      "summary": "A total stock balance can look accurate while hiding important differences between the physical quantities behind it. Batch control keeps those differences visible, allowing businesses to manage shelf life, quality status and traceability at the level where those decisions actually need to be made.",
+      "published_datetime": "2026-09-15 20:32:54.236087",
+      "featured_image_filename": "IMG000007.webp",
+      "author": "Daniel Hampton",
+      "reading_time": "8 min read"
+    },
+    {
       "slug": "non-stocked-does-not-mean-unplanned",
       "title": "Non-Stocked Does Not Mean Unplanned",
       "summary": "Non-stocked items may sit outside inventory valuation, but they can still require stock control, replenishment planning and clear purchasing ownership. Understanding the difference between physical stock, planning control and financial inventory value helps prevent avoidable shortages, reactive buying and unexpected P&L timing effects.",
