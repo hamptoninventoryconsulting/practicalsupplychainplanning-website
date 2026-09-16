@@ -319,8 +319,8 @@ main {
 }
 
 .founder__photo {
-  width: 7.5rem;
-  height: 7.5rem;
+  width: 15rem;
+  height: 15rem;
   border-radius: var(--card-radius);
   object-fit: cover;
   flex-shrink: 0;
