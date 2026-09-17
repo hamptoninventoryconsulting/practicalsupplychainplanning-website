@@ -1,6 +1,15 @@
 {
   "posts": [
     {
+      "slug": "forecast-bias-finding-the-direction-behind-forecast-errors",
+      "title": "Forecast Bias: Finding the Direction Behind Forecast Errors",
+      "summary": "Forecast accuracy tells you how far forecasts were from actual demand. Forecast bias adds another useful question: do those errors consistently lean high or low? Reviewing both helps planners identify forecasting issues that can otherwise turn into excess stock or service problems.",
+      "published_datetime": "2026-09-17 09:45:37.082272",
+      "featured_image_filename": "IMG000008.webp",
+      "author": "Daniel Hampton",
+      "reading_time": "7 min read"
+    },
+    {
       "slug": "batch-control-why-total-stock-is-not-enough-for-shelf-life-management",
       "title": "Batch Control: Why Total Stock Is Not Enough for Shelf Life Management",
       "summary": "A total stock balance can look accurate while hiding important differences between the physical quantities behind it. Batch control keeps those differences visible, allowing businesses to manage shelf life, quality status and traceability at the level where those decisions actually need to be made.",
