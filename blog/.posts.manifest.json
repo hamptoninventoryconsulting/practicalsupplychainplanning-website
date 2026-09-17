@@ -1,6 +1,15 @@
 {
   "posts": [
     {
+      "slug": "mrp-is-more-than-a-stock-calculation-why-time-phasing-matters",
+      "title": "MRP Is More Than a Stock Calculation: Why Time-Phasing Matters",
+      "summary": "Material Requirements Planning (MRP) works out when supply is needed as well as how much is needed. Its value comes from calculating projected stock over time, using demand, existing supply, stock on hand and planning parameters at each item and location.",
+      "published_datetime": "2026-09-17 21:25:23.915563",
+      "featured_image_filename": "IMG000009.webp",
+      "author": "Daniel Hampton",
+      "reading_time": "10 min read"
+    },
+    {
       "slug": "forecast-bias-finding-the-direction-behind-forecast-errors",
       "title": "Forecast Bias: Finding the Direction Behind Forecast Errors",
       "summary": "Forecast accuracy tells you how far forecasts were from actual demand. Forecast bias adds another useful question: do those errors consistently lean high or low? Reviewing both helps planners identify forecasting issues that can otherwise turn into excess stock or service problems.",
