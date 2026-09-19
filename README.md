@@ -38,6 +38,7 @@ Then open:
 
 - http://localhost:8080/
 - http://localhost:8080/about/
+- http://localhost:8080/learn/safety-stock-simulator/
 
 Stop the server with `Ctrl+C`.
 
@@ -61,12 +62,14 @@ No build step is required — Cloudflare serves the static files directly.
 Website/
 ├── index.html              # Meta-refresh to /about/ (not an HTTP redirect)
 ├── about/index.html        # About page
+├── learn/                  # Educational pages (safety stock simulator)
 ├── blog/                   # Blog index, article pages, publisher templates
 ├── robots.txt              # Allow crawling; points at the XML sitemap
 ├── sitemap.xml             # Public pages derived from static files + blog manifest
 ├── 404.html                # Custom 404; also disables Cloudflare Pages SPA fallback
 ├── scripts/
-│   └── verify_indexing.py  # Generate sitemap.xml; verify indexing files
+│   ├── verify_indexing.py  # Generate sitemap.xml; verify indexing files
+│   └── verify_simulator.js # Smoke-check scenario data and Monte Carlo engine
 ├── assets/
 │   ├── brand/              # Logo, photo, colour PDFs
 │   ├── variables.css       # Brand colour tokens
@@ -90,10 +93,18 @@ python scripts/verify_indexing.py --write
 python scripts/verify_indexing.py
 ```
 
-`sitemap.xml` lists `/`, `/about/`, `/blog/`, and each published article that
-exists as `blog/<slug>/index.html` (from `blog/.posts.manifest.json`). Knowledge
-OS BlogPublisher does not update the sitemap from this repo; regenerating it is
-companion work on each publish.
+`sitemap.xml` lists `/`, `/about/`, `/blog/`, `/learn/safety-stock-simulator/`,
+and each published article that exists as `blog/<slug>/index.html` (from
+`blog/.posts.manifest.json`). Knowledge OS BlogPublisher does not update the
+sitemap from this repo; regenerating it is companion work on each publish.
+
+Check the safety stock simulator after changing scenario data or the engine:
+
+```powershell
+python scripts/verify_indexing.py --write
+python scripts/verify_indexing.py
+node scripts/verify_simulator.js
+```
 
 ## Next pages (planned)
 
