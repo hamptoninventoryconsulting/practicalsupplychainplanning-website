@@ -31,6 +31,7 @@ CORE_PAGES = (
     "/",
     "/about/",
     "/blog/",
+    "/learn/safety-stock-simulator/",
 )
 
 

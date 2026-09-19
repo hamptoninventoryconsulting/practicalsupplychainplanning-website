@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Safety Stock Simulator — Practical Supply Chain Planning</title>
+    <meta
+      name="description"
+      content="A free educational safety stock simulator. Compare demand risk, supply risk, and both together with a browser-side Monte Carlo model."
+    />
+    <link rel="canonical" href="/learn/safety-stock-simulator/" />
+    <link rel="icon" href="/assets/brand/favicon.png" type="image/png" />
+    <link rel="stylesheet" href="/assets/styles.css?v=14" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a class="site-header__link" href="/">
+          <img
+            class="site-header__logo"
+            src="/assets/brand/logo.jpg?v=2"
+            alt="Practical Supply Chain Planning"
+          />
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul class="site-nav__list">
+            <li>
+              <a class="site-nav__link" href="/">Home</a>
+            </li>
+            <li>
+              <a
+                class="site-nav__link site-nav__link--active"
+                href="/learn/safety-stock-simulator/"
+                aria-current="page"
+                >Learn</a
+              >
+            </li>
+            <li>
+              <a class="site-nav__link" href="/blog/">Blog</a>
+            </li>
+            <li>
+              <a class="site-nav__link" href="/about/">About</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <h1 class="page-title">Safety Stock Simulator</h1>
+      <p class="tagline">
+        A free educational tool for seeing how demand uncertainty and supply
+        delay use the same inventory buffer.
+      </p>
+
+      <p id="sim-error" class="sim-error" hidden></p>
+
+      <section class="card">
+        <h2 class="card__title">How this works</h2>
+        <div class="content">
+          <p>
+            Each teaching scenario uses the same average demand and the same
+            average lead time. The only thing that changes is where the
+            uncertainty comes from. That keeps the three results comparable.
+          </p>
+          <p>
+            The reorder point is expected demand during the average lead time,
+            plus the safety stock you set. Each Monte Carlo trial draws a lead
+            time, then a demand for every day of that wait. If demand during
+            the wait exceeds the reorder point, that cycle stocks out.
+          </p>
+          <p>
+            The simulation runs in this browser. Individual runs are not stored
+            on a server. Temporary choices stay in
+            <code>sessionStorage</code> for this tab only and clear when the
+            tab closes.
+          </p>
+        </div>
+        <p id="sim-data-version" class="sim-meta">
+          Scenario inputs are versioned in
+          <a href="/learn/safety-stock-simulator/scenarios.json">scenarios.json</a>.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2 class="card__title">Choose a scenario</h2>
+        <div id="sim-scenarios" class="sim-scenarios"></div>
+        <p id="sim-teaching" class="sim-teaching"></p>
+        <dl class="sim-params">
+          <div>
+            <dt>Average demand</dt>
+            <dd id="sim-param-demand"></dd>
+          </div>
+          <div>
+            <dt>Demand variability</dt>
+            <dd id="sim-param-demand-cv"></dd>
+          </div>
+          <div>
+            <dt>Average lead time</dt>
+            <dd id="sim-param-lead-time"></dd>
+          </div>
+          <div>
+            <dt>Lead time variability</dt>
+            <dd id="sim-param-lead-time-cv"></dd>
+          </div>
+          <div>
+            <dt>Expected lead-time demand</dt>
+            <dd id="sim-param-expected-ltd"></dd>
+          </div>
+          <div>
+            <dt>Reorder point</dt>
+            <dd id="sim-param-rop"></dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="card">
+        <h2 class="card__title">Safety stock</h2>
+        <div class="sim-controls">
+          <label class="sim-label" for="sim-safety-stock-number">
+            Safety stock (units)
+            <strong id="sim-safety-stock-value">40</strong>
+          </label>
+          <input
+            id="sim-safety-stock"
+            type="range"
+            min="0"
+            max="120"
+            step="5"
+            value="40"
+          />
+          <input
+            id="sim-safety-stock-number"
+            type="number"
+            min="0"
+            max="120"
+            step="5"
+            value="40"
+          />
+          <div class="sim-actions">
+            <button id="sim-run" class="sim-button" type="button">
+              Run simulation
+            </button>
+            <button id="sim-new-sample" class="sim-button sim-button--secondary" type="button">
+              Draw a new sample
+            </button>
+          </div>
+        </div>
+        <p id="sim-status" class="sim-meta"></p>
+      </section>
+
+      <section class="card">
+        <h2 class="card__title">Results at this safety stock</h2>
+        <p id="sim-insight" class="sim-insight"></p>
+        <div class="sim-table-wrap">
+          <table class="sim-table">
+            <caption>
+              The same safety stock is applied to all three scenarios so the
+              metrics can be compared directly.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Metric</th>
+                <th scope="col">Demand risk only</th>
+                <th scope="col">Supply risk only</th>
+                <th scope="col">Demand and supply</th>
+              </tr>
+            </thead>
+            <tbody id="sim-results-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card__title">Adding more stock has diminishing returns</h2>
+        <div class="content">
+          <p>
+            Cycle service level at several safety stock levels. Extra units help
+            at first, then buy less and less service — especially when demand
+            and supply risk are combined.
+          </p>
+        </div>
+        <div class="sim-table-wrap">
+          <table class="sim-table">
+            <caption>
+              Cycle service level by safety stock. The selected scenario column
+              is highlighted.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Safety stock</th>
+                <th scope="col">Demand risk only</th>
+                <th scope="col">Supply risk only</th>
+                <th scope="col">Demand and supply</th>
+              </tr>
+            </thead>
+            <tbody id="sim-sensitivity-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="/assets/safety-stock-engine.js"></script>
+    <script src="/assets/safety-stock-simulator.js"></script>
+  </body>
+</html>
