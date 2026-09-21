@@ -107,6 +107,7 @@ Check the safety stock simulator after changing scenario data or the engine:
 ```powershell
 python scripts/verify_indexing.py --write
 python scripts/verify_indexing.py
+node scripts/verify_redirects.mjs
 node scripts/verify_simulator.js
 ```
 
