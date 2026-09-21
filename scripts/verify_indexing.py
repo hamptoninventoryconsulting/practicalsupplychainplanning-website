@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime
@@ -26,12 +27,25 @@ SITEMAP_PATH = ROOT / "sitemap.xml"
 ROBOTS_PATH = ROOT / "robots.txt"
 MANIFEST_PATH = ROOT / "blog" / ".posts.manifest.json"
 NOT_FOUND_PATH = ROOT / "404.html"
+REDIRECTS_PATH = ROOT / "_redirects"
+MIDDLEWARE_PATH = ROOT / "functions" / "_middleware.js"
+CANONICAL_RE = re.compile(
+    r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']',
+    re.I,
+)
+REFRESH_RE = re.compile(r'<meta\s+http-equiv=["\']refresh["\']', re.I)
 
 CORE_PAGES = (
     "/",
     "/about/",
     "/blog/",
     "/learn/safety-stock-simulator/",
+)
+
+CANONICAL_PAGES = (
+    ("about/index.html", f"{SITE_ORIGIN}/about/"),
+    ("blog/index.html", f"{SITE_ORIGIN}/blog/"),
+    ("learn/safety-stock-simulator/index.html", f"{SITE_ORIGIN}/learn/safety-stock-simulator/"),
 )
 
 
@@ -171,6 +185,82 @@ def parse_committed_sitemap(errors: list[str]) -> list[dict]:
     return urls
 
 
+def verify_homepage_routing(errors: list[str]) -> None:
+    index_html = ROOT / "index.html"
+    if not index_html.is_file():
+        fail("index.html is missing from the site root", errors)
+    else:
+        text = index_html.read_text(encoding="utf-8")
+        if REFRESH_RE.search(text):
+            fail("index.html still uses a meta-refresh; use HTTP 301 to /about/", errors)
+        match = CANONICAL_RE.search(text)
+        if match and match.group(1) != f"{SITE_ORIGIN}/about/":
+            fail(
+                "index.html canonical must be the absolute /about/ URL on the apex host",
+                errors,
+            )
+
+    if not REDIRECTS_PATH.is_file():
+        fail("_redirects is missing; Cloudflare Pages needs it for / → /about/ 301", errors)
+    else:
+        text = REDIRECTS_PATH.read_text(encoding="utf-8")
+        if not re.search(r"^/\s+/about/\s+301\s*$", text, re.M):
+            fail("_redirects must contain `/ /about/ 301`", errors)
+
+    if not MIDDLEWARE_PATH.is_file():
+        fail(
+            "functions/_middleware.js is missing; www → apex and / → /about/ "
+            "HTTP 301s are implemented there",
+            errors,
+        )
+        return
+    text = MIDDLEWARE_PATH.read_text(encoding="utf-8")
+    if "www.${APEX_HOST}" not in text:
+        fail("functions/_middleware.js must redirect the www hostname", errors)
+    if "/about/" not in text:
+        fail("functions/_middleware.js must redirect `/` to `/about/`", errors)
+
+
+def verify_canonicals(errors: list[str]) -> None:
+    for relative, expected in CANONICAL_PAGES:
+        path = ROOT / relative
+        if not path.is_file():
+            fail(f"missing page for canonical check: {relative}", errors)
+            continue
+        text = path.read_text(encoding="utf-8")
+        match = CANONICAL_RE.search(text)
+        if not match:
+            fail(f"{relative} is missing a rel=canonical tag", errors)
+            continue
+        if match.group(1) != expected:
+            fail(
+                f"{relative} canonical is {match.group(1)!r}, expected {expected!r}",
+                errors,
+            )
+
+    for article in sorted((ROOT / "blog").glob("*/index.html")):
+        relative = article.relative_to(ROOT).as_posix()
+        slug = article.parent.name
+        expected = f"{SITE_ORIGIN}/blog/{slug}/"
+        text = article.read_text(encoding="utf-8")
+        match = CANONICAL_RE.search(text)
+        if not match:
+            fail(f"{relative} is missing a rel=canonical tag", errors)
+            continue
+        href = match.group(1)
+        if not href.startswith(f"{SITE_ORIGIN}/"):
+            fail(
+                f"{relative} canonical must be an absolute HTTPS apex URL, got {href!r}",
+                errors,
+            )
+            continue
+        if href != expected:
+            fail(
+                f"{relative} canonical is {href!r}, expected {expected!r}",
+                errors,
+            )
+
+
 def verify_sitemap(errors: list[str]) -> None:
     expected = expected_urls()
     expected_by_loc = {entry["loc"]: entry for entry in expected}
@@ -223,6 +313,8 @@ def main() -> int:
         verify_robots(errors)
         verify_404(errors)
         verify_sitemap(errors)
+        verify_homepage_routing(errors)
+        verify_canonicals(errors)
     except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
         fail(str(exc), errors)
     if errors:

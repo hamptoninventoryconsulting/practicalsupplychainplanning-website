@@ -1,0 +1,5 @@
+# Homepage is not a separate landing page. Prefer HTTP 301 over meta-refresh.
+# Host-level www → apex is not supported in this file (domain-level redirects
+# are unsupported here); that lives in functions/_middleware.js.
+/ /about/ 301
+/index.html /about/ 301
