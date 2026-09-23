@@ -454,8 +454,24 @@ assert.match(page, /99%/);
 assert.match(page, /Short \(2 weeks\)/);
 assert.match(page, /Medium \(5 weeks\)/);
 assert.match(page, /Long \(10 weeks\)/);
+assert.match(page, /id="sim-mode-band"/);
+assert.match(page, /id="sim-run-year"/);
+assert.match(page, /Run year/);
+assert.match(page, />One year</);
 assert.match(page, /id="sim-run-mc"/);
 assert.match(page, /Run Monte Carlo/);
+const teachingAt = page.indexOf("Teaching tool only");
+const modeAt = page.indexOf('id="sim-mode-band"');
+const patternAt = page.indexOf("Base demand pattern");
+assert.ok(teachingAt !== -1 && modeAt > teachingAt, "mode band follows the teaching framing");
+assert.ok(patternAt > modeAt, "mode band comes before the setup sections");
+const modeBand = page.slice(modeAt, patternAt);
+assert.match(modeBand, /id="sim-run-year"/);
+assert.match(modeBand, /id="sim-run-mc"/);
+assert.match(modeBand, /Run year/);
+assert.match(modeBand, /Run Monte Carlo/);
+assert.equal(page.split('id="sim-run-mc"').length - 1, 1);
+assert.equal(page.split('id="sim-run-year"').length - 1, 1);
 assert.match(page, /P10–P90/);
 assert.match(page, /median only/i);
 assert.doesNotMatch(page, /planned_order/);
@@ -475,7 +491,15 @@ assert.doesNotMatch(ui, /P5|P95/);
 assert.doesNotMatch(ui, /railway|streamlit|sqlite/i);
 const bootStart = ui.indexOf("function boot()");
 const bootBody = ui.slice(bootStart, ui.indexOf("if (document.readyState"));
-assert.doesNotMatch(bootBody, /runMonteCarloClicked|engine\.runMonteCarlo/);
+assert.doesNotMatch(bootBody, /runMonteCarloClicked|runYearClicked|engine\.runMonteCarlo|engine\.runYear/);
+const changeBody = ui.slice(
+  ui.indexOf("function onControlsChanged()"),
+  ui.indexOf("function setMode(")
+);
+assert.match(changeBody, /clearStaleOutputs/);
+assert.doesNotMatch(changeBody, /engine\.runYear|engine\.runMonteCarlo|runYearClicked|runMonteCarloClicked/);
+const modeBody = ui.slice(ui.indexOf("function setMode("), ui.indexOf("function restoreSession"));
+assert.doesNotMatch(modeBody, /engine\.runYear|engine\.runMonteCarlo|runYearClicked|runMonteCarloClicked/);
 
 const about = fs.readFileSync(path.join(ROOT, "about", "index.html"), "utf8");
 assert.match(about, /free educational/);
