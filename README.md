@@ -73,7 +73,7 @@ Website/
 ├── scripts/
 │   ├── verify_indexing.py  # Generate sitemap.xml; verify indexing + canonicals
 │   ├── verify_redirects.mjs # Check www → apex and `/` → `/about/` 301 logic
-│   └── verify_simulator.js # Smoke-check scenario data and Monte Carlo engine
+│   └── verify_simulator.js # Smoke-check the 52-week safety stock MRP engine
 ├── assets/
 │   ├── brand/              # Logo, photo, colour PDFs
 │   ├── variables.css       # Brand colour tokens
@@ -102,7 +102,7 @@ and each published article that exists as `blog/<slug>/index.html` (from
 `blog/.posts.manifest.json`). Knowledge OS BlogPublisher does not update the
 sitemap from this repo; regenerating it is companion work on each publish.
 
-Check the safety stock simulator after changing scenario data or the engine:
+Check the safety stock simulator after changing the weekly MRP engine or its page:
 
 ```powershell
 python scripts/verify_indexing.py --write

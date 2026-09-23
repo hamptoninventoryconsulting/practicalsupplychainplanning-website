@@ -1,48 +1,5 @@
 {
-  "version": "1.0.0",
-  "id": "standard-teaching-scenarios",
-  "title": "Safety stock teaching scenarios",
-  "description": "Three versioned scenarios that isolate demand risk, supply risk, and both together. Shared mean demand and mean lead time keep results comparable.",
-  "shared": {
-    "demandMeanPerDay": 20,
-    "leadTimeMeanDays": 10,
-    "trials": 2000,
-    "safetyStockDefault": 40,
-    "safetyStockMin": 0,
-    "safetyStockMax": 120,
-    "safetyStockStep": 5,
-    "sensitivitySafetyStocks": [0, 40, 80, 120]
-  },
-  "scenarios": [
-    {
-      "id": "demand-risk-only",
-      "name": "Demand risk only",
-      "summary": "Buffer covers demand uncertainty",
-      "teachingPoint": "When supply is reliable, safety stock is mainly there for demand uncertainty. The same planned lead time can still consume very different amounts of stock if orders swing up and down.",
-      "demandMeanPerDay": 20,
-      "demandCv": 0.55,
-      "leadTimeMeanDays": 10,
-      "leadTimeCv": 0
-    },
-    {
-      "id": "supply-risk-only",
-      "name": "Supply risk only",
-      "summary": "Supply delay consumes the same buffer",
-      "teachingPoint": "When demand is steady, a late delivery still uses the safety stock. Extra waiting days mean extra demand against the same reorder point — the buffer is not reserved for demand noise alone.",
-      "demandMeanPerDay": 20,
-      "demandCv": 0,
-      "leadTimeMeanDays": 10,
-      "leadTimeCv": 0.3
-    },
-    {
-      "id": "demand-and-supply",
-      "name": "Demand and supply together",
-      "summary": "Risks compound; more stock is not automatically better",
-      "teachingPoint": "Demand swings and supply delays hit the same buffer at once, so service is worse than either risk alone. Adding more stock can help, but the extra units buy less and less service — reducing variability is often the better lever.",
-      "demandMeanPerDay": 20,
-      "demandCv": 0.55,
-      "leadTimeMeanDays": 10,
-      "leadTimeCv": 0.3
-    }
-  ]
+  "version": "2.0.0",
+  "status": "retired-as-simulator-input",
+  "note": "The Learn safety stock simulator no longer reads this file. The 52-week MRP model lives in /assets/safety-stock-engine.js and runs entirely in the browser."
 }
