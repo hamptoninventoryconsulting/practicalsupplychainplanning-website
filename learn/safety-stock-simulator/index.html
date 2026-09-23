@@ -6,14 +6,14 @@
     <title>Safety Stock Simulator — Practical Supply Chain Planning</title>
     <meta
       name="description"
-      content="A free educational safety stock simulator. Compare demand risk, supply risk, and both together with a browser-side Monte Carlo model."
+      content="A free teaching simulator for a 52-week inventory year. See how safety stock, lot size, and uncertainty change service, turns, and working capital. Not for operational use."
     />
     <link
       rel="canonical"
       href="https://practicalsupplychainplanning.com/learn/safety-stock-simulator/"
     />
     <link rel="icon" href="/assets/brand/favicon.png" type="image/png" />
-    <link rel="stylesheet" href="/assets/styles.css?v=14" />
+    <link rel="stylesheet" href="/assets/styles.css?v=15" />
   </head>
   <body>
     <header class="site-header">
@@ -52,158 +52,365 @@
     <main>
       <h1 class="page-title">Safety Stock Simulator</h1>
       <p class="tagline">
-        A free educational tool for seeing how demand uncertainty and supply
-        delay use the same inventory buffer.
+        A 52-week teaching year: forecast, uncertainty, replenishment, then the
+        consequences for service, turns, and cash.
       </p>
 
-      <p id="sim-error" class="sim-error" hidden></p>
+      <div class="sim-app" id="sim-app">
+        <p id="sim-error" class="sim-error" hidden></p>
 
-      <section class="card">
-        <h2 class="card__title">How this works</h2>
-        <div class="content">
-          <p>
-            Each teaching scenario uses the same average demand and the same
-            average lead time. The only thing that changes is where the
-            uncertainty comes from. That keeps the three results comparable.
-          </p>
-          <p>
-            The reorder point is expected demand during the average lead time,
-            plus the safety stock you set. Each Monte Carlo trial draws a lead
-            time, then a demand for every day of that wait. If demand during
-            the wait exceeds the reorder point, that cycle stocks out.
-          </p>
-          <p>
-            The simulation runs in this browser. Individual runs are not stored
-            on a server. Temporary choices stay in
-            <code>sessionStorage</code> for this tab only and clear when the
-            tab closes.
-          </p>
-        </div>
-        <p id="sim-data-version" class="sim-meta">
-          Scenario inputs are versioned in
-          <a href="/learn/safety-stock-simulator/scenarios.json">scenarios.json</a>.
-        </p>
-      </section>
-
-      <section class="card">
-        <h2 class="card__title">Choose a scenario</h2>
-        <div id="sim-scenarios" class="sim-scenarios"></div>
-        <p id="sim-teaching" class="sim-teaching"></p>
-        <dl class="sim-params">
-          <div>
-            <dt>Average demand</dt>
-            <dd id="sim-param-demand"></dd>
+        <section class="card">
+          <h2 class="card__title">Teaching tool only</h2>
+          <div class="content">
+            <p>
+              This is a teaching tool only. It is not suitable for real
+              operational use, and it is not a planner or an optimiser.
+            </p>
+            <p>
+              The simulation runs in this browser. Nothing is stored on a
+              server. Temporary choices stay in
+              <code>sessionStorage</code> for this tab and clear when the tab
+              closes.
+            </p>
+            <p>
+              Teaching prices are fixed at a $100 sell price, a $70 cost, and
+              $30 gross profit per unit. They cannot be edited.
+            </p>
           </div>
-          <div>
-            <dt>Demand variability</dt>
-            <dd id="sim-param-demand-cv"></dd>
-          </div>
-          <div>
-            <dt>Average lead time</dt>
-            <dd id="sim-param-lead-time"></dd>
-          </div>
-          <div>
-            <dt>Lead time variability</dt>
-            <dd id="sim-param-lead-time-cv"></dd>
-          </div>
-          <div>
-            <dt>Expected lead-time demand</dt>
-            <dd id="sim-param-expected-ltd"></dd>
-          </div>
-          <div>
-            <dt>Reorder point</dt>
-            <dd id="sim-param-rop"></dd>
-          </div>
-        </dl>
-      </section>
-
-      <section class="card">
-        <h2 class="card__title">Safety stock</h2>
-        <div class="sim-controls">
-          <label class="sim-label" for="sim-safety-stock-number">
-            Safety stock (units)
-            <strong id="sim-safety-stock-value">40</strong>
+          <label class="sim-check" for="sim-explanations">
+            <input id="sim-explanations" type="checkbox" />
+            Show explanations
           </label>
-          <input
-            id="sim-safety-stock"
-            type="range"
-            min="0"
-            max="120"
-            step="5"
-            value="40"
-          />
-          <input
-            id="sim-safety-stock-number"
-            type="number"
-            min="0"
-            max="120"
-            step="5"
-            value="40"
-          />
-          <div class="sim-actions">
-            <button id="sim-run" class="sim-button" type="button">
-              Run simulation
+          <p class="sim-help">
+            Start with variability and the demand shock turned off, read one
+            year, then turn uncertainty on. Monte Carlo runs only when you
+            click its button. Fifty independent years use the same settings.
+          </p>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Base demand pattern</h2>
+          <div id="sim-patterns" class="sim-scenarios">
+            <button
+              type="button"
+              class="sim-scenario sim-scenario--selected"
+              data-pattern-id="level"
+              aria-pressed="true"
+            >
+              <span class="sim-scenario__name">Level</span>
+              <span class="sim-scenario__summary">The same forecast every week (40 units).</span>
             </button>
-            <button id="sim-new-sample" class="sim-button sim-button--secondary" type="button">
-              Draw a new sample
+            <button
+              type="button"
+              class="sim-scenario"
+              data-pattern-id="seasonal"
+              aria-pressed="false"
+            >
+              <span class="sim-scenario__name">Seasonal</span>
+              <span class="sim-scenario__summary">A smooth peak and trough around 40 units.</span>
+            </button>
+            <button
+              type="button"
+              class="sim-scenario"
+              data-pattern-id="rising"
+              aria-pressed="false"
+            >
+              <span class="sim-scenario__name">Rising</span>
+              <span class="sim-scenario__summary">Forecast starts at 22 and steps up through the year.</span>
             </button>
           </div>
-        </div>
-        <p id="sim-status" class="sim-meta"></p>
-      </section>
-
-      <section class="card">
-        <h2 class="card__title">Results at this safety stock</h2>
-        <p id="sim-insight" class="sim-insight"></p>
-        <div class="sim-table-wrap">
-          <table class="sim-table">
-            <caption>
-              The same safety stock is applied to all three scenarios so the
-              metrics can be compared directly.
-            </caption>
-            <thead>
-              <tr>
-                <th scope="col">Metric</th>
-                <th scope="col">Demand risk only</th>
-                <th scope="col">Supply risk only</th>
-                <th scope="col">Demand and supply</th>
-              </tr>
-            </thead>
-            <tbody id="sim-results-body"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2 class="card__title">Adding more stock has diminishing returns</h2>
-        <div class="content">
-          <p>
-            Cycle service level at several safety stock levels. Extra units help
-            at first, then buy less and less service — especially when demand
-            and supply risk are combined.
+          <p class="sim-help">
+            Forecast demand is the base demand. Variability and the shock are
+            applied on top. The pattern itself is not a weekly editor.
           </p>
-        </div>
-        <div class="sim-table-wrap">
-          <table class="sim-table">
-            <caption>
-              Cycle service level by safety stock. The selected scenario column
-              is highlighted.
-            </caption>
-            <thead>
-              <tr>
-                <th scope="col">Safety stock</th>
-                <th scope="col">Demand risk only</th>
-                <th scope="col">Supply risk only</th>
-                <th scope="col">Demand and supply</th>
-              </tr>
-            </thead>
-            <tbody id="sim-sensitivity-body"></tbody>
-          </table>
-        </div>
-      </section>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Replenishment</h2>
+          <div class="sim-grid">
+            <label class="sim-field" for="sim-lot-mode">
+              Lot size
+              <select id="sim-lot-mode">
+                <option value="fixed">Fixed quantity</option>
+                <option value="weeks">Weeks cover</option>
+              </select>
+            </label>
+            <label class="sim-field" id="sim-lot-qty-field" for="sim-lot-qty">
+              Fixed lot quantity
+              <input id="sim-lot-qty" type="number" min="1" max="1000" step="1" value="40" />
+            </label>
+            <label class="sim-field" id="sim-lot-weeks-field" for="sim-lot-weeks" hidden>
+              Weeks of cover
+              <select id="sim-lot-weeks">
+                <option value="2">2</option>
+                <option value="4" selected>4</option>
+                <option value="6">6</option>
+                <option value="10">10</option>
+              </select>
+            </label>
+            <label class="sim-field" for="sim-ss-mode">
+              Safety stock
+              <select id="sim-ss-mode">
+                <option value="fixed">Fixed quantity</option>
+                <option value="formula">Formula</option>
+                <option value="weeks">Weeks cover</option>
+              </select>
+            </label>
+            <label class="sim-field" id="sim-ss-qty-field" for="sim-ss-qty">
+              Fixed safety stock
+              <input id="sim-ss-qty" type="number" min="0" max="1000" step="1" value="20" />
+            </label>
+            <label class="sim-field" id="sim-ss-weeks-field" for="sim-ss-weeks" hidden>
+              Safety stock cover
+              <select id="sim-ss-weeks">
+                <option value="2">2</option>
+                <option value="4" selected>4</option>
+                <option value="6">6</option>
+                <option value="10">10</option>
+              </select>
+            </label>
+            <label class="sim-field" id="sim-service-field" for="sim-service-level" hidden>
+              Formula service level
+              <select id="sim-service-level">
+                <option value="90">90%</option>
+                <option value="95" selected>95%</option>
+                <option value="98">98%</option>
+                <option value="99">99%</option>
+              </select>
+            </label>
+            <label class="sim-field" for="sim-lead-time">
+              Base lead time
+              <select id="sim-lead-time">
+                <option value="2">Short (2 weeks)</option>
+                <option value="5" selected>Medium (5 weeks)</option>
+                <option value="10">Long (10 weeks)</option>
+              </select>
+            </label>
+          </div>
+          <p id="sim-formula-note" class="sim-meta" hidden></p>
+          <p class="sim-help">
+            An order is placed only when calculated stock on hand is strictly
+            below safety stock. Calculated stock is beginning stock, plus
+            supply already due this week, minus this week's demand. Landing on
+            the safety-stock line does not order. With safety stock at zero,
+            the line is zero. The order is one lot unless that lot would not
+            lift calculated stock above zero, in which case it is two lots.
+            That rule looks at calculated stock against zero, not at whether
+            last week ended negative, and it does not keep ordering until
+            safety stock is rebuilt.
+          </p>
+          <p class="sim-help">
+            Fixed lots are a whole number from 1 to 1000. Fixed safety stock is
+            a whole number from 0 to 1000. Weeks cover sums the first 2, 4, 6,
+            or 10 weeks of base demand. Starting stock is week-1 base demand
+            plus that nominal lot, with no delivery-quantity noise.
+          </p>
+          <p class="sim-help">
+            Formula safety stock is round(Z × σD × √L). Z is 1.282, 1.645,
+            2.054, or 2.326 at 90%, 95%, 98%, and 99%. σD is the population
+            standard deviation of this year's demand after the demand factor
+            and before any shock. L is the base lead time: short 2, medium 5,
+            or long 10. The result is constant across the 52 weeks. Monte
+            Carlo keeps that same quantity for every year in the batch. The
+            base lead time is not added onto the arrival week. It is used for
+            √L and for the maximum extra delay when lead-time variability is on.
+          </p>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Variability</h2>
+          <div class="sim-grid">
+            <label class="sim-field" for="sim-demand-var">
+              Demand
+              <select id="sim-demand-var">
+                <option value="off" selected>Off</option>
+                <option value="small">Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
+              </select>
+            </label>
+            <label class="sim-field" for="sim-lt-var">
+              Lead time
+              <select id="sim-lt-var">
+                <option value="off" selected>Off</option>
+                <option value="small">Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
+              </select>
+            </label>
+            <label class="sim-field" for="sim-delivery-var">
+              Delivery quantity
+              <select id="sim-delivery-var">
+                <option value="off" selected>Off</option>
+                <option value="small">Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
+              </select>
+            </label>
+          </div>
+          <p class="sim-help">
+            Each lever is independent. Off means no noise. Small, medium, and
+            large are the only levels.
+          </p>
+          <p class="sim-help">
+            Demand multiplies base demand by a uniform factor, then rounds:
+            small 0.90 to 1.10, medium 0.70 to 1.30, large 0.50 to 1.50. Off
+            uses the rounded forecast.
+          </p>
+          <p class="sim-help">
+            Lead time adds a whole-number delay from 0 up to a maximum that
+            depends on the base lead time. Short: 1 / 1 / 2. Medium: 1 / 2 / 3.
+            Long: 1 / 3 / 5 (small / medium / large). The order arrives in the
+            requirement week plus that delay. A receipt dated after week 52
+            does not arrive in this year. With lead-time variability off, the
+            delay is zero.
+          </p>
+          <p class="sim-help">
+            Delivery quantity only reduces a planned lot. It does not touch
+            starting stock. A fixed lot can lose up to 5%, 10%, or 15%, drawn
+            as a whole number of units. A weeks-cover lot can lose weeks:
+            2 → 0 / 0 / −1, 4 → 0 / −1 / −2, 6 → −1 / −2 / −3, 10 → −1 / −3 / −4
+            (small / medium / large). The receipt is the sum of that many
+            opening weeks of base demand.
+          </p>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Demand shock</h2>
+          <label class="sim-check" for="sim-shock">
+            <input id="sim-shock" type="checkbox" />
+            Double three demand weeks
+          </label>
+          <p id="sim-shock-weeks" class="sim-meta"></p>
+          <p class="sim-help">
+            When the shock is on, three weeks from week 21 through week 52 are
+            chosen again for every year. Successive chosen weeks are at least
+            four weeks apart. Those weeks' demand, after the usual demand
+            factor, is doubled and rounded. You do not pick the weeks.
+          </p>
+        </section>
+
+        <section class="card" aria-live="polite">
+          <h2 class="card__title">One simulated year</h2>
+          <div class="sim-actions">
+            <button id="sim-new-year" class="sim-button" type="button">
+              Run a new year
+            </button>
+          </div>
+          <p id="sim-status" class="sim-meta"></p>
+          <dl class="sim-params" id="sim-snapshot"></dl>
+          <p id="sim-callout" class="sim-callout" hidden></p>
+          <div class="sim-metrics" id="sim-metrics"></div>
+          <p class="sim-note">
+            Inventory turns use on-hand stock only: each week's ending stock
+            counts as zero when it is negative, then the year's simulated
+            demand is divided by that average. A stockout does not improve
+            turns. If the average is zero, turns are not applicable. Working
+            capital is different on purpose: it averages ending stock with the
+            negatives still in, then multiplies by the $70 cost. Gross profit
+            is simulated demand times $30 and does not change because of
+            backorders.
+          </p>
+          <p class="sim-help">
+            High turns with weak service is a poor outcome. The warning appears
+            when turns are at least 8 and either customer service is below 95%
+            or three or more weeks end below zero. Out-of-stock means ending
+            stock is below zero. Ending on zero is not a stockout. Customer
+            service is the share of the 52 weeks that are not out of stock.
+          </p>
+          <figure class="sim-figure">
+            <svg id="sim-chart" class="sim-chart" role="img" aria-labelledby="sim-chart-title"></svg>
+            <figcaption id="sim-chart-title">
+              <ul class="sim-legend">
+                <li class="sim-legend__ending">Ending SOH</li>
+                <li class="sim-legend__ss">Safety stock</li>
+                <li class="sim-legend__zero">Zero</li>
+              </ul>
+              <p class="sim-meta">One year only. Monte Carlo does not draw this chart.</p>
+            </figcaption>
+          </figure>
+          <div class="sim-table-wrap sim-scroll--weeks">
+            <table class="sim-table">
+              <caption>
+                Weekly results for this year. Planned order quantity and planned
+                arrival week are not shown.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Week</th>
+                  <th scope="col">Base demand</th>
+                  <th scope="col">Simulated demand</th>
+                  <th scope="col">Beginning SOH</th>
+                  <th scope="col">Planned supply</th>
+                  <th scope="col">Ending SOH</th>
+                  <th scope="col">Safety stock</th>
+                </tr>
+              </thead>
+              <tbody id="sim-weeks-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Monte Carlo</h2>
+          <div class="content">
+            <p>
+              Fifty independent years under the current settings. Each year has
+              its own random numbers. Click the button to run them. Opening
+              this section does not start a batch.
+            </p>
+          </div>
+          <div class="sim-actions">
+            <button id="sim-run-mc" class="sim-button" type="button">
+              Run Monte Carlo
+            </button>
+          </div>
+          <p id="sim-mc-empty" class="sim-meta">
+            No Monte Carlo batch yet.
+          </p>
+          <div id="sim-mc-results" hidden>
+            <p id="sim-mc-callout" class="sim-callout" hidden></p>
+            <div class="sim-metrics" id="sim-mc-card"></div>
+            <p class="sim-note">
+              Out-of-stock weeks, customer service, inventory turns, and
+              average working capital show the median and the P10–P90 band.
+              Annual gross profit shows the median only.
+            </p>
+            <details class="sim-details">
+              <summary>Per-run results</summary>
+              <div class="sim-table-wrap sim-scroll--weeks">
+                <table class="sim-table">
+                  <caption>
+                    One row per retained year. There is no Monte Carlo chart.
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Run</th>
+                      <th scope="col">OOS weeks</th>
+                      <th scope="col">Customer service</th>
+                      <th scope="col">Inventory turns</th>
+                      <th scope="col">Average working capital</th>
+                      <th scope="col">Annual gross profit</th>
+                      <th scope="col">Safety stock</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sim-mc-body"></tbody>
+                </table>
+              </div>
+            </details>
+          </div>
+          <p class="sim-help">
+            Percentiles use linear interpolation. If a year's turns are not
+            applicable, that year is left out of the turns median and P10–P90
+            only. It still counts for the other measures. The same safety
+            stock, lot size, variability, and shock setting are used for all
+            fifty years. A single-run chart is not repeated here.
+          </p>
+        </section>
+      </div>
     </main>
 
-    <script src="/assets/safety-stock-engine.js"></script>
-    <script src="/assets/safety-stock-simulator.js"></script>
+    <script src="/assets/safety-stock-engine.js?v=2"></script>
+    <script src="/assets/safety-stock-simulator.js?v=2"></script>
   </body>
 </html>
