@@ -268,8 +268,91 @@ for (let seed = 1; seed <= 25; seed += 1) {
     }
   });
   shockWeeksSeen.add(shocked.shockWeeks.join("-"));
+  shocked.shockWeeks.forEach((weekNo) => {
+    const week = shocked.weeks[weekNo - 1];
+    assert.strictEqual(week.baseDemand, 40);
+    assert.strictEqual(week.beginningSoh, 40);
+    assert.strictEqual(week.simulatedDemand, 80, "shock week simulated demand is double the forecast");
+    assert.strictEqual(week.plannedSupply, 40, "order one lot from base-netted calculated SOH");
+    assert.strictEqual(
+      week.endingSoh,
+      0,
+      "ending stock consumes the doubled demand in the shock week"
+    );
+    const release = shocked.releases.find((item) => item.requirementWeek === weekNo);
+    assert.strictEqual(release.lots, 1);
+    assert.strictEqual(release.delay, 0);
+    assert.strictEqual(release.arrivalWeek, weekNo);
+  });
 }
 assert.ok(shockWeeksSeen.size > 1, "shock weeks are redrawn for a new sample");
+
+const exampleBase = flat(40);
+exampleBase[21] = 55;
+exampleBase[25] = 40;
+exampleBase[32] = 62;
+const shockExample = run(
+  {
+    baseDemand: exampleBase,
+    shock: true,
+    demandVariability: "off",
+    leadTimeVariability: "off",
+    deliveryVariability: "off",
+  },
+  109
+);
+assert.deepStrictEqual(shockExample.shockWeeks, [22, 26, 33]);
+assert.deepStrictEqual(
+  [22, 26, 33].map((weekNo) => shockExample.normalDemand[weekNo - 1]),
+  [55, 40, 62]
+);
+assert.deepStrictEqual(
+  [22, 26, 33].map((weekNo) => shockExample.simulatedDemand[weekNo - 1]),
+  [110, 80, 124]
+);
+assert.deepStrictEqual(
+  [22, 26, 33].map((weekNo) => shockExample.weeks[weekNo - 1].baseDemand),
+  [55, 40, 62]
+);
+shockExample.weeks.forEach((week) => {
+  const shockedWeek = shockExample.shockWeeks.indexOf(week.week) !== -1;
+  if (!shockedWeek) {
+    assert.strictEqual(week.simulatedDemand, week.baseDemand);
+  }
+});
+
+function ordersFromBaseForecast(result) {
+  result.weeks.forEach((week) => {
+    const threshold = result.safetyStock > 0 ? result.safetyStock : 0;
+    const calculated = week.beginningSoh - week.baseDemand;
+    const lots = calculated < threshold ? (calculated + result.nominalLot > 0 ? 1 : 2) : 0;
+    assert.strictEqual(week.plannedSupply, lots * result.nominalLot);
+    assert.strictEqual(
+      week.endingSoh,
+      week.beginningSoh + week.plannedSupply - week.simulatedDemand
+    );
+  });
+}
+ordersFromBaseForecast(shockExample);
+const variedOrders = run(
+  {
+    demandVariability: "medium",
+    shock: true,
+    leadTimeVariability: "off",
+    deliveryVariability: "off",
+  },
+  17
+);
+assert.notDeepStrictEqual(variedOrders.simulatedDemand, variedOrders.baseDemand);
+ordersFromBaseForecast(variedOrders);
+variedOrders.shockWeeks.forEach((weekNo) => {
+  const index = weekNo - 1;
+  assert.strictEqual(
+    variedOrders.simulatedDemand[index],
+    engine.roundHalfEven(variedOrders.normalDemand[index] * 2)
+  );
+  assert.strictEqual(variedOrders.weeks[index].baseDemand, variedOrders.baseDemand[index]);
+});
 
 const streamSeed = 99;
 const withShock = run({ demandVariability: "medium", shock: true }, streamSeed);
@@ -338,6 +421,11 @@ const noisyFormulaQuiet = run(
 );
 assert.deepStrictEqual(noisyFormula.normalDemand, noisyFormulaQuiet.normalDemand);
 assert.strictEqual(noisyFormula.safetyStock, noisyFormulaQuiet.safetyStock);
+assert.strictEqual(noisyFormula.formula.sigma, engine.populationStdev(noisyFormula.normalDemand));
+assert.notStrictEqual(
+  engine.populationStdev(noisyFormula.simulatedDemand),
+  noisyFormula.formula.sigma
+);
 assert.strictEqual(
   noisyFormula.safetyStock,
   engine.formulaSafetyStock(noisyFormula.normalDemand, 95, 5)
@@ -350,12 +438,26 @@ const monteCarlo = engine.runMonteCarlo(noisyFormula.controls, 12345, {
 assert.strictEqual(monteCarlo.runs.length, 50);
 assert.strictEqual(monteCarlo.frozenSafetyStock, noisyFormula.safetyStock);
 const demandSignatures = new Set();
+const shockSignatures = new Set();
 monteCarlo.runs.forEach((batchRun) => {
   assert.strictEqual(batchRun.safetyStock, noisyFormula.safetyStock);
   assert.strictEqual(batchRun.weeks.length, 52);
+  assert.strictEqual(batchRun.shockWeeks.length, 3);
+  assert.ok(batchRun.shockWeeks[1] - batchRun.shockWeeks[0] >= 4);
+  assert.ok(batchRun.shockWeeks[2] - batchRun.shockWeeks[1] >= 4);
+  batchRun.shockWeeks.forEach((weekNo) => {
+    const index = weekNo - 1;
+    assert.strictEqual(
+      batchRun.simulatedDemand[index],
+      engine.roundHalfEven(batchRun.normalDemand[index] * 2)
+    );
+    assert.strictEqual(batchRun.weeks[index].baseDemand, batchRun.baseDemand[index]);
+  });
   demandSignatures.add(batchRun.simulatedDemand.join(","));
+  shockSignatures.add(batchRun.shockWeeks.join("-"));
 });
 assert.ok(demandSignatures.size > 1);
+assert.ok(shockSignatures.size > 1, "Monte Carlo redraws shock weeks");
 
 const autoFrozen = engine.runMonteCarlo(noisyFormula.controls, 12345, { runs: 50 });
 const reference = engine.runYear(
@@ -460,6 +562,11 @@ assert.match(page, /Run year/);
 assert.match(page, />One year</);
 assert.match(page, /id="sim-run-mc"/);
 assert.match(page, /Run Monte Carlo/);
+assert.match(page, /Double three demand weeks/);
+assert.match(page, /is doubled and rounded/);
+assert.match(page, /minus this week's base forecast/);
+assert.match(page, /Ending stock subtracts simulated demand/);
+assert.doesNotMatch(page, /Triple|tripled|3×/);
 const teachingAt = page.indexOf("Teaching tool only");
 const modeAt = page.indexOf('id="sim-mode-band"');
 const patternAt = page.indexOf("Base demand pattern");

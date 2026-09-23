@@ -27,14 +27,21 @@
  *
  * Replenishment (B1 / CR1)
  * ------------------------
- * calculated SOH = beginning + supply already due this week − demand.
- * Order only when calculated SOH is strictly below safety stock
+ * calculated SOH = beginning + supply already due this week − base forecast
+ * demand. Order only when calculated SOH is strictly below safety stock
  * (or strictly below zero when safety stock is 0).
  * One nominal lot is ordered, unless that lot would not lift calculated
- * SOH above zero — then two lots. The test uses the nominal lot, not the
- * previous ending balance and not the safety-stock line.
+ * SOH above zero — then two lots. That test uses the base-netted calculated
+ * value and the nominal lot, not the previous ending balance and not the
+ * safety-stock line.
+ * Ending SOH = beginning + planned supply − simulated demand.
+ * Same-week simulated demand is not an input to the order.
  * Base lead time is not added to the arrival week. Delay is 0 unless
  * lead-time variability is on.
+ *
+ * Demand shock (when on) doubles pre-shock normal demand on exactly three
+ * weeks in 21–52, successive gaps at least 4, then rounds. The base demand
+ * column stays unshocked. The multiplier is 2.
  *
  * Formula safety stock is computed from this run's pre-shock normal demand.
  * Monte Carlo freezes one safety-stock quantity for all 50 runs (the
@@ -61,6 +68,7 @@
   var STRONG_TURNS = 8;
   var WEAK_CSL = 95;
   var HIGH_OOS = 3;
+  var SHOCK_MULTIPLIER = 2;
 
   var Z_BY_SERVICE_LEVEL = {
     90: 1.282,
@@ -498,7 +506,7 @@
     var simulatedDemand = [];
     for (var i = 0; i < HORIZON; i += 1) {
       if (shockSet[i + 1]) {
-        simulatedDemand.push(roundHalfEven(normalDemand[i] * 2));
+        simulatedDemand.push(roundHalfEven(normalDemand[i] * SHOCK_MULTIPLIER));
       } else {
         simulatedDemand.push(normalDemand[i]);
       }
@@ -636,8 +644,9 @@
     for (var w = 0; w < HORIZON; w += 1) {
       var beginning = w === 0 ? startingSoh : previousEnding;
       var existing = due[w];
+      var weekBase = base[w];
       var weekDemand = demand.simulatedDemand[w];
-      var calculated = beginning + existing - weekDemand;
+      var calculated = beginning + existing - weekBase;
       var threshold = safetyStock > 0 ? safetyStock : 0;
       var newReceipt = 0;
 
