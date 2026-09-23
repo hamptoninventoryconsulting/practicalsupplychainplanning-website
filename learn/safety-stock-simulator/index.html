@@ -235,6 +235,13 @@
             plus that nominal lot, with no delivery-quantity noise.
           </p>
           <p class="sim-help">
+            The time it takes from placing a purchase order to receiving the
+            goods — including the supplier's lead time and shipping. Longer
+            lead times usually mean you need more protection (inventory or
+            safety stock), because problems show up later and take longer to
+            fix.
+          </p>
+          <p class="sim-help">
             Formula safety stock is round(Z × σD × √L). Z is 1.282, 1.645,
             2.054, or 2.326 at 90%, 95%, 98%, and 99%. σD is the population
             standard deviation of this year's demand after the demand factor
@@ -278,29 +285,18 @@
             </label>
           </div>
           <p class="sim-help">
-            Each lever is independent. Off means no noise. Small, medium, and
-            large are the only levels.
-          </p>
-          <p class="sim-help">
-            Demand multiplies base demand by a uniform factor, then rounds:
-            small 0.90 to 1.10, medium 0.70 to 1.30, large 0.50 to 1.50. Off
-            uses the rounded forecast.
-          </p>
-          <p class="sim-help">
-            Lead time adds a whole-number delay from 0 up to a maximum that
-            depends on the base lead time. Short: 1 / 1 / 2. Medium: 1 / 2 / 3.
-            Long: 1 / 3 / 5 (small / medium / large). The order arrives in the
-            requirement week plus that delay. A receipt dated after week 52
-            does not arrive in this year. With lead-time variability off, the
-            delay is zero.
-          </p>
-          <p class="sim-help">
-            Delivery quantity only reduces a planned lot. It does not touch
-            starting stock. A fixed lot can lose up to 5%, 10%, or 15%, drawn
-            as a whole number of units. A weeks-cover lot can lose weeks:
-            2 → 0 / 0 / −1, 4 → 0 / −1 / −2, 6 → −1 / −2 / −3, 10 → −1 / −3 / −4
-            (small / medium / large). The receipt is the sum of that many
-            opening weeks of base demand.
+            Sales often fluctuate around a mean. A forecast of 100 a week does
+            not mean you expect to sell exactly 100 every week — some weeks
+            will be more, some less. That is <strong>demand</strong> variability.
+            <strong>Lead time</strong> variability is stock arriving earlier or
+            later than expected. That can come from things like vessel
+            availability, port congestion, or manufacturing delays.
+            <strong>Delivery quantity</strong> variability is not receiving the
+            exact quantity you ordered — often because of supplier manufacturing
+            issues, stock availability, or picking errors. In practice that can
+            look like a large unexpected customer order, an unplanned promotion,
+            or a competitor running out of stock and sending extra demand your
+            way.
           </p>
         </section>
 
