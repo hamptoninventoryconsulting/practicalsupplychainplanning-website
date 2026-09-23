@@ -13,7 +13,7 @@
       href="https://practicalsupplychainplanning.com/learn/safety-stock-simulator/"
     />
     <link rel="icon" href="/assets/brand/favicon.png" type="image/png" />
-    <link rel="stylesheet" href="/assets/styles.css?v=15" />
+    <link rel="stylesheet" href="/assets/styles.css?v=16" />
   </head>
   <body>
     <header class="site-header">
@@ -82,9 +82,37 @@
             Show explanations
           </label>
           <p class="sim-help">
-            Start with variability and the demand shock turned off, read one
-            year, then turn uncertainty on. Monte Carlo runs only when you
-            click its button. Fifty independent years use the same settings.
+            The Mode section is next, before the settings. Choose One year or
+            Monte Carlo, then press the matching button. Nothing is drawn until
+            you do. Changing a setting clears the last results. Switching to
+            Monte Carlo does not start the fifty years.
+          </p>
+        </section>
+
+        <section class="card" id="sim-mode-band">
+          <h2 class="card__title">Mode</h2>
+          <div class="sim-mode-choices" role="group" aria-label="One year or Monte Carlo">
+            <button
+              type="button"
+              id="sim-mode-year"
+              class="sim-scenario sim-scenario--selected"
+              aria-pressed="true"
+            >
+              <span class="sim-scenario__name">One year</span>
+              <span class="sim-scenario__summary">One 52-week year, with the weekly table and chart.</span>
+            </button>
+            <button type="button" id="sim-mode-mc" class="sim-scenario" aria-pressed="false">
+              <span class="sim-scenario__name">Monte Carlo</span>
+              <span class="sim-scenario__summary">Fifty years under the same settings. Summary only, no chart.</span>
+            </button>
+          </div>
+          <div class="sim-actions">
+            <button id="sim-run-year" class="sim-button" type="button">Run year</button>
+            <button id="sim-run-mc" class="sim-button" type="button" hidden>Run Monte Carlo</button>
+          </div>
+          <p class="sim-meta">
+            The chart, weekly table, and Monte Carlo summary stay empty until
+            you press the button for this mode. Changing a setting clears them.
           </p>
         </section>
 
@@ -290,34 +318,17 @@
           </p>
         </section>
 
-        <section class="card" aria-live="polite">
+        <section class="card sim-panel" id="sim-year-panel" aria-live="polite">
           <h2 class="card__title">One simulated year</h2>
-          <div class="sim-actions">
-            <button id="sim-new-year" class="sim-button" type="button">
-              Run a new year
-            </button>
-          </div>
+          <p id="sim-year-empty" class="sim-meta">
+            No year yet. Press Run year. Changing settings does not draw this
+            chart or table.
+          </p>
+          <div id="sim-year-output" hidden>
           <p id="sim-status" class="sim-meta"></p>
           <dl class="sim-params" id="sim-snapshot"></dl>
           <p id="sim-callout" class="sim-callout" hidden></p>
           <div class="sim-metrics" id="sim-metrics"></div>
-          <p class="sim-note">
-            Inventory turns use on-hand stock only: each week's ending stock
-            counts as zero when it is negative, then the year's simulated
-            demand is divided by that average. A stockout does not improve
-            turns. If the average is zero, turns are not applicable. Working
-            capital is different on purpose: it averages ending stock with the
-            negatives still in, then multiplies by the $70 cost. Gross profit
-            is simulated demand times $30 and does not change because of
-            backorders.
-          </p>
-          <p class="sim-help">
-            High turns with weak service is a poor outcome. The warning appears
-            when turns are at least 8 and either customer service is below 95%
-            or three or more weeks end below zero. Out-of-stock means ending
-            stock is below zero. Ending on zero is not a stockout. Customer
-            service is the share of the 52 weeks that are not out of stock.
-          </p>
           <figure class="sim-figure">
             <svg id="sim-chart" class="sim-chart" role="img" aria-labelledby="sim-chart-title"></svg>
             <figcaption id="sim-chart-title">
@@ -349,24 +360,38 @@
               <tbody id="sim-weeks-body"></tbody>
             </table>
           </div>
+          </div>
+          <p class="sim-note">
+            Inventory turns use on-hand stock only: each week's ending stock
+            counts as zero when it is negative, then the year's simulated
+            demand is divided by that average. A stockout does not improve
+            turns. If the average is zero, turns are not applicable. Working
+            capital is different on purpose: it averages ending stock with the
+            negatives still in, then multiplies by the $70 cost. Gross profit
+            is simulated demand times $30 and does not change because of
+            backorders.
+          </p>
+          <p class="sim-help">
+            High turns with weak service is a poor outcome. The warning appears
+            when turns are at least 8 and either customer service is below 95%
+            or three or more weeks end below zero. Out-of-stock means ending
+            stock is below zero. Ending on zero is not a stockout. Customer
+            service is the share of the 52 weeks that are not out of stock.
+          </p>
         </section>
 
-        <section class="card">
+        <section class="card sim-panel" id="sim-mc-panel" hidden>
           <h2 class="card__title">Monte Carlo</h2>
           <div class="content">
             <p>
               Fifty independent years under the current settings. Each year has
-              its own random numbers. Click the button to run them. Opening
-              this section does not start a batch.
+              its own random numbers. Press Run Monte Carlo in the mode band.
+              Opening this mode does not start a batch.
             </p>
           </div>
-          <div class="sim-actions">
-            <button id="sim-run-mc" class="sim-button" type="button">
-              Run Monte Carlo
-            </button>
-          </div>
           <p id="sim-mc-empty" class="sim-meta">
-            No Monte Carlo batch yet.
+            No Monte Carlo batch yet. Press Run Monte Carlo. Opening this mode
+            does not start a batch.
           </p>
           <div id="sim-mc-results" hidden>
             <p id="sim-mc-callout" class="sim-callout" hidden></p>
@@ -411,6 +436,6 @@
     </main>
 
     <script src="/assets/safety-stock-engine.js?v=2"></script>
-    <script src="/assets/safety-stock-simulator.js?v=2"></script>
+    <script src="/assets/safety-stock-simulator.js?v=3"></script>
   </body>
 </html>

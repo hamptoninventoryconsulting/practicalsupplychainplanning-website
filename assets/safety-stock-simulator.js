@@ -10,8 +10,11 @@
     controls: null,
     seed: 20260923,
     explanations: false,
+    mode: "year",
     result: null,
     monteCarlo: null,
+    yearStatus: "empty",
+    mcStatus: "empty",
   };
 
   function $(id) {
@@ -47,7 +50,11 @@
           controls: state.controls,
           seed: state.seed,
           explanations: state.explanations,
+          mode: state.mode,
+          result: state.result,
+          yearStatus: state.yearStatus,
           monteCarlo: state.monteCarlo,
+          mcStatus: state.mcStatus,
         })
       );
     } catch (err) {
@@ -143,6 +150,7 @@
       button.setAttribute("aria-pressed", selected ? "true" : "false");
       button.classList.toggle("sim-scenario--selected", selected);
     });
+    applyMode();
     $("sim-lot-qty-field").hidden = controls.lotMode !== "fixed";
     $("sim-lot-weeks-field").hidden = controls.lotMode !== "weeks";
     $("sim-ss-qty-field").hidden = controls.ssMode !== "fixed";
@@ -384,7 +392,37 @@
     });
   }
 
+  function clearYearDom() {
+    $("sim-snapshot").innerHTML = "";
+    $("sim-metrics").innerHTML = "";
+    $("sim-callout").hidden = true;
+    $("sim-callout").textContent = "";
+    $("sim-status").textContent = "";
+    $("sim-formula-note").hidden = true;
+    $("sim-formula-note").textContent = "";
+    $("sim-shock-weeks").textContent = "";
+    $("sim-weeks-body").innerHTML = "";
+    var svg = $("sim-chart");
+    while (svg.firstChild) {
+      svg.removeChild(svg.firstChild);
+    }
+  }
+
   function renderSingle() {
+    var empty = $("sim-year-empty");
+    var output = $("sim-year-output");
+    if (!state.result) {
+      clearYearDom();
+      output.hidden = true;
+      empty.hidden = false;
+      empty.textContent =
+        state.yearStatus === "stale"
+          ? "Settings changed. The chart, weekly table, and year metrics were cleared. Press Run year to draw them again."
+          : "No year yet. Press Run year. Changing settings does not draw this chart or table.";
+      return;
+    }
+    empty.hidden = true;
+    output.hidden = false;
     var result = state.result;
     var quiet =
       state.controls.demandVariability === "off" &&
@@ -394,10 +432,10 @@
     $("sim-status").textContent = quiet
       ? "Showing the 52-week year for sample " +
         state.seed +
-        ". Variability and shock are off, so a new year matches this one. Nothing was saved on a server."
+        ". Variability and shock are off, so Run year again matches this one. Nothing was saved on a server."
       : "Showing the 52-week year for sample " +
         state.seed +
-        ". Run a new year to draw fresh random weeks. Nothing was saved on a server.";
+        ". Press Run year again for a new sample. Nothing was saved on a server.";
     renderSnapshot(result);
     renderFormula(result);
     renderMetrics(result);
@@ -418,6 +456,13 @@
       empty.hidden = false;
       results.hidden = true;
       callout.hidden = true;
+      callout.textContent = "";
+      card.innerHTML = "";
+      body.innerHTML = "";
+      empty.textContent =
+        state.mcStatus === "stale"
+          ? "Settings changed. The last Monte Carlo batch was cleared. Press Run Monte Carlo to run fifty years again."
+          : "No Monte Carlo batch yet. Press Run Monte Carlo. Opening this mode does not start a batch.";
       return;
     }
     empty.hidden = true;
@@ -496,18 +541,45 @@
     };
   }
 
-  function rerunSingle() {
-    state.controls = readControlsFromDom();
-    writeControlsToDom();
-    state.result = engine.runYear(state.controls, state.seed);
-    renderSingle();
-    writeSession();
+  function applyMode() {
+    var yearMode = state.mode !== "monte-carlo";
+    $("sim-mode-year").setAttribute("aria-pressed", yearMode ? "true" : "false");
+    $("sim-mode-mc").setAttribute("aria-pressed", yearMode ? "false" : "true");
+    $("sim-mode-year").classList.toggle("sim-scenario--selected", yearMode);
+    $("sim-mode-mc").classList.toggle("sim-scenario--selected", !yearMode);
+    $("sim-run-year").hidden = !yearMode;
+    $("sim-run-mc").hidden = yearMode;
+    $("sim-year-panel").hidden = !yearMode;
+    $("sim-mc-panel").hidden = yearMode;
+  }
+
+  function clearStaleOutputs() {
+    if (state.result) {
+      state.result = null;
+      state.yearStatus = "stale";
+    }
+    if (state.monteCarlo) {
+      state.monteCarlo = null;
+      state.mcStatus = "stale";
+    }
   }
 
   function onControlsChanged() {
-    state.monteCarlo = null;
+    state.controls = readControlsFromDom();
+    clearStaleOutputs();
+    writeControlsToDom();
+    renderSingle();
     renderMonteCarlo();
-    rerunSingle();
+    writeSession();
+  }
+
+  function setMode(mode) {
+    if (mode !== "year" && mode !== "monte-carlo") {
+      return;
+    }
+    state.mode = mode;
+    applyMode();
+    writeSession();
   }
 
   function restoreSession() {
@@ -523,8 +595,23 @@
       state.seed = saved.seed >>> 0 || 1;
     }
     state.explanations = Boolean(saved.explanations);
-    if (saved.monteCarlo && saved.monteCarlo.summary && saved.monteCarlo.rows) {
+    if (saved.mode === "year" || saved.mode === "monte-carlo") {
+      state.mode = saved.mode;
+    }
+    if (saved.yearStatus === "ready" && saved.result && saved.result.weeks && saved.result.weeks.length === 52) {
+      state.result = saved.result;
+      state.yearStatus = "ready";
+    } else if (saved.yearStatus === "stale") {
+      state.yearStatus = "stale";
+    }
+    if (saved.mcStatus === "ready" && saved.monteCarlo && saved.monteCarlo.summary && saved.monteCarlo.rows) {
       state.monteCarlo = saved.monteCarlo;
+      state.mcStatus = "ready";
+    } else if (saved.monteCarlo && saved.monteCarlo.summary && saved.monteCarlo.rows && saved.mcStatus !== "stale") {
+      state.monteCarlo = saved.monteCarlo;
+      state.mcStatus = "ready";
+    } else if (saved.mcStatus === "stale") {
+      state.mcStatus = "stale";
     }
   }
 
@@ -553,26 +640,49 @@
     });
     document.querySelectorAll("[data-pattern-id]").forEach(function (button) {
       button.addEventListener("click", function () {
-        state.controls.patternId = button.getAttribute("data-pattern-id");
+        var patternId = button.getAttribute("data-pattern-id");
+        if (state.controls.patternId === patternId) {
+          return;
+        }
+        state.controls.patternId = patternId;
         onControlsChanged();
       });
     });
-    $("sim-new-year").addEventListener("click", function () {
-      state.seed = freshSeed();
-      state.monteCarlo = null;
-      renderMonteCarlo();
-      rerunSingle();
+    $("sim-mode-year").addEventListener("click", function () {
+      setMode("year");
     });
+    $("sim-mode-mc").addEventListener("click", function () {
+      setMode("monte-carlo");
+    });
+    $("sim-run-year").addEventListener("click", runYearClicked);
     $("sim-run-mc").addEventListener("click", runMonteCarloClicked);
   }
 
+  function runYearClicked() {
+    state.controls = readControlsFromDom();
+    writeControlsToDom();
+    state.seed = freshSeed();
+    state.result = engine.runYear(state.controls, state.seed);
+    state.yearStatus = "ready";
+    renderSingle();
+    writeSession();
+  }
+
   function runMonteCarloClicked() {
+    var next = readControlsFromDom();
+    if (JSON.stringify(next) !== JSON.stringify(state.controls)) {
+      state.controls = next;
+      clearStaleOutputs();
+      writeControlsToDom();
+      renderSingle();
+    }
     var options = { runs: 50 };
-    if (state.controls.ssMode === "formula") {
+    if (state.controls.ssMode === "formula" && state.result) {
       options.frozenSafetyStock = state.result.safetyStock;
     }
     var batch = engine.runMonteCarlo(state.controls, freshSeed(), options);
     state.monteCarlo = compactMonteCarlo(batch);
+    state.mcStatus = "ready";
     renderMonteCarlo();
     writeSession();
   }
@@ -585,7 +695,6 @@
     restoreSession();
     writeControlsToDom();
     bindControls();
-    state.result = engine.runYear(state.controls, state.seed);
     renderSingle();
     renderMonteCarlo();
     writeSession();

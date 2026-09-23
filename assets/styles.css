@@ -759,6 +759,23 @@ main {
   margin-top: 1.5rem;
 }
 
+.sim-mode-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.sim-mode-band .sim-actions,
+#sim-mode-band .sim-actions {
+  margin-top: 1rem;
+}
+
+.sim-button[hidden],
+.sim-panel[hidden],
+#sim-year-output[hidden] {
+  display: none !important;
+}
+
 .sim-check {
   display: flex;
   align-items: flex-start;
@@ -964,7 +981,8 @@ main {
   .sim-scenarios,
   .sim-params,
   .sim-grid,
-  .sim-metrics {
+  .sim-metrics,
+  .sim-mode-choices {
     grid-template-columns: 1fr;
   }
 }
