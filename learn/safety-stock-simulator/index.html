@@ -219,7 +219,8 @@
           <p class="sim-help">
             An order is placed only when calculated stock on hand is strictly
             below safety stock. Calculated stock is beginning stock, plus
-            supply already due this week, minus this week's demand. Landing on
+            supply already due this week, minus this week's base forecast
+            demand. Ending stock subtracts simulated demand. Landing on
             the safety-stock line does not order. With safety stock at zero,
             the line is zero. The order is one lot unless that lot would not
             lift calculated stock above zero, in which case it is two lots.
