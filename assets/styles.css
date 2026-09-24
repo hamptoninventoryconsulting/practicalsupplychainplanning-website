@@ -989,12 +989,64 @@ main {
 }
 
 .sim-details {
-  margin-top: 0.5rem;
+  margin: 0 0 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--card-radius);
+  background: var(--color-surface);
+  max-width: 100%;
 }
 
-.sim-details summary {
+.sim-details > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0.8rem 1rem;
+  list-style: none;
   cursor: pointer;
   font-weight: 600;
+  color: var(--color-text);
+  background: var(--color-surface-muted);
+  border-radius: calc(var(--card-radius) - 1px);
+}
+
+.sim-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.sim-details > summary::marker {
+  content: "";
+}
+
+.sim-details > summary::before {
+  content: "";
+  flex: 0 0 0.7rem;
+  width: 0.7rem;
+  height: 0.7rem;
+  background: currentColor;
+  clip-path: polygon(28% 18%, 28% 82%, 80% 50%);
+}
+
+.sim-details[open] > summary {
+  border-bottom: 1px solid var(--color-border);
+  border-radius: calc(var(--card-radius) - 1px) calc(var(--card-radius) - 1px) 0 0;
+}
+
+.sim-details[open] > summary::before {
+  clip-path: polygon(18% 28%, 82% 28%, 50% 80%);
+}
+
+.sim-details > summary:hover {
+  background: #e4e8ec;
+}
+
+.sim-details > summary:focus-visible {
+  outline: 2px solid var(--color-brand-cyan);
+  outline-offset: 2px;
+}
+
+.sim-details > .sim-table-wrap {
+  margin: 0;
 }
 
 @media (max-width: 800px) {
