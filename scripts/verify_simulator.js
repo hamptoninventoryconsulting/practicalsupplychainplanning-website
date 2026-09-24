@@ -702,6 +702,67 @@ assert.doesNotMatch(bootBody, /scrollResultsIntoView/);
 assert.doesNotMatch(changeBody, /scrollResultsIntoView/);
 assert.doesNotMatch(modeBody, /scrollResultsIntoView/);
 
+function expanderAround(id) {
+  const at = page.indexOf(`id="${id}"`);
+  assert.notStrictEqual(at, -1, id);
+  const start = page.lastIndexOf("<details", at);
+  const end = page.indexOf("</details>", at);
+  assert.ok(start !== -1 && end > at, `${id} sits inside a details element`);
+  const block = page.slice(start, end);
+  const openTag = block.slice(0, block.indexOf(">") + 1);
+  assert.match(openTag, /class="sim-details"/, `${id} uses the shared expander`);
+  assert.doesNotMatch(
+    openTag,
+    /\sopen(?:\s|=|>)/,
+    `${id} expander is closed by default`
+  );
+  return block;
+}
+
+const weekExpander = expanderAround("sim-weeks-body");
+assert.match(weekExpander, /<summary>Weekly table<\/summary>/);
+assert.ok(!weekExpander.includes('id="sim-chart"'), "chart stays outside the weekly expander");
+assert.ok(!weekExpander.includes('id="sim-metrics"'), "year metrics stay outside the weekly expander");
+
+const mcExpander = expanderAround("sim-mc-body");
+assert.match(mcExpander, /<summary>Per-run results<\/summary>/);
+assert.ok(!mcExpander.includes('id="sim-mc-card"'), "Monte Carlo summary stays outside the per-run expander");
+assert.equal(page.split('class="sim-details"').length - 1, 2);
+
+const yearBeforeTable = page.slice(
+  page.indexOf('id="sim-year-output"'),
+  page.indexOf('id="sim-weeks-body"')
+);
+assert.match(yearBeforeTable, /id="sim-chart"/);
+assert.match(yearBeforeTable, /id="sim-metrics"/);
+assert.match(
+  yearBeforeTable,
+  /<details class="sim-details">\s*<summary>Weekly table<\/summary>/
+);
+const yearSection = page.slice(
+  page.indexOf('id="sim-year-panel"'),
+  page.indexOf('id="sim-mc-panel"')
+);
+assert.match(
+  yearSection.slice(yearSection.indexOf("</details>")),
+  /Inventory turns use on-hand stock only/
+);
+
+const mcBeforeTable = page.slice(
+  page.indexOf('id="sim-mc-results"'),
+  page.indexOf('id="sim-mc-body"')
+);
+assert.match(mcBeforeTable, /id="sim-mc-card"/);
+assert.match(
+  mcBeforeTable,
+  /<details class="sim-details">\s*<summary>Per-run results<\/summary>/
+);
+
+const css = fs.readFileSync(path.join(ROOT, "assets", "styles.css"), "utf8");
+assert.match(css, /\.sim-details\s*\{[^}]*border:\s*1px solid var\(--color-border\)/);
+assert.match(css, /\.sim-details\s*\{[^}]*margin:\s*0 0 1\.5rem/);
+assert.match(css, /\.sim-details\[open\] > summary::before/);
+
 const about = fs.readFileSync(path.join(ROOT, "about", "index.html"), "utf8");
 assert.match(about, /free educational/);
 assert.match(about, /\/learn\/safety-stock-simulator\//);

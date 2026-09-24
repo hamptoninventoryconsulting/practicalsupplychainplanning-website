@@ -13,7 +13,7 @@
       href="https://practicalsupplychainplanning.com/learn/safety-stock-simulator/"
     />
     <link rel="icon" href="/assets/brand/favicon.png" type="image/png" />
-    <link rel="stylesheet" href="/assets/styles.css?v=17" />
+    <link rel="stylesheet" href="/assets/styles.css?v=18" />
   </head>
   <body>
     <header class="site-header">
@@ -360,26 +360,29 @@
               <p class="sim-meta">One year only. Monte Carlo does not draw this chart.</p>
             </figcaption>
           </figure>
-          <div class="sim-table-wrap sim-scroll--weeks">
-            <table class="sim-table">
-              <caption>
-                Weekly results for this year. Planned order quantity and planned
-                arrival week are not shown.
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">Week</th>
-                  <th scope="col">Base demand</th>
-                  <th scope="col">Simulated demand</th>
-                  <th scope="col">Beginning SOH</th>
-                  <th scope="col">Planned supply</th>
-                  <th scope="col">Ending SOH</th>
-                  <th scope="col">Safety stock</th>
-                </tr>
-              </thead>
-              <tbody id="sim-weeks-body"></tbody>
-            </table>
-          </div>
+          <details class="sim-details">
+            <summary>Weekly table</summary>
+            <div class="sim-table-wrap sim-scroll--weeks">
+              <table class="sim-table">
+                <caption>
+                  Weekly results for this year. Planned order quantity and planned
+                  arrival week are not shown.
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Week</th>
+                    <th scope="col">Base demand</th>
+                    <th scope="col">Simulated demand</th>
+                    <th scope="col">Beginning SOH</th>
+                    <th scope="col">Planned supply</th>
+                    <th scope="col">Ending SOH</th>
+                    <th scope="col">Safety stock</th>
+                  </tr>
+                </thead>
+                <tbody id="sim-weeks-body"></tbody>
+              </table>
+            </div>
+          </details>
           </div>
           <p class="sim-note">
             Inventory turns use on-hand stock only: each week's ending stock
