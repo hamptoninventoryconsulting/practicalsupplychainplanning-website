@@ -242,6 +242,23 @@
             fix.
           </p>
           <p class="sim-help">
+            Formula safety stock uses the standard textbook calculation that's
+            widely taught in planning courses and built into many planning
+            systems. It treats weekly demand as varying randomly around its
+            average or forecast in a bell-curve pattern. If you know how much
+            demand usually varies, you can work out how much extra stock covers
+            that variation over the lead time for the service level you choose.
+            Robert G. Brown's <em>Statistical Forecasting for Inventory
+            Control</em> (McGraw-Hill, 1959) helped bring this statistical
+            approach into everyday inventory practice, and it's covered in
+            standard texts such as Silver, Pyke and Thomas, <em>Inventory and
+            Production Management in Supply Chains</em> (4th ed., CRC Press,
+            2017). It assumes the lead time is fixed and demand only moves
+            randomly, so it doesn't allow for late deliveries, short shipments
+            or demand shocks. Testing those situations is what this simulator
+            is for.
+          </p>
+          <p class="sim-help">
             Formula safety stock is round(Z × σD × √L). Z is 1.282, 1.645,
             2.054, or 2.326 at 90%, 95%, 98%, and 99%. σD is the population
             standard deviation of this year's demand after the demand factor
