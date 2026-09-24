@@ -969,7 +969,13 @@ main {
 }
 
 .sim-legend__zero {
-  color: #6b7280;
+  color: #000;
+}
+
+.sim-legend li.sim-legend__zero::before {
+  height: 1.5px;
+  border-top: 0;
+  background: currentColor;
 }
 
 .sim-scroll--weeks {
