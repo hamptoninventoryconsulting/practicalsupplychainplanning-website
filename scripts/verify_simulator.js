@@ -10,13 +10,34 @@ const fs = require("fs");
 const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
-const PAGE_PATH = path.join(ROOT, "learn", "safety-stock-simulator", "index.html");
+const SITE = path.join(ROOT, "_site");
+const PAGE_PATH = path.join(SITE, "learn", "safety-stock-simulator", "index.html");
 const ENGINE_PATH = path.join(ROOT, "assets", "safety-stock-engine.js");
 const UI_PATH = path.join(ROOT, "assets", "safety-stock-simulator.js");
+
+if (!fs.existsSync(PAGE_PATH)) {
+  console.error(
+    "Built simulator page is missing. Run `npm run build` before scripts/verify_simulator.js."
+  );
+  process.exit(1);
+}
 
 const engine = require(ENGINE_PATH);
 const page = fs.readFileSync(PAGE_PATH, "utf8");
 const ui = fs.readFileSync(UI_PATH, "utf8");
+
+function assertByteCopy(relativePath) {
+  const source = fs.readFileSync(path.join(ROOT, relativePath));
+  const built = fs.readFileSync(path.join(SITE, relativePath));
+  assert.ok(
+    source.equals(built),
+    `${relativePath} in _site must be a byte copy of the source file`
+  );
+}
+
+assertByteCopy("assets/safety-stock-engine.js");
+assertByteCopy("assets/safety-stock-simulator.js");
+assertByteCopy("learn/safety-stock-simulator/scenarios.json");
 
 function flat(value) {
   const demand = [];
@@ -542,6 +563,8 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
   "week",
 ].sort());
 
+assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=2"/);
+assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=4"/);
 assert.match(page, /sessionStorage/);
 assert.match(page, /Teaching tool only/);
 assert.match(page, /not suitable for real\s+operational use/i);
@@ -763,7 +786,7 @@ assert.match(css, /\.sim-details\s*\{[^}]*border:\s*1px solid var\(--color-borde
 assert.match(css, /\.sim-details\s*\{[^}]*margin:\s*0 0 1\.5rem/);
 assert.match(css, /\.sim-details\[open\] > summary::before/);
 
-const about = fs.readFileSync(path.join(ROOT, "about", "index.html"), "utf8");
+const about = fs.readFileSync(path.join(SITE, "about", "index.html"), "utf8");
 assert.match(about, /free educational/);
 assert.match(about, /\/learn\/safety-stock-simulator\//);
 assert.match(about, />Learn<\/a>/);

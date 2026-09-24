@@ -1,0 +1,16 @@
+{
+  "name": "practicalsupplychainplanning-website",
+  "private": true,
+  "description": "Static site for practicalsupplychainplanning.com, built with Eleventy.",
+  "scripts": {
+    "build": "eleventy",
+    "dev": "eleventy --serve",
+    "check": "npm run build && python3 scripts/verify_indexing.py && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/verify_redirects.mjs && node scripts/verify_simulator.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@11ty/eleventy": "^3.1.2"
+  }
+}
