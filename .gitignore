@@ -5,3 +5,5 @@ desktop.ini
 *.log
 _inventory.py
 _inventory.txt
+node_modules/
+_site/

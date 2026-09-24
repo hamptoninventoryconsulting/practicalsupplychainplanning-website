@@ -1,4 +1,6 @@
-# Cloudflare Pages project: static site + functions/_middleware.js
+# Cloudflare Pages project: Eleventy output + functions/_middleware.js
+# functions/ stays at the project root (sibling of _site), not inside the output.
+# Flip the Pages dashboard build settings at the same time this lands on main.
 name = "practicalsupplychainplanning-website"
 compatibility_date = "2026-09-18"
-pages_build_output_dir = "."
+pages_build_output_dir = "_site"

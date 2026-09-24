@@ -1,56 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Safety Stock Simulator — Practical Supply Chain Planning</title>
-    <meta
-      name="description"
-      content="A free teaching simulator for a 52-week inventory year. See how safety stock, lot size, and uncertainty change service, turns, and working capital. Not for operational use."
-    />
-    <link
-      rel="canonical"
-      href="https://practicalsupplychainplanning.com/learn/safety-stock-simulator/"
-    />
-    <link rel="icon" href="/assets/brand/favicon.png" type="image/png" />
-    <link rel="stylesheet" href="/assets/styles.css?v=19" />
-  </head>
-  <body>
-    <header class="site-header">
-      <div class="site-header__inner">
-        <a class="site-header__link" href="/">
-          <img
-            class="site-header__logo"
-            src="/assets/brand/logo.jpg?v=2"
-            alt="Practical Supply Chain Planning"
-          />
-        </a>
-        <nav class="site-nav" aria-label="Primary">
-          <ul class="site-nav__list">
-            <li>
-              <a class="site-nav__link" href="/">Home</a>
-            </li>
-            <li>
-              <a
-                class="site-nav__link site-nav__link--active"
-                href="/learn/safety-stock-simulator/"
-                aria-current="page"
-                >Learn</a
-              >
-            </li>
-            <li>
-              <a class="site-nav__link" href="/blog/">Blog</a>
-            </li>
-            <li>
-              <a class="site-nav__link" href="/about/">About</a>
-            </li>
-          </ul>
-        </nav>
-      </div>
-    </header>
-
-    <main>
-      <h1 class="page-title">Safety Stock Simulator</h1>
+---json
+{
+  "layout": "layouts/simulator.njk",
+  "title": "Safety Stock Simulator — Practical Supply Chain Planning",
+  "description": "A free teaching simulator for a 52-week inventory year. See how safety stock, lot size, and uncertainty change service, turns, and working capital. Not for operational use.",
+  "canonical": "https://practicalsupplychainplanning.com/learn/safety-stock-simulator/",
+  "nav": "learn",
+  "permalink": "/learn/safety-stock-simulator/",
+  "scripts": [
+    "/assets/safety-stock-engine.js?v=2",
+    "/assets/safety-stock-simulator.js?v=4"
+  ]
+}
+---
+<h1 class="page-title">Safety Stock Simulator</h1>
       <p class="tagline">
         A 52-week teaching year: forecast, uncertainty, replenishment, then the
         consequences for service, turns, and cash.
@@ -456,9 +418,3 @@
           </p>
         </section>
       </div>
-    </main>
-
-    <script src="/assets/safety-stock-engine.js?v=2"></script>
-    <script src="/assets/safety-stock-simulator.js?v=4"></script>
-  </body>
-</html>

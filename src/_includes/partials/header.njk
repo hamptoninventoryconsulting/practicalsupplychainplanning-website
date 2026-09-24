@@ -1,0 +1,27 @@
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="site-header__link" href="/">
+      <img
+        class="site-header__logo"
+        src="/assets/brand/logo.jpg?v={{ site.logoVersion }}"
+        alt="Practical Supply Chain Planning"
+      />
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <ul class="site-nav__list">
+        <li>
+          <a class="site-nav__link{% if nav == 'home' %} site-nav__link--active{% endif %}" href="/"{% if nav == 'home' %} aria-current="page"{% endif %}>Home</a>
+        </li>
+        <li>
+          <a class="site-nav__link{% if nav == 'learn' %} site-nav__link--active{% endif %}" href="/learn/safety-stock-simulator/"{% if nav == 'learn' %} aria-current="page"{% endif %}>Learn</a>
+        </li>
+        <li>
+          <a class="site-nav__link{% if nav == 'blog' %} site-nav__link--active{% endif %}" href="/blog/"{% if nav == 'blog' %} aria-current="page"{% endif %}>Blog</a>
+        </li>
+        <li>
+          <a class="site-nav__link{% if nav == 'about' %} site-nav__link--active{% endif %}" href="/about/"{% if nav == 'about' %} aria-current="page"{% endif %}>About</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</header>
