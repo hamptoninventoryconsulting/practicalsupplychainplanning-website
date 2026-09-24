@@ -563,7 +563,29 @@ assert.match(page, />One year</);
 assert.match(page, /id="sim-run-mc"/);
 assert.match(page, /Run Monte Carlo/);
 assert.match(page, /Double three demand weeks/);
-assert.match(page, /is doubled and rounded/);
+assert.match(page, /doubles demand in three separate weeks/);
+const flatPage = page.replace(/\s+/g, " ");
+const practiceSentence =
+  "In practice that can look like a large unexpected customer order, an unplanned promotion, or a competitor running out of stock and sending extra demand your way.";
+assert.strictEqual(
+  flatPage.split(practiceSentence).length - 1,
+  1,
+  "demand-shock examples appear once"
+);
+const variabilitySlice = flatPage.slice(
+  flatPage.indexOf(">Variability<"),
+  flatPage.indexOf(">Demand shock<")
+);
+assert.ok(
+  variabilitySlice.includes("or picking errors."),
+  "variability ends at picking errors"
+);
+assert.ok(!variabilitySlice.includes(practiceSentence));
+const shockSlice = flatPage.slice(
+  flatPage.indexOf(">Demand shock<"),
+  flatPage.indexOf(">One simulated year<")
+);
+assert.ok(shockSlice.includes(practiceSentence));
 assert.match(page, /minus this week's base forecast/);
 assert.match(page, /Ending stock subtracts simulated demand/);
 assert.doesNotMatch(page, /Triple|tripled|3×/);
