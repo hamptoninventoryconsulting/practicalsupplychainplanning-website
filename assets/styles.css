@@ -917,8 +917,8 @@ main {
 }
 
 .sim-chart__zero {
-  stroke: #9ca3af;
-  stroke-dasharray: 4 3;
+  stroke: #000;
+  stroke-width: 1.5;
 }
 
 .sim-chart__ending {
