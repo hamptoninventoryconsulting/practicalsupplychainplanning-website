@@ -647,6 +647,61 @@ assert.doesNotMatch(changeBody, /engine\.runYear|engine\.runMonteCarlo|runYearCl
 const modeBody = ui.slice(ui.indexOf("function setMode("), ui.indexOf("function restoreSession"));
 assert.doesNotMatch(modeBody, /engine\.runYear|engine\.runMonteCarlo|runYearClicked|runMonteCarloClicked/);
 
+assert.match(
+  flatPage,
+  /No year yet\. Press Run year at the end of the settings\. Changing settings does not draw this chart or table\./
+);
+assert.match(
+  flatPage,
+  /No Monte Carlo batch yet\. Press Run Monte Carlo at the end of the settings\. Opening this mode does not start a batch\./
+);
+assert.match(
+  flatPage,
+  /Press Run Monte Carlo at the end of the settings\. Opening this mode does not start a batch\./
+);
+assert.doesNotMatch(flatPage, /Press Run year\. Changing settings/);
+assert.doesNotMatch(flatPage, /Press Run Monte Carlo\. Opening/);
+assert.match(
+  ui,
+  /Press Run year at the end of the settings to draw them again\./
+);
+assert.match(
+  ui,
+  /No year yet\. Press Run year at the end of the settings\. Changing settings does not draw this chart or table\./
+);
+assert.match(
+  ui,
+  /Press Run Monte Carlo at the end of the settings to run fifty years again\./
+);
+assert.match(
+  ui,
+  /No Monte Carlo batch yet\. Press Run Monte Carlo at the end of the settings\. Opening this mode does not start a batch\./
+);
+assert.doesNotMatch(ui, /Press Run year to draw them again\./);
+assert.doesNotMatch(ui, /Press Run Monte Carlo to run fifty years again\./);
+assert.doesNotMatch(ui, /Press Run Monte Carlo\. Opening/);
+const yearClickBody = ui.slice(
+  ui.indexOf("function runYearClicked()"),
+  ui.indexOf("function runMonteCarloClicked()")
+);
+const mcClickBody = ui.slice(
+  ui.indexOf("function runMonteCarloClicked()"),
+  ui.indexOf("function boot()")
+);
+assert.match(yearClickBody, /scrollResultsIntoView\("sim-year-panel"\)/);
+assert.match(mcClickBody, /scrollResultsIntoView\("sim-mc-panel"\)/);
+const scrollBody = ui.slice(
+  ui.indexOf("function scrollResultsIntoView("),
+  ui.indexOf("function runYearClicked()")
+);
+assert.match(scrollBody, /prefers-reduced-motion: reduce/);
+assert.match(scrollBody, /behavior: reduceMotion \? "instant" : "smooth"/);
+assert.match(scrollBody, /tabindex", "-1"/);
+assert.match(scrollBody, /preventScroll: true/);
+assert.doesNotMatch(bootBody, /scrollResultsIntoView/);
+assert.doesNotMatch(changeBody, /scrollResultsIntoView/);
+assert.doesNotMatch(modeBody, /scrollResultsIntoView/);
+
 const about = fs.readFileSync(path.join(ROOT, "about", "index.html"), "utf8");
 assert.match(about, /free educational/);
 assert.match(about, /\/learn\/safety-stock-simulator\//);

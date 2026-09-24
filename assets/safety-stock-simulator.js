@@ -417,8 +417,8 @@
       empty.hidden = false;
       empty.textContent =
         state.yearStatus === "stale"
-          ? "Settings changed. The chart, weekly table, and year metrics were cleared. Press Run year to draw them again."
-          : "No year yet. Press Run year. Changing settings does not draw this chart or table.";
+          ? "Settings changed. The chart, weekly table, and year metrics were cleared. Press Run year at the end of the settings to draw them again."
+          : "No year yet. Press Run year at the end of the settings. Changing settings does not draw this chart or table.";
       return;
     }
     empty.hidden = true;
@@ -461,8 +461,8 @@
       body.innerHTML = "";
       empty.textContent =
         state.mcStatus === "stale"
-          ? "Settings changed. The last Monte Carlo batch was cleared. Press Run Monte Carlo to run fifty years again."
-          : "No Monte Carlo batch yet. Press Run Monte Carlo. Opening this mode does not start a batch.";
+          ? "Settings changed. The last Monte Carlo batch was cleared. Press Run Monte Carlo at the end of the settings to run fifty years again."
+          : "No Monte Carlo batch yet. Press Run Monte Carlo at the end of the settings. Opening this mode does not start a batch.";
       return;
     }
     empty.hidden = true;
@@ -658,6 +658,28 @@
     $("sim-run-mc").addEventListener("click", runMonteCarloClicked);
   }
 
+  function scrollResultsIntoView(panelId) {
+    var panel = $(panelId);
+    if (!panel || panel.hidden) {
+      return;
+    }
+    var heading = panel.querySelector(".card__title");
+    var target = heading || panel;
+    var reduceMotion =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (heading) {
+      heading.setAttribute("tabindex", "-1");
+    }
+    target.scrollIntoView({
+      behavior: reduceMotion ? "instant" : "smooth",
+      block: "start",
+    });
+    if (heading) {
+      heading.focus({ preventScroll: true });
+    }
+  }
+
   function runYearClicked() {
     state.controls = readControlsFromDom();
     writeControlsToDom();
@@ -666,6 +688,7 @@
     state.yearStatus = "ready";
     renderSingle();
     writeSession();
+    scrollResultsIntoView("sim-year-panel");
   }
 
   function runMonteCarloClicked() {
@@ -685,6 +708,7 @@
     state.mcStatus = "ready";
     renderMonteCarlo();
     writeSession();
+    scrollResultsIntoView("sim-mc-panel");
   }
 
   function boot() {
