@@ -586,6 +586,22 @@ const shockSlice = flatPage.slice(
   flatPage.indexOf(">One simulated year<")
 );
 assert.ok(shockSlice.includes(practiceSentence));
+assert.equal(
+  (shockSlice.match(/id="sim-run-year"/g) || []).length,
+  1,
+  "Run year button is inside the Demand shock card exactly once"
+);
+assert.equal(
+  (shockSlice.match(/id="sim-run-mc"/g) || []).length,
+  1,
+  "Run Monte Carlo button is inside the Demand shock card exactly once"
+);
+assert.ok(
+  shockSlice.includes(
+    "The chart, weekly table, and Monte Carlo summary stay empty until you press the button for this mode. Changing a setting clears them."
+  ),
+  "run helper note sits in the Demand shock card"
+);
 assert.match(page, /minus this week's base forecast/);
 assert.match(page, /Ending stock subtracts simulated demand/);
 assert.doesNotMatch(page, /Triple|tripled|3×/);
@@ -595,12 +611,13 @@ const patternAt = page.indexOf("Base demand pattern");
 assert.ok(teachingAt !== -1 && modeAt > teachingAt, "mode band follows the teaching framing");
 assert.ok(patternAt > modeAt, "mode band comes before the setup sections");
 const modeBand = page.slice(modeAt, patternAt);
-assert.match(modeBand, /id="sim-run-year"/);
-assert.match(modeBand, /id="sim-run-mc"/);
-assert.match(modeBand, /Run year/);
-assert.match(modeBand, /Run Monte Carlo/);
+assert.match(modeBand, />One year</);
+assert.match(modeBand, />Monte Carlo</);
+assert.doesNotMatch(modeBand, /id="sim-run-year"/);
+assert.doesNotMatch(modeBand, /id="sim-run-mc"/);
 assert.equal(page.split('id="sim-run-mc"').length - 1, 1);
 assert.equal(page.split('id="sim-run-year"').length - 1, 1);
+assert.equal(page.split('id="sim-demand-shock"').length - 1, 1);
 assert.match(page, /P10–P90/);
 assert.match(page, /median only/i);
 assert.doesNotMatch(page, /planned_order/);

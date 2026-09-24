@@ -13,7 +13,7 @@
       href="https://practicalsupplychainplanning.com/learn/safety-stock-simulator/"
     />
     <link rel="icon" href="/assets/brand/favicon.png" type="image/png" />
-    <link rel="stylesheet" href="/assets/styles.css?v=16" />
+    <link rel="stylesheet" href="/assets/styles.css?v=17" />
   </head>
   <body>
     <header class="site-header">
@@ -106,14 +106,6 @@
               <span class="sim-scenario__summary">Fifty years under the same settings. Summary only, no chart.</span>
             </button>
           </div>
-          <div class="sim-actions">
-            <button id="sim-run-year" class="sim-button" type="button">Run year</button>
-            <button id="sim-run-mc" class="sim-button" type="button" hidden>Run Monte Carlo</button>
-          </div>
-          <p class="sim-meta">
-            The chart, weekly table, and Monte Carlo summary stay empty until
-            you press the button for this mode. Changing a setting clears them.
-          </p>
         </section>
 
         <section class="card">
@@ -314,13 +306,25 @@
           </p>
         </section>
 
-        <section class="card">
+        <section class="card" id="sim-demand-shock">
           <h2 class="card__title">Demand shock</h2>
-          <label class="sim-check" for="sim-shock">
-            <input id="sim-shock" type="checkbox" />
-            Double three demand weeks
-          </label>
-          <p id="sim-shock-weeks" class="sim-meta"></p>
+          <div class="sim-shock-run">
+            <div class="sim-shock-run__choice">
+              <label class="sim-check" for="sim-shock">
+                <input id="sim-shock" type="checkbox" />
+                Double three demand weeks
+              </label>
+              <p id="sim-shock-weeks" class="sim-meta"></p>
+            </div>
+            <div class="sim-actions">
+              <button id="sim-run-year" class="sim-button" type="button">Run year</button>
+              <button id="sim-run-mc" class="sim-button" type="button" hidden>Run Monte Carlo</button>
+            </div>
+          </div>
+          <p class="sim-meta">
+            The chart, weekly table, and Monte Carlo summary stay empty until
+            you press the button for this mode. Changing a setting clears them.
+          </p>
           <p class="sim-help">
             A demand shock is a sudden, short-lived jump in demand that your
             forecast didn't expect. In practice that can look like a large
