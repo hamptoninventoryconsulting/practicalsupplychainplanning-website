@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title }}</title>
+    {%- if description %}
+    <meta name="description" content="{{ description }}" />
+    {%- endif %}
+    {%- if canonical %}
+    <link rel="canonical" href="{{ canonical }}" />
+    {%- endif %}
+    {%- if robots %}
+    <meta name="robots" content="{{ robots }}" />
+    {%- endif %}
+    {%- if og %}
+    <meta property="og:title" content="{{ title }}" />
+    <meta property="og:description" content="{{ summary }}" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="{{ canonical }}" />
+    <meta property="og:image" content="{{ site.url }}/images/{{ featured_image }}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="{{ title }}" />
+    <meta name="twitter:description" content="{{ summary }}" />
+    <meta name="twitter:image" content="{{ site.url }}/images/{{ featured_image }}" />
+    {%- endif %}
+    <link rel="icon" href="/assets/brand/favicon.png" type="image/png" />
+    <link rel="stylesheet" href="/assets/styles.css?v={{ site.cssVersion }}" />
+    {%- if schemaJson %}
+    <script type="application/ld+json">
+{{ schemaJson | safe }}
+    </script>
+    {%- endif %}
+  </head>
+  <body>
+    {% include "partials/header.njk" %}
+    <main>
+      {{ content | safe }}
+    </main>
+    {% include "partials/footer.njk" %}
+    {%- for src in scripts %}
+    <script src="{{ src }}"></script>
+    {%- endfor %}
+    {%- for src in deferScripts %}
+    <script src="{{ src }}" defer></script>
+    {%- endfor %}
+  </body>
+</html>

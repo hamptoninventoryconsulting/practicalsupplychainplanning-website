@@ -1,0 +1,25 @@
+---
+permalink: /sitemap.xml
+eleventyExcludeFromCollections: true
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>{{ site.url }}/</loc>
+  </url>
+  <url>
+    <loc>{{ site.url }}/about/</loc>
+  </url>
+  <url>
+    <loc>{{ site.url }}/blog/</loc>
+  </url>
+  <url>
+    <loc>{{ site.url }}/learn/safety-stock-simulator/</loc>
+  </url>
+  {%- for post in collections.postsByDate %}
+  <url>
+    <loc>{{ site.url }}/blog/{{ post.fileSlug }}/</loc>
+    <lastmod>{{ post.data.published_datetime | isoDate }}</lastmod>
+  </url>
+  {%- endfor %}
+</urlset>

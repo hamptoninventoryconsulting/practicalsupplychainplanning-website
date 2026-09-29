@@ -2,6 +2,8 @@
 
 Static marketing site for [practicalsupplychainplanning.com](https://practicalsupplychainplanning.com).
 
+The site is built with [Eleventy](https://www.11ty.dev/). Shared header, footer, and stylesheet live in layouts. Page copy lives in content files. `npm run build` writes the finished site to `_site/`.
+
 ## Brand assets
 
 Place files in `assets/brand/`:
@@ -14,101 +16,105 @@ Place files in `assets/brand/`:
 Colour palette PDFs stay in `assets/brand/` for reference. Update hex values in
 [`assets/variables.css`](assets/variables.css) to match your brand guides.
 
-## Git
+The header logo in use is `assets/brand/logo.jpg`.
 
-Initialize the repository (run once):
+## Requirements
 
-```powershell
-cd "C:\Users\hampt\OneDrive\Documents\Planning Software Development\Website"
-git init
-```
-
-No initial commit is included unless you request one.
+Node.js 18 or newer.
 
 ## Preview locally
 
-Use a local HTTP server (recommended — avoids broken paths for `/about/`):
-
 ```powershell
-cd "C:\Users\hampt\OneDrive\Documents\Planning Software Development\Website"
-python -m http.server 8080
+npm install
+npm run dev
 ```
 
-Then open:
+Eleventy serves the built site (default `http://localhost:8080/`). `/` is still redirected to `/about/` in production by `_redirects` and `functions/_middleware.js`. The dev server does not apply those redirects.
 
-- http://localhost:8080/
-- http://localhost:8080/about/
-- http://localhost:8080/learn/safety-stock-simulator/
+## Build
 
-Stop the server with `Ctrl+C`.
+```powershell
+npm run build
+```
+
+That runs Eleventy and writes `_site/`. Check the output with:
+
+```powershell
+npm run check
+```
+
+`npm run check` builds, then runs:
+
+- `python3 scripts/verify_indexing.py` against `_site`
+- `node scripts/verify_redirects.mjs`
+- `node scripts/verify_simulator.js` (also requires `_site`)
 
 ## Deploy to Cloudflare Pages
 
-1. Push this folder to a GitHub repository.
-2. In Cloudflare: **Workers & Pages** → **Create** → **Pages** → **Connect to Git**.
-3. Select the repository.
-4. Build settings:
-   - **Framework preset:** None
-   - **Build command:** *(leave empty)*
-   - **Build output directory:** `/`
-5. Deploy. You will get a `*.pages.dev` URL for staging.
-6. When your domain transfer completes: **Custom domains** → add `practicalsupplychainplanning.com`.
-7. Add `www.practicalsupplychainplanning.com` as a **second custom domain** on the same Pages project. Do not CNAME `www` to the apex by hand. A proxied `www` record that is not bound to Pages returns Cloudflare **522**. After the domain is Active, `functions/_middleware.js` 301s `www` to `https://practicalsupplychainplanning.com`.
+`functions/_middleware.js` stays at the **project root**, next to `_site`. Cloudflare compiles Pages Functions from that root directory. Do not move `functions/` into `_site`.
 
-No build step is required — Cloudflare serves the static files directly. Pages Functions in `functions/` compile on deploy.
+Build settings after this Eleventy cutover (change them **at merge**, not before):
+
+| Setting | Value |
+|---------|--------|
+| Framework preset | Eleventy (or custom with the same values) |
+| Build command | `npm run build` |
+| Build output directory | `_site` |
+| Production branch | `main` |
+| `wrangler.toml` `pages_build_output_dir` | `_site` |
+
+Until those dashboard settings change, a build of `main` that still has no build command will not run Eleventy. After the change, an older commit that expects the repo root as the output directory will publish an empty or wrong site. Flip the settings in the same step as merging this cutover.
+
+`_redirects` is copied into `_site` so `/` and `/index.html` still 301 to `/about/`. The www → apex redirect stays in `functions/_middleware.js`.
+
+Add `www.practicalsupplychainplanning.com` as a second custom domain on the same Pages project. Do not CNAME `www` to the apex by hand. A proxied `www` record that is not bound to Pages returns Cloudflare **522**. After the domain is Active, the middleware 301s `www` to `https://practicalsupplychainplanning.com`.
 
 ## Structure
 
 ```text
-Website/
-├── index.html              # Fallback link to /about/ (production uses HTTP 301)
-├── _redirects              # `/` → `/about/` 301 for Cloudflare Pages
-├── functions/_middleware.js  # www → apex and `/` → `/about/` HTTP 301s
-├── about/index.html        # About page
-├── learn/                  # Educational pages (safety stock simulator)
-├── blog/                   # Blog index, article pages, publisher templates
-├── robots.txt              # Allow crawling; points at the XML sitemap
-├── sitemap.xml             # Public pages derived from static files + blog manifest
-├── 404.html                # Custom 404; also disables Cloudflare Pages SPA fallback
+├── eleventy.config.js
+├── package.json
+├── src/                      # Layouts, content, generated sitemap
+│   ├── _includes/layouts/    # base, page, article, blog, simulator
+│   ├── about.njk
+│   ├── 404.njk               # output: /404.html
+│   ├── blog/                 # listing, generated manifest, article content
+│   └── learn/safety-stock-simulator.njk
+├── _redirects                # copied into _site
+├── functions/_middleware.js  # project root; not inside _site
+├── robots.txt                # copied into _site
+├── assets/                   # CSS, scripts, brand; copied as-is
+├── images/                   # article images; copied as-is
+├── learn/safety-stock-simulator/scenarios.json
 ├── scripts/
-│   ├── verify_indexing.py  # Generate sitemap.xml; verify indexing + canonicals
-│   ├── verify_redirects.mjs # Check www → apex and `/` → `/about/` 301 logic
-│   └── verify_simulator.js # Smoke-check the 52-week safety stock MRP engine
-├── assets/
-│   ├── brand/              # Logo, photo, colour PDFs
-│   ├── variables.css       # Brand colour tokens
-│   └── styles.css          # Shared styles
-└── README.md
+└── wrangler.toml             # pages_build_output_dir = "_site"
 ```
 
-## Search indexing files
+Stylesheet links use one cache-bust query, `styles.css?v=19` (`src/_data/site.js`). 19 is the highest version that was already live (the simulator). About was 8, articles 10, and the blog and 404 were 13.
 
-`robots.txt` and `sitemap.xml` are real static files at the site root. Do not rely
-on Cloudflare to invent them — without those files, Pages serves `/index.html`
-for unmatched paths (SPA fallback), which then 301s to `/about/`.
+## Content and Knowledge OS
 
-The top-level `404.html` is required for the same reason: it switches Pages from
-SPA fallback to a genuine HTTP 404 for missing URLs.
+Article pages are content files in `src/blog/posts/<slug>.html` (front matter plus the article body). Eleventy applies the article layout: one title, meta, share block, and JSON-LD. The old full-page files `blog/article.template.html` and `blog/index.template.html` are removed. Production HTML comes from this build.
 
-Regenerate and check the sitemap after publishing or removing a blog article:
+Knowledge OS still publishes finished article HTML until its own follow-up change. After that change, Knowledge OS should write these content files and the featured image under `images/`, not a finished `blog/<slug>/index.html`. Do not publish from the current Knowledge OS between merging this site and merging that Knowledge OS change.
+
+`blog/.posts.manifest.json` is no longer stored in git. Eleventy writes `/blog/.posts.manifest.json` from the article collection so `assets/blog.js` can keep loading it. The content files are the source of truth.
+
+The sitemap is generated by Eleventy and includes `/learn/safety-stock-simulator/`.
+
+## Safety stock simulator
+
+`assets/safety-stock-engine.js` and `assets/safety-stock-simulator.js` are copied into `_site` without transformation. `node scripts/verify_simulator.js` checks those copies match the source bytes and checks the built page.
+
+## Search indexing
+
+`robots.txt` and `sitemap.xml` in `_site` are real files. The top-level `404.html` switches Pages from SPA fallback to a genuine HTTP 404.
+
+Regenerate the site, then check indexing:
 
 ```powershell
-python scripts/verify_indexing.py --write
-python scripts/verify_indexing.py
-```
-
-`sitemap.xml` lists `/`, `/about/`, `/blog/`, `/learn/safety-stock-simulator/`,
-and each published article that exists as `blog/<slug>/index.html` (from
-`blog/.posts.manifest.json`). Knowledge OS BlogPublisher does not update the
-sitemap from this repo; regenerating it is companion work on each publish.
-
-Check the safety stock simulator after changing the weekly MRP engine or its page:
-
-```powershell
-python scripts/verify_indexing.py --write
-python scripts/verify_indexing.py
-node scripts/verify_redirects.mjs
-node scripts/verify_simulator.js
+npm run build
+python3 scripts/verify_indexing.py
 ```
 
 ## Next pages (planned)

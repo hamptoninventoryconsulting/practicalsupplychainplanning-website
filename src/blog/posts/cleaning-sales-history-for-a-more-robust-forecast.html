@@ -1,0 +1,70 @@
+---json
+{
+  "title": "Cleaning Sales History for a More Robust Forecast",
+  "summary": "Unusual sales observations should not be removed simply because they look like outliers. The useful question is what caused the observation, whether that cause is likely to repeat, and which treatment will give the most realistic representation of future demand.",
+  "published_datetime": "2026-08-17 10:45:18.963891",
+  "featured_image": "IMG000006.webp",
+  "schema_image": "IMG000006.webp",
+  "author": "Daniel Hampton",
+  "reading_time": "7 minutes",
+  "keywords": "cleaning sales history for a more robust forecast, inventory planning",
+  "about": "Sales and Customer Operations",
+  "in_language": "English",
+  "publisher": "Practical Supply Chain Planning"
+}
+---
+<p>A forecast can be distorted in two very different ways.</p>
+<p>A planner may leave an unusual sale in the history and forecast demand that is unlikely to happen again. Or they may remove a large or small observation that looks strange, only to remove a genuine part of the item&#x27;s normal demand pattern.</p>
+<p>That is why cleaning sales history is not really about making the data look tidy. The objective is to create the most robust representation of demand for forecasting.</p>
+<h2>A large deviation is not automatically a bad data point</h2>
+<p>It is tempting to identify statistical outliers and remove or adjust them. But an observation can be unusual and still be completely normal for that item.</p>
+<p>Consider an intermittent-demand item with this history:</p>
+<p>**0 → 0 → 0 → 500 → 0 → 0 → 0 → 400**</p>
+<p>The sales of 500 and 400 are very different from the surrounding periods, but that does not make them mistakes. The item may genuinely sell in occasional large quantities with long gaps between orders. If that is its normal pattern, removing the large sales would make the forecast less representative, not more.</p>
+<p>Now consider a higher-volume item with a history like this:</p>
+<p>**300,000 → 285,000 → 310,000 → 0 → 295,000 → 305,000**</p>
+<p>If the zero resulted from a temporary business shutdown, it is real sales history, but it may not represent the demand expected during the forecast horizon. Allowing it to reduce the forecast could create a misleading view of future demand.</p>
+<p>The size of the deviation does not tell you what to do with it. The cause does.</p>
+<h2>Start with why the observation happened</h2>
+<p>When an unusual sale is identified, the most useful question is:</p>
+<p>&gt; **Is the event that caused this observation likely to occur again within the forecast horizon?**</p>
+<p>This shifts the discussion away from whether a number looks statistically strange and toward whether it contains useful information about the future.</p>
+<p>Take a customer that normally orders 100 units each month. Their buyer goes on leave, misses one monthly order, and then places an order for 200 units when they return.</p>
+<p>The 200-unit order is genuine. It happened and should remain in the actual sales record. But it may not mean the customer&#x27;s monthly demand has doubled. If the missed-order event is unlikely to repeat, treating the full 200 units as ordinary monthly demand may lead to over-forecasting.</p>
+<p>The opposite can also happen. A customer may place a large project order every six months. That order may look like an outlier in a monthly sales history, but if the project cycle is expected to continue, it is relevant demand. Removing it simply because it is large could lead to under-forecasting.</p>
+<p>The question is not whether the sale was real. The question is whether the circumstances behind it help predict what comes next.</p>
+<h2>Sales are not always the same as demand</h2>
+<p>One of the most common traps is treating sales history as a perfect record of customer demand.</p>
+<p>Suppose an item normally sells around 100 units each week, but it was out of stock for three weeks:</p>
+<p>**98 → 105 → 102 → 18 → 22 → 15 → 101 → 99**</p>
+<p>The low sales in the middle may look like a drop in demand. In reality, customers may have wanted more than 18, 22 and 15 units, but the business could only sell what was available.</p>
+<p>Those observations describe constrained sales, not necessarily unconstrained demand. If they are used as normal demand without investigation, the forecast may be pulled down just when the item returns to normal availability.</p>
+<p>This does not mean every low-sales period should be adjusted. A genuine loss of demand is possible. The point is to investigate whether availability, customer ordering behaviour, a temporary disruption, or another event explains the result.</p>
+<h2>Three reasonable treatments</h2>
+<p>Once the cause is understood, there are three broad ways to handle an unusual observation.</p>
+<h3>Retain it when it represents future-relevant demand</h3>
+<p>Keep the observation in forecasting history when it is part of the demand pattern likely to continue.</p>
+<p>This can include recurring seasonal demand, regular promotions, recurring customer orders, genuine intermittent demand, or a sustained change in the underlying demand level.</p>
+<p>A history does not need to be smooth to be useful. For some items, uneven demand is the pattern that the forecast needs to recognise.</p>
+<h3>Adjust it when the circumstances are unlikely to repeat</h3>
+<p>An adjustment may be appropriate when the sale was genuine but was caused by an event that is not expected to recur.</p>
+<p>Examples include a missed customer order followed by a catch-up order, a temporary shutdown, a one-off project, an exceptional event, or a short-term operational disruption.</p>
+<p>The purpose is not to hide inconvenient history. It is to avoid allowing a non-repeatable event to disproportionately influence a view of future demand.</p>
+<p>There is a trade-off. Retaining an exceptional high observation may cause over-forecasting. Adjusting an observation that was actually meaningful may cause under-forecasting. That is why the explanation behind the number matters.</p>
+<h3>Investigate when the answer is not clear</h3>
+<p>Sometimes the correct treatment cannot be determined from the sales history alone.</p>
+<p>A large order may be a one-off project, the start of a recurring customer requirement, or a customer bringing forward future purchases. A low sales period may reflect a stockout, reduced demand, or an issue in the sales data.</p>
+<p>In these cases, automatic adjustment is risky. Check whether the data is correct and speak with the people closest to the event, such as sales, customer service, operations, or the account team. The history should not be changed just because it is difficult to explain.</p>
+<h2>Keep actual sales and forecasting history separate</h2>
+<p>Adjusting history for forecasting does not mean rewriting what actually happened.</p>
+<p>It helps to distinguish between two views of history:</p>
+<p>- **Actual sales history:** what the business actually sold. - **Forecasting demand history:** the representation of demand judged most appropriate for generating the forecast.</p>
+<p>This distinction protects the integrity of the original record while allowing planners to apply judgement. The actual 200-unit catch-up order still exists in the sales history. The forecasting history can reflect the fact that it may have represented two months of demand rather than a new monthly requirement of 200 units.</p>
+<p>Keeping these views separate also makes discussions clearer. Finance, sales, and operational reporting may need actual sales. Forecasting needs the best available representation of future demand. They are related, but they do not always serve the same purpose.</p>
+<h2>Questions to ask before changing history</h2>
+<p>Before retaining, adjusting, or excluding an unusual observation from forecasting history, work through a few practical questions:</p>
+<p>| Question | What it helps determine | | --- | --- | | Is the data correct? | Incorrect transactions or data errors should be corrected first. | | What caused the observation? | The cause is more useful than the size of the deviation. | | Is that cause likely to repeat? | Recurrence determines whether the event is relevant to the forecast. | | Does the sale represent underlying demand? | Stockouts and ordering behaviour can make sales differ from demand. | | What is the risk of retaining it? | It may push the forecast too high or too low. | | What is the risk of adjusting it? | An adjustment may remove a genuine demand signal. |</p>
+<p>The final question is the most important: **which treatment gives the most robust forecast for the period ahead?**</p>
+<p>That answer may differ by item, customer, and planning horizon. A recurring six-month project order matters if the forecast covers the next six months. It may be less useful if the business is trying to understand the expected demand next week.</p>
+<h2>Key Takeaways</h2>
+<p>- The objective of cleaning history is not to make it smooth; it is to create a robust representation of demand for forecasting. - An unusual observation is not automatically an outlier that should be removed. - The cause of the observation matters more than the size of the deviation. - Ask whether the event that caused it is likely to repeat during the forecast horizon. - Sales history may be constrained by stockouts or distorted by ordering behaviour, so sales do not always equal underlying demand. - Retain unusual history when it represents the expected demand pattern, adjust it when the cause is unlikely to recur, and investigate when the answer is unclear. - Preserve actual sales history while maintaining a separate forecasting view where judgement is needed.</p>

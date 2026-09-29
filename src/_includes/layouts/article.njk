@@ -1,0 +1,35 @@
+---
+layout: layouts/base.njk
+---
+<p><a href="/blog/">← Back to Blog</a></p>
+
+<article>
+  <header class="article-header">
+    <img
+      class="article-hero"
+      src="/images/{{ featured_image }}"
+      alt="{{ title }}"
+    />
+
+    <h1 class="page-title">{{ title }}</h1>
+    <p class="tagline">{{ summary }}</p>
+
+    <p
+      class="article-meta"
+      id="article-meta"
+      data-published="{{ published_datetime }}"
+      data-reading-time="{{ reading_time }}"
+      data-author="{{ author }}"
+    ></p>
+
+    {% include "partials/article-share.njk" %}
+
+    <hr class="article-divider" />
+  </header>
+
+  <section class="card article-body">
+    <div class="content">
+      {{ content | safe }}
+    </div>
+  </section>
+</article>
