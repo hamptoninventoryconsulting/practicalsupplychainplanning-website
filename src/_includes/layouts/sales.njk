@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title }}</title>
+    {%- if description %}
+    <meta name="description" content="{{ description }}" />
+    {%- endif %}
+    {%- if canonical %}
+    <link rel="canonical" href="{{ canonical }}" />
+    {%- endif %}
+    {%- if robots %}
+    <meta name="robots" content="{{ robots }}" />
+    {%- endif %}
+    {%- if stripQuery %}
+    <script>
+      (function () {
+        if (!window.location.search) {
+          return;
+        }
+        try {
+          window.history.replaceState(
+            null,
+            "",
+            window.location.pathname + window.location.hash
+          );
+        } catch (error) {
+          /* Checkout query values are not read, shown, or stored. */
+        }
+      })();
+    </script>
+    {%- endif %}
+    <link rel="icon" href="/assets/brand/favicon.png" type="image/png" />
+    <link rel="stylesheet" href="/assets/styles.css?v={{ site.cssVersion }}" />
+    <link rel="stylesheet" href="/assets/sales.css?v={{ site.cssVersion }}" />
+  </head>
+  <body class="sales">
+    <header class="sales-header">
+      <div class="sales-header__inner">
+        <a class="site-header__link" href="/">
+          <img
+            class="site-header__logo"
+            src="/assets/brand/logo.jpg?v={{ site.logoVersion }}"
+            alt="Practical Supply Chain Planning"
+          />
+        </a>
+      </div>
+    </header>
+    <main>
+      {{ content | safe }}
+    </main>
+    <footer class="sales-footer">
+      <div class="sales-footer__inner">
+        <nav class="sales-footer__nav" aria-label="Legal">
+          <ul class="sales-footer__list">
+            <li>
+              <a href="/terms/">Terms</a>
+            </li>
+            <li>
+              <a href="/refunds/">Refund Policy</a>
+            </li>
+            <li>
+              <a href="/privacy/">Privacy</a>
+            </li>
+            <li>
+              <a href="/contact/">Contact</a>
+            </li>
+          </ul>
+        </nav>
+        <p class="sales-footer__copy">
+          &copy; {{ site.copyrightYear }} Practical Supply Chain Planning
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

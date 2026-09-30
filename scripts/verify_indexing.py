@@ -8,6 +8,11 @@ build output, and the sitemap must list pages that exist in `_site`.
 The sitemap is owned by Eleventy (`src/sitemap.njk`). This script checks the
 built files; it does not write `sitemap.xml`.
 
+`/welcome/` is the post-purchase page. It must be noindex and must not appear
+in the sitemap or in site menus. Placeholder legal pages linked from its
+footer (`/terms/`, `/refunds/`, `/privacy/`, `/contact/`) stay noindex and
+out of the sitemap until real copy is published.
+
 Usage:
   npm run build
   python3 scripts/verify_indexing.py
@@ -30,6 +35,18 @@ SITEMAP_PATH = SITE / "sitemap.xml"
 ROBOTS_PATH = SITE / "robots.txt"
 POSTS_DIR = ROOT / "src" / "blog" / "posts"
 NOT_FOUND_PATH = SITE / "404.html"
+WELCOME_PATH = SITE / "welcome" / "index.html"
+WELCOME_LOC = f"{SITE_ORIGIN}/welcome/"
+PLACEHOLDER_PAGES = (
+    ("terms/index.html", f"{SITE_ORIGIN}/terms/"),
+    ("refunds/index.html", f"{SITE_ORIGIN}/refunds/"),
+    ("privacy/index.html", f"{SITE_ORIGIN}/privacy/"),
+    ("contact/index.html", f"{SITE_ORIGIN}/contact/"),
+)
+NOINDEX_RE = re.compile(
+    r'<meta\s+name=["\']robots["\']\s+content=["\'][^"\']*\bnoindex\b',
+    re.I,
+)
 REDIRECTS_SOURCE = ROOT / "_redirects"
 REDIRECTS_BUILT = SITE / "_redirects"
 MIDDLEWARE_PATH = ROOT / "functions" / "_middleware.js"
@@ -415,6 +432,81 @@ def verify_listing_fix(errors: list[str], posts: list[dict]) -> None:
         fail("generated posts manifest is missing lot-size author or reading_time", errors)
 
 
+def verify_welcome(errors: list[str]) -> None:
+    if not WELCOME_PATH.is_file():
+        fail("/welcome/ was not built; expected _site/welcome/index.html", errors)
+        return
+
+    text = WELCOME_PATH.read_text(encoding="utf-8")
+    if not NOINDEX_RE.search(text):
+        fail("/welcome/ must include a noindex robots meta tag", errors)
+    if "site-nav" in text:
+        fail("/welcome/ must not include the site menu", errors)
+    if "cdn.paddle.com" in text or "paddle.js" in text.lower():
+        fail("/welcome/ must not load Paddle.js", errors)
+    if "_ptxn" in text or "localStorage" in text or "sessionStorage" in text:
+        fail("/welcome/ must not display or store checkout query parameters", errors)
+    if "history.replaceState" not in text:
+        fail(
+            "/welcome/ must drop checkout query parameters from the address bar "
+            "without reading or storing them",
+            errors,
+        )
+    if not re.search(r"<button\b[^>]*\bdisabled\b", text, re.I):
+        fail("/welcome/ download control must be a disabled button", errors)
+    if re.search(
+        r"<a\b[^>]*>[^<]*Download Practical Stock Planner",
+        text,
+        re.I,
+    ):
+        fail("/welcome/ download must not be a link", errors)
+    if re.search(r'href=["\'][^"\']+\.(?:exe|msi|zip)["\']', text, re.I):
+        fail("/welcome/ must not link to a download file", errors)
+    if "Coming soon." not in text:
+        fail("/welcome/ download must say it is coming soon", errors)
+    if "[CHECK]" in text or "[PLACEHOLDER]" in text:
+        fail("/welcome/ still contains raw [CHECK] or [PLACEHOLDER] draft markers", errors)
+    if text.lower().count("<h1") != 1:
+        fail("/welcome/ must have exactly one h1", errors)
+
+    sitemap = ""
+    if SITEMAP_PATH.is_file():
+        sitemap = SITEMAP_PATH.read_text(encoding="utf-8")
+    if WELCOME_LOC in sitemap or "/welcome/" in sitemap:
+        fail("/welcome/ must not appear in sitemap.xml", errors)
+
+    for relative in (
+        "src/_includes/partials/header.njk",
+        "src/_includes/partials/footer.njk",
+    ):
+        source = (ROOT / relative).read_text(encoding="utf-8")
+        if "/welcome/" in source:
+            fail(f"/welcome/ is linked from the site menu in {relative}", errors)
+
+    for path in sorted(SITE.rglob("*.html")):
+        if path.resolve() == WELCOME_PATH.resolve():
+            continue
+        page = path.read_text(encoding="utf-8")
+        if 'href="/welcome/"' in page or 'href="/welcome"' in page:
+            fail(
+                f"/welcome/ is linked from {path.relative_to(SITE).as_posix()}",
+                errors,
+            )
+
+    for relative, loc in PLACEHOLDER_PAGES:
+        path = SITE / relative
+        if not path.is_file():
+            fail(f"placeholder page is missing from _site: {relative}", errors)
+            continue
+        page = path.read_text(encoding="utf-8")
+        if not NOINDEX_RE.search(page):
+            fail(f"{relative} must include a noindex robots meta tag", errors)
+        if loc in sitemap:
+            fail(f"{loc} must not appear in sitemap.xml", errors)
+        if 'href="/welcome/"' in page:
+            fail(f"{relative} must not link to /welcome/", errors)
+
+
 def verify_simulator_assets(errors: list[str]) -> None:
     scenarios = SITE / "learn" / "safety-stock-simulator" / "scenarios.json"
     if not scenarios.is_file():
@@ -436,6 +528,7 @@ def main() -> int:
         verify_robots(errors)
         verify_404(errors)
         verify_sitemap(errors, posts)
+        verify_welcome(errors)
         verify_homepage_routing(errors)
         verify_canonicals(errors, posts)
         verify_stylesheet_version(errors, version)
