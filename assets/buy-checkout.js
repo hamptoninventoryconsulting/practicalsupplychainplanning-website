@@ -1,8 +1,9 @@
 (function () {
   var button = document.getElementById("checkout-button");
   var note = document.getElementById("checkout-note");
+  var loadNote = document.getElementById("checkout-load-note");
   var configEl = document.getElementById("paddle-config");
-  if (!button || !note || !configEl) {
+  if (!button || !note || !loadNote || !configEl) {
     return;
   }
 
@@ -17,6 +18,14 @@
   function showUnconfigured() {
     button.disabled = true;
     note.hidden = false;
+    loadNote.hidden = true;
+  }
+
+  function showLoadFailed() {
+    button.disabled = true;
+    button.setAttribute("aria-describedby", "checkout-load-note");
+    note.hidden = true;
+    loadNote.hidden = false;
   }
 
   var config;
@@ -49,7 +58,7 @@
   }
 
   if (!window.Paddle || typeof window.Paddle.Initialize !== "function") {
-    button.disabled = true;
+    showLoadFailed();
     return;
   }
 
@@ -67,7 +76,7 @@
       },
     });
   } catch (error) {
-    showUnconfigured();
+    showLoadFailed();
     return;
   }
 
@@ -78,7 +87,7 @@
       var customData = { campaign: campaignId };
       params.forEach(function (value, key) {
         if (key.indexOf("utm_") === 0 && value) {
-          customData[key] = value;
+          customData[key] = String(value).slice(0, 100);
         }
       });
       var openArgs = {

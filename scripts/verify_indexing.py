@@ -638,6 +638,10 @@ def verify_buy(errors: list[str]) -> None:
         fail("/buy/ needs a noscript fallback to the support email", errors)
     if not re.search(r"<button\b[^>]*>\s*Checkout\s*</button>", text, re.I):
         fail("/buy/ must include a Checkout button", errors)
+    if "Checkout couldn't load. Please refresh, or email" not in text:
+        fail("/buy/ must include the Paddle load-failure note", errors)
+    if 'id="checkout-load-note"' not in text or "hidden" not in text:
+        fail("/buy/ must keep the Paddle load-failure note hidden until script shows it", errors)
     checkout_js = ROOT / "assets" / "buy-checkout.js"
     if not checkout_js.is_file():
         fail("assets/buy-checkout.js is missing", errors)
@@ -651,6 +655,8 @@ def verify_buy(errors: list[str]) -> None:
             "successUrl: config.successUrl",
             "customData",
             'key.indexOf("utm_")',
+            "slice(0, 100)",
+            "showLoadFailed",
             "discountId",
             "quantity: 1",
             'params.get("c")',
