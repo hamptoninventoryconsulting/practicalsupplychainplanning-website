@@ -74,6 +74,25 @@
   </ol>
 </section>
 
+<section class="sales-panel" aria-labelledby="data-heading">
+  <h2 id="data-heading">Getting your data ready</h2>
+  <ul class="sales-guides">
+    {%- for guide in exportGuides %}
+    {%- set guideHref = guide.href | trim %}
+    <li>
+      {%- if guideHref %}
+      <a href="{{ guideHref }}">{{ guide.label }}</a>
+      {%- else %}
+      <span class="sales-placeholder">
+        <strong>Guide coming soon.</strong>
+        {{ guide.label }}
+      </span>
+      {%- endif %}
+    </li>
+    {%- endfor %}
+  </ul>
+</section>
+
 <section class="sales-panel" aria-labelledby="help-heading">
   <h2 id="help-heading">Need a hand?</h2>
   <p>

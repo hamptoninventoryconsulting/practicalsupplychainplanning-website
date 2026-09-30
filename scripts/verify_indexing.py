@@ -47,6 +47,15 @@ NOINDEX_RE = re.compile(
     r'<meta\s+name=["\']robots["\']\s+content=["\'][^"\']*\bnoindex\b',
     re.I,
 )
+EXPORT_GUIDES_PATH = ROOT / "src" / "_data" / "exportGuides.js"
+EXPORT_GUIDE_RE = re.compile(
+    r'label:\s*(["\'])(?P<label>.*?)\1\s*,\s*href:\s*(["\'])(?P<href>.*?)\3',
+    re.S,
+)
+REQUIRED_EXPORT_GUIDES = (
+    "Export your data from Shopify",
+    "Export your data from Xero",
+)
 REDIRECTS_SOURCE = ROOT / "_redirects"
 REDIRECTS_BUILT = SITE / "_redirects"
 MIDDLEWARE_PATH = ROOT / "functions" / "_middleware.js"
@@ -432,6 +441,23 @@ def verify_listing_fix(errors: list[str], posts: list[dict]) -> None:
         fail("generated posts manifest is missing lot-size author or reading_time", errors)
 
 
+def export_guides() -> list[dict]:
+    if not EXPORT_GUIDES_PATH.is_file():
+        raise FileNotFoundError("src/_data/exportGuides.js is missing")
+    text = EXPORT_GUIDES_PATH.read_text(encoding="utf-8")
+    guides = [
+        {"label": match.group("label").strip(), "href": match.group("href").strip()}
+        for match in EXPORT_GUIDE_RE.finditer(text)
+    ]
+    labels = [guide["label"] for guide in guides]
+    if labels != list(REQUIRED_EXPORT_GUIDES):
+        raise ValueError(
+            "src/_data/exportGuides.js must list Shopify then Xero, "
+            f"with labels {list(REQUIRED_EXPORT_GUIDES)!r}"
+        )
+    return guides
+
+
 def verify_welcome(errors: list[str]) -> None:
     if not WELCOME_PATH.is_file():
         fail("/welcome/ was not built; expected _site/welcome/index.html", errors)
@@ -464,6 +490,35 @@ def verify_welcome(errors: list[str]) -> None:
         fail("/welcome/ must not link to a download file", errors)
     if "Coming soon." not in text:
         fail("/welcome/ download must say it is coming soon", errors)
+    if "Getting your data ready" not in text:
+        fail("/welcome/ is missing the Getting your data ready section", errors)
+    guides = export_guides()
+    unpublished = [guide for guide in guides if not guide["href"]]
+    if text.count("Guide coming soon.") != len(unpublished):
+        fail(
+            "/welcome/ must say Guide coming soon once for each export guide "
+            "that has no URL yet",
+            errors,
+        )
+    if re.search(r"""href=["'](?:|#)["']""", text):
+        fail("/welcome/ must not include an empty or hash href", errors)
+    for guide in guides:
+        label = re.escape(guide["label"])
+        linked = re.search(rf"<a\b[^>]*>\s*{label}\s*</a>", text, re.I)
+        if guide["href"]:
+            expected = (
+                rf'<a\b[^>]*\bhref="{re.escape(guide["href"])}"[^>]*>\s*{label}\s*</a>'
+            )
+            if not re.search(expected, text):
+                fail(
+                    f"/welcome/ must link {guide['label']!r} to {guide['href']!r}",
+                    errors,
+                )
+        elif linked:
+            fail(
+                f"/welcome/ must not link {guide['label']!r} until its href is set",
+                errors,
+            )
     if "[CHECK]" in text or "[PLACEHOLDER]" in text:
         fail("/welcome/ still contains raw [CHECK] or [PLACEHOLDER] draft markers", errors)
     if text.lower().count("<h1") != 1:
