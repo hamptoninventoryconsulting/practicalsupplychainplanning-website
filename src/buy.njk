@@ -1,0 +1,39 @@
+---json
+{
+  "layout": "layouts/sales.njk",
+  "title": "Practical Stock Planner, US$49/month, tax included",
+  "description": "Checkout for Practical Stock Planner.",
+  "canonical": "https://practicalsupplychainplanning.com/buy/",
+  "robots": "noindex",
+  "eleventyExcludeFromCollections": true,
+  "permalink": "/buy/"
+}
+---
+{%- set checkoutConfigured = ("REPLACE_ME" not in paddle.clientToken) and (paddle.campaigns.default.priceId) and ("REPLACE_ME" not in paddle.campaigns.default.priceId) -%}
+<h1 class="page-title">Practical Stock Planner, US$49/month, tax included</h1>
+<p class="sales-checkout">
+  <button
+    type="button"
+    class="sales-button sales-button--action"
+    id="checkout-button"
+    disabled
+    {% if not checkoutConfigured %}aria-describedby="checkout-note"{% endif %}
+  >
+    Checkout
+  </button>
+</p>
+<p class="sales-note" id="checkout-note"{% if checkoutConfigured %} hidden{% endif %}>
+  checkout not configured
+</p>
+<noscript>
+  <p>
+    Checkout needs JavaScript. Email
+    <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a>
+    and we will help you subscribe.
+  </p>
+</noscript>
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+<script type="application/json" id="paddle-config">
+{{ paddle | dump | safe }}
+</script>
+<script src="/assets/buy-checkout.js"></script>

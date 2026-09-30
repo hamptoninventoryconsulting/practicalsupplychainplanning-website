@@ -104,6 +104,29 @@
   opacity: 1;
 }
 
+.sales-button--action:not(:disabled) {
+  border: 1px solid transparent;
+  background: var(--color-primary);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.sales-button--action:not(:disabled):hover,
+.sales-button--action:not(:disabled):focus-visible {
+  filter: brightness(0.95);
+}
+
+.sales-button--action:focus-visible {
+  outline: 2px solid var(--color-text);
+  outline-offset: 2px;
+}
+
+.sales-note {
+  margin: 0.75rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
 .sales-placeholder {
   display: block;
   margin: 0.75rem 0 0;

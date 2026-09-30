@@ -13,6 +13,10 @@ in the sitemap or in site menus. Placeholder legal pages linked from its
 footer (`/terms/`, `/refunds/`, `/privacy/`, `/contact/`) stay noindex and
 out of the sitemap until real copy is published.
 
+`/buy/` is the sandbox checkout page. It must be noindex, stay out of the
+sitemap and the site menu, and it is the only page that may load Paddle.js.
+`/welcome/` must stay free of Paddle.js.
+
 Usage:
   npm run build
   python3 scripts/verify_indexing.py
@@ -37,6 +41,10 @@ POSTS_DIR = ROOT / "src" / "blog" / "posts"
 NOT_FOUND_PATH = SITE / "404.html"
 WELCOME_PATH = SITE / "welcome" / "index.html"
 WELCOME_LOC = f"{SITE_ORIGIN}/welcome/"
+BUY_PATH = SITE / "buy" / "index.html"
+BUY_LOC = f"{SITE_ORIGIN}/buy/"
+PADDLE_DATA_PATH = ROOT / "src" / "_data" / "paddle.js"
+PADDLE_JS_URL = "https://cdn.paddle.com/paddle/v2/paddle.js"
 PLACEHOLDER_PAGES = (
     ("terms/index.html", f"{SITE_ORIGIN}/terms/"),
     ("refunds/index.html", f"{SITE_ORIGIN}/refunds/"),
@@ -589,6 +597,107 @@ def verify_welcome(errors: list[str]) -> None:
             fail(f"{relative} must not link to /welcome/", errors)
 
 
+def paddle_placeholders_block_checkout() -> bool:
+    if not PADDLE_DATA_PATH.is_file():
+        return True
+    text = PADDLE_DATA_PATH.read_text(encoding="utf-8")
+    token = re.search(r"clientToken:\s*(['\"])(?P<value>.*?)\1", text)
+    price = re.search(
+        r"default:\s*\{[^}]*priceId:\s*(['\"])(?P<value>.*?)\1",
+        text,
+        re.S,
+    )
+    token_value = token.group("value") if token else ""
+    price_value = price.group("value") if price else ""
+    return "REPLACE_ME" in token_value or "REPLACE_ME" in price_value or not token_value or not price_value
+
+
+def verify_buy(errors: list[str]) -> None:
+    if not BUY_PATH.is_file():
+        fail("/buy/ was not built; expected _site/buy/index.html", errors)
+        return
+    if not PADDLE_DATA_PATH.is_file():
+        fail("src/_data/paddle.js is missing", errors)
+        return
+
+    text = BUY_PATH.read_text(encoding="utf-8")
+    source = PADDLE_DATA_PATH.read_text(encoding="utf-8")
+    if not NOINDEX_RE.search(text):
+        fail("/buy/ must include a noindex robots meta tag", errors)
+    if "site-nav" in text:
+        fail("/buy/ must not include the site menu", errors)
+    if "Practical Stock Planner, US$49/month, tax included" not in text:
+        fail("/buy/ is missing the checkout heading", errors)
+    if text.lower().count("<h1") != 1:
+        fail("/buy/ must have exactly one h1", errors)
+    if PADDLE_JS_URL not in text:
+        fail("/buy/ must load Paddle.js v2 from cdn.paddle.com", errors)
+    if "https://practicalsupplychainplanning.com/welcome/" not in text:
+        fail("/buy/ must set the Paddle success URL to /welcome/", errors)
+    if "<noscript" not in text.lower() or "mailto:support@practicalsupplychainplanning.com" not in text:
+        fail("/buy/ needs a noscript fallback to the support email", errors)
+    if not re.search(r"<button\b[^>]*>\s*Checkout\s*</button>", text, re.I):
+        fail("/buy/ must include a Checkout button", errors)
+    checkout_js = ROOT / "assets" / "buy-checkout.js"
+    if not checkout_js.is_file():
+        fail("assets/buy-checkout.js is missing", errors)
+    else:
+        script = checkout_js.read_text(encoding="utf-8")
+        for snippet in (
+            'Paddle.Environment.set("sandbox")',
+            "Paddle.Initialize",
+            "Paddle.Checkout.open",
+            "displayMode: \"overlay\"",
+            "successUrl: config.successUrl",
+            "customData",
+            'key.indexOf("utm_")',
+            "discountId",
+            "quantity: 1",
+            'params.get("c")',
+        ):
+            if snippet not in script:
+                fail(f"assets/buy-checkout.js is missing {snippet}", errors)
+        if re.search(r"""\.get\(\s*['\"](?:priceId|discountId|price|discount)['\"]\s*\)""", script):
+            fail("/buy/ must not read a price or discount from the URL", errors)
+        if "REPLACE_ME" not in script and "isPlaceholder" not in script:
+            fail("assets/buy-checkout.js must keep the button disabled when placeholders remain", errors)
+    if 'environment: "sandbox"' not in source and "environment: 'sandbox'" not in source:
+        fail("src/_data/paddle.js must set environment to sandbox", errors)
+    if "https://practicalsupplychainplanning.com/welcome/" not in source:
+        fail("src/_data/paddle.js must set successUrl to the absolute /welcome/ URL", errors)
+    if paddle_placeholders_block_checkout():
+        if "checkout not configured" not in text:
+            fail("/buy/ must show checkout not configured while placeholders remain", errors)
+        if not re.search(r"<button\b[^>]*\bdisabled\b[^>]*>\s*Checkout\s*</button>", text, re.I):
+            fail("/buy/ Checkout button must be disabled while placeholders remain", errors)
+
+    sitemap = ""
+    if SITEMAP_PATH.is_file():
+        sitemap = SITEMAP_PATH.read_text(encoding="utf-8")
+    if BUY_LOC in sitemap or "/buy/" in sitemap:
+        fail("/buy/ must not appear in sitemap.xml", errors)
+
+    for relative in (
+        "src/_includes/partials/header.njk",
+        "src/_includes/partials/footer.njk",
+    ):
+        menu = (ROOT / relative).read_text(encoding="utf-8")
+        if "/buy/" in menu:
+            fail(f"/buy/ is linked from the site menu in {relative}", errors)
+
+    for path in sorted(SITE.rglob("*.html")):
+        page = path.read_text(encoding="utf-8")
+        relative = path.relative_to(SITE).as_posix()
+        if path.resolve() == BUY_PATH.resolve():
+            if 'href="/buy/"' in page or "href='/buy/'" in page:
+                fail("/buy/ must not link to itself from the menu", errors)
+            continue
+        if "cdn.paddle.com" in page or "paddle.js" in page.lower():
+            fail(f"Paddle.js must load only on /buy/, found in {relative}", errors)
+        if 'href="/buy/"' in page or 'href="/buy"' in page:
+            fail(f"/buy/ is linked from {relative}", errors)
+
+
 def verify_simulator_assets(errors: list[str]) -> None:
     scenarios = SITE / "learn" / "safety-stock-simulator" / "scenarios.json"
     if not scenarios.is_file():
@@ -611,6 +720,7 @@ def main() -> int:
         verify_404(errors)
         verify_sitemap(errors, posts)
         verify_welcome(errors)
+        verify_buy(errors)
         verify_homepage_routing(errors)
         verify_canonicals(errors, posts)
         verify_stylesheet_version(errors, version)
