@@ -1171,6 +1171,21 @@ main {
   font-size: 0.9375rem;
 }
 
+.site-footer__credit {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.site-footer__credit a {
+  color: inherit;
+}
+
+.site-footer__credit a:hover {
+  color: var(--color-text);
+}
+
 .site-footer__nav {
   margin-left: auto;
 }
