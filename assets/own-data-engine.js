@@ -7,7 +7,11 @@
  *
  * Same replenishment rule and the same seeded random stream as the teaching
  * engine, so a level forecast of 40, prices of $100 and $70, a lead time of
- * 2, 5, or 10, and the teaching starting stock reproduce that engine.
+ * 2, 5, or 10, and the teaching starting stock reproduce that engine's stock
+ * path. Annual gross profit does not: it counts units actually sold.
+ * Demand that cannot be filled from stock on hand and receipts that week
+ * is unmet and is left out. The teaching engine multiplies all simulated
+ * demand by $30.
  *
  * Differences:
  * - One average weekly forecast per SKU (no Level / Seasonal / Rising pattern).
@@ -396,11 +400,20 @@
     };
   }
 
+  function unitsSoldInWeek(week) {
+    var onHand = week.beginningSoh > 0 ? week.beginningSoh : 0;
+    var supply = week.plannedSupply > 0 ? week.plannedSupply : 0;
+    var demand = week.simulatedDemand > 0 ? week.simulatedDemand : 0;
+    var available = onHand + supply;
+    return demand < available ? demand : available;
+  }
+
   function computeMetrics(weeks, unitCost, sellingPrice) {
     var oosWeeks = 0;
     var sumEnding = 0;
     var sumFloored = 0;
     var annualDemand = 0;
+    var unitsSold = 0;
     for (var i = 0; i < weeks.length; i += 1) {
       var ending = weeks[i].endingSoh;
       if (ending < 0) {
@@ -409,6 +422,7 @@
       sumEnding += ending;
       sumFloored += ending > 0 ? ending : 0;
       annualDemand += weeks[i].simulatedDemand;
+      unitsSold += unitsSoldInWeek(weeks[i]);
     }
     var n = weeks.length || HORIZON;
     var avgSohTurns = sumFloored / n;
@@ -418,10 +432,12 @@
       oosWeeks: oosWeeks,
       csl: ((n - oosWeeks) / n) * 100,
       annualDemand: annualDemand,
+      unitsSold: unitsSold,
+      unmetDemand: annualDemand - unitsSold,
       avgSohTurns: avgSohTurns,
       inventoryTurns: inventoryTurns,
       averageWc: (sumEnding / n) * unitCost,
-      annualGp: annualDemand * gpEach,
+      annualGp: unitsSold * gpEach,
       unitCost: unitCost,
       sellingPrice: sellingPrice,
       unitGp: gpEach,

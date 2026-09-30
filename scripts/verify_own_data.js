@@ -120,6 +120,8 @@ assert.strictEqual(quiet.nominalLot, 10);
 assert.strictEqual(quiet.safetyStock, 0);
 assert.strictEqual(quiet.metrics.oosWeeks, 0);
 assert.strictEqual(quiet.metrics.annualDemand, 520);
+assert.strictEqual(quiet.metrics.unitsSold, 520);
+assert.strictEqual(quiet.metrics.unmetDemand, 0);
 assert.strictEqual(quiet.metrics.annualGp, 2600);
 assertClose(quiet.metrics.averageWc, 7350, "working capital");
 assert.strictEqual(quiet.weeks[51].endingSoh, 480);
@@ -128,7 +130,35 @@ assert.ok(quiet.releases.length === 0, "a full opening stock does not order");
 const zeroStock = own.runYear(sku({ currentStock: 0, ssQty: 0, demandVariability: "off" }), globals(), 4);
 assert.strictEqual(zeroStock.startingSoh, 0);
 assert.ok(zeroStock.releases.length > 0, "zero stock still places an order");
-assert.strictEqual(zeroStock.metrics.annualGp, zeroStock.metrics.annualDemand * 30);
+assert.strictEqual(zeroStock.metrics.unitsSold + zeroStock.metrics.unmetDemand, zeroStock.metrics.annualDemand);
+assert.strictEqual(zeroStock.metrics.annualGp, zeroStock.metrics.unitsSold * 30);
+
+const lostSales = own.runYear(
+  sku({
+    forecast: 10,
+    currentStock: 4,
+    lotQty: 1,
+    ssQty: 0,
+    demandVariability: "off",
+    leadTimeVariability: "off",
+    leadTimeWeeks: 5,
+    unitCost: 70,
+    sellingPrice: 100,
+  }),
+  globals(),
+  1
+);
+assert.strictEqual(lostSales.weeks[0].plannedSupply, 2, "week 1 receives two lots");
+assert.strictEqual(lostSales.weeks[0].endingSoh, -4, "week 1 ends short");
+lostSales.weeks.forEach(function (week, index) {
+  assert.strictEqual(week.simulatedDemand, 10, "demand " + (index + 1));
+  assert.strictEqual(week.plannedSupply, 2, "supply " + (index + 1));
+});
+assert.strictEqual(lostSales.metrics.annualDemand, 520);
+assert.strictEqual(lostSales.metrics.unitsSold, 108, "opening stock plus two units a week");
+assert.strictEqual(lostSales.metrics.unmetDemand, 412);
+assert.strictEqual(lostSales.metrics.annualGp, 108 * 30);
+assert.ok(lostSales.metrics.annualGp < lostSales.metrics.annualDemand * 30);
 
 const ownBig = own.runYear(sku({ lotQty: 2500, demandVariability: "off", currentStock: 80 }), globals(), 1);
 assert.strictEqual(ownBig.nominalLot, 2500);
@@ -176,6 +206,13 @@ function parityControls(controls) {
   });
 }
 
+function soldFromWeeks(weeks) {
+  return weeks.reduce(function (sum, week) {
+    const available = Math.max(0, week.beginningSoh) + Math.max(0, week.plannedSupply);
+    return sum + Math.min(week.simulatedDemand, available);
+  }, 0);
+}
+
 function assertSameYear(left, right, label) {
   assert.strictEqual(left.startingSoh, right.startingSoh, label + " start");
   assert.strictEqual(left.safetyStock, right.safetyStock, label + " ss");
@@ -186,7 +223,22 @@ function assertSameYear(left, right, label) {
     assert.strictEqual(left.weeks[week].plannedSupply, right.weeks[week].plannedSupply, label + " supply " + (week + 1));
   }
   assert.strictEqual(left.metrics.oosWeeks, right.metrics.oosWeeks, label + " oos");
-  assert.strictEqual(left.metrics.annualGp, right.metrics.annualGp, label + " gp");
+  assert.strictEqual(left.metrics.unitsSold, soldFromWeeks(left.weeks), label + " units sold");
+  assert.strictEqual(
+    left.metrics.unmetDemand,
+    left.metrics.annualDemand - left.metrics.unitsSold,
+    label + " unmet"
+  );
+  assert.strictEqual(
+    left.metrics.annualGp,
+    left.metrics.unitsSold * (left.prices.sell - left.prices.cost),
+    label + " gp"
+  );
+  if (left.metrics.unmetDemand === 0) {
+    assert.strictEqual(left.metrics.annualGp, right.metrics.annualGp, label + " gp parity");
+  } else {
+    assert.ok(left.metrics.annualGp < right.metrics.annualGp, label + " lost sales reduce gp");
+  }
   assertClose(left.metrics.averageWc, right.metrics.averageWc, label + " wc");
   if (left.metrics.inventoryTurns == null || right.metrics.inventoryTurns == null) {
     assert.strictEqual(left.metrics.inventoryTurns, right.metrics.inventoryTurns, label + " turns");
@@ -266,7 +318,17 @@ const ownMc = own.runMonteCarlo(
   7
 );
 assert.strictEqual(ownMc.summary.oosWeeks.median, taughtMc.summary.oosWeeks.median);
-assert.strictEqual(ownMc.summary.annualGp.median, taughtMc.summary.annualGp.median);
+ownMc.runs.forEach(function (run, index) {
+  const taughtRun = taughtMc.runs[index];
+  assert.strictEqual(run.metrics.annualDemand, taughtRun.metrics.annualDemand, "mc demand " + index);
+  assert.strictEqual(run.metrics.unitsSold, soldFromWeeks(run.weeks), "mc sold " + index);
+  assert.strictEqual(run.metrics.annualGp, run.metrics.unitsSold * 30, "mc gp " + index);
+  if (run.metrics.unmetDemand === 0) {
+    assert.strictEqual(run.metrics.annualGp, taughtRun.metrics.annualGp, "mc gp parity " + index);
+  } else {
+    assert.ok(run.metrics.annualGp < taughtRun.metrics.annualGp, "mc lost sales " + index);
+  }
+});
 assert.strictEqual(ownMc.runs[0].safetyStock, taughtMc.runs[0].safetyStock);
 assert.strictEqual(ownMc.frozenSafetyStock, taughtMc.frozenSafetyStock);
 
@@ -719,9 +781,15 @@ assert.match(page, /Out-of-stock weeks/);
 assert.match(page, /Customer service level/);
 assert.match(page, /Inventory turns/);
 assert.match(page, /Average working capital/);
-assert.match(page, /Annual gross profit/);
-assert.match(page, /src="\/assets\/own-data-engine\.js\?v=1"/);
-assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=1"/);
+assert.match(page, /Annual gross profit \(units sold\)/);
+assert.match(flat, /only units actually sold/);
+assert.match(flat, /could not be filled in a stockout is left out/);
+assert.match(flat, /SOH means stock on hand/);
+assert.match(flat, /In 8 out of 10 simulated years, the result falls inside it/);
+assert.match(flat, /Z comes from the service level you pick/);
+assert.match(flat, /square root of L spreads that weekly variation/);
+assert.match(page, /src="\/assets\/own-data-engine\.js\?v=2"/);
+assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=2"/);
 assert.ok(page.indexOf("own-data-engine.js") < page.indexOf("own-data-simulator.js"));
 assert.doesNotMatch(page, /type="email"/i);
 assert.doesNotMatch(page, /sessionStorage/);

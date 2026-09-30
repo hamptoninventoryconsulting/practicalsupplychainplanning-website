@@ -7,8 +7,8 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/own-data/",
   "scripts": [
-    "/assets/own-data-engine.js?v=1",
-    "/assets/own-data-simulator.js?v=1"
+    "/assets/own-data-engine.js?v=2",
+    "/assets/own-data-simulator.js?v=2"
   ]
 }
 ---
@@ -227,9 +227,15 @@
             formula and the extra delay when lead-time variability is on.
           </p>
           <p class="sim-help">
-            Formula safety stock is round(Z × σD × √L). It assumes a fixed lead
-            time and random demand only. With demand variability off and a flat
-            forecast, σ is 0, so the formula result is 0.
+            Formula safety stock is round(Z × σD × √L). Z comes from the
+            service level you pick: a higher service level uses a bigger Z,
+            so the buffer is larger. σD is how far weekly demand usually sits
+            from the forecast. L is the lead time in weeks. Multiplying by
+            the square root of L spreads that weekly variation over the weeks
+            you wait for an order. The result is extra stock on top of the
+            forecast. It assumes a fixed lead time and random demand only.
+            With demand variability off and a flat forecast, σ is 0, so the
+            formula result is 0.
           </p>
         </section>
 
@@ -307,6 +313,10 @@
             <p id="own-callout" class="sim-callout" hidden></p>
             <div id="own-commentary" class="own-commentary"></div>
             <div class="sim-metrics" id="own-metrics"></div>
+            <p class="sim-note">
+              Annual gross profit counts only units actually sold. Demand
+              that could not be filled in a stockout is left out.
+            </p>
             <figure class="sim-figure">
               <svg id="own-chart" class="sim-chart" role="img" aria-label="Ending stock, safety stock, and zero"></svg>
               <figcaption>
@@ -318,6 +328,12 @@
                 <p class="sim-meta">One year only. Monte Carlo does not draw this chart.</p>
               </figcaption>
             </figure>
+            <p class="sim-help">
+              SOH means stock on hand, the units in stock. Beginning SOH is
+              the stock at the start of the week. Ending SOH is the stock
+              after this week's supply and demand. Ending below zero is a
+              stockout.
+            </p>
             <details class="sim-details">
               <summary>Weekly table</summary>
               <div class="sim-table-wrap sim-scroll--weeks">
@@ -359,7 +375,9 @@
             <p class="sim-note">
               Out-of-stock weeks, customer service, inventory turns, and
               average working capital show the median and the P10–P90 band.
-              Annual gross profit shows the median only.
+              Annual gross profit (units sold) shows the median only. It
+              counts only units actually sold. Demand that could not be
+              filled in a stockout is left out.
             </p>
             <details class="sim-details">
               <summary>Per-run results</summary>
@@ -373,7 +391,7 @@
                       <th scope="col">Customer service</th>
                       <th scope="col">Inventory turns</th>
                       <th scope="col">Average working capital</th>
-                      <th scope="col">Annual gross profit</th>
+                      <th scope="col">Annual gross profit (units sold)</th>
                       <th scope="col">Safety stock</th>
                     </tr>
                   </thead>
@@ -387,6 +405,10 @@
               recommendation, or advice for your business.
             </p>
           </div>
+          <p class="sim-help">
+            P10–P90 is the likely range. In 8 out of 10 simulated years, the
+            result falls inside it.
+          </p>
         </section>
 
         <section class="card" id="own-summary">
@@ -407,16 +429,19 @@
                   <th scope="col">Customer service level</th>
                   <th scope="col">Inventory turns</th>
                   <th scope="col">Average working capital</th>
-                  <th scope="col">Annual gross profit</th>
+                  <th scope="col">Annual gross profit (units sold)</th>
                 </tr>
               </thead>
               <tbody id="own-summary-body"></tbody>
             </table>
           </div>
           <p class="sim-help">
-            In Monte Carlo, the table shows medians. The total adds those
-            medians. It is not the median of one combined year. Out-of-stock
-            weeks, customer service, and turns are not added across SKUs.
+            In Monte Carlo, the table shows medians. P10–P90 is the likely
+            range: in 8 out of 10 simulated years, the result falls inside
+            it. The total adds those medians. It is not the median of one
+            combined year. Out-of-stock weeks, customer service, and turns
+            are not added across SKUs. Annual gross profit counts only units
+            actually sold.
           </p>
         </section>
       </div>

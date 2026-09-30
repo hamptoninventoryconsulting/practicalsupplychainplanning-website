@@ -513,7 +513,7 @@
     host.appendChild(metricCard("Customer service level", formatPercent(metrics.csl)));
     host.appendChild(metricCard("Inventory turns", formatTurns(metrics.inventoryTurns)));
     host.appendChild(metricCard("Average working capital", formatMoney(metrics.averageWc)));
-    host.appendChild(metricCard("Annual gross profit", formatMoney(metrics.annualGp)));
+    host.appendChild(metricCard("Annual gross profit (units sold)", formatMoney(metrics.annualGp)));
     renderChart(result.weeks);
     renderWeeks(result.weeks);
   }
@@ -536,7 +536,7 @@
     card.appendChild(metricCard("Customer service level", formatBand(summary.csl, formatPercent)));
     card.appendChild(metricCard("Inventory turns", formatBand(summary.inventoryTurns, formatTurns)));
     card.appendChild(metricCard("Average working capital", formatBand(summary.averageWc, formatMoney)));
-    card.appendChild(metricCard("Annual gross profit", "Median " + formatMoney(summary.annualGp.median)));
+    card.appendChild(metricCard("Annual gross profit (units sold)", "Median " + formatMoney(summary.annualGp.median)));
     var callout = $("own-mc-callout");
     if (row.commentary.callout) {
       callout.hidden = false;
@@ -630,8 +630,8 @@
     wrap.hidden = false;
     $("own-summary-caption").textContent =
       mode === "monte-carlo"
-        ? "Illustrative estimate. Monte Carlo rows show medians and P10–P90. The total adds the median working capital and the median gross profit."
-        : "Illustrative estimate. One row per SKU. The total adds working capital and gross profit only.";
+        ? "Illustrative estimate. Monte Carlo rows show medians and P10–P90. The total adds the median working capital and the median gross profit on units sold."
+        : "Illustrative estimate. One row per SKU. The total adds working capital and gross profit on units sold.";
     var body = $("own-summary-body");
     body.innerHTML = "";
     var keys = ["oosWeeks", "csl", "inventoryTurns", "averageWc", "annualGp"];
