@@ -1167,14 +1167,14 @@ main {
 
 .site-footer__copy {
   margin: 0;
-  color: var(--color-text-muted);
+  color: #6b7280;
   font-size: 0.9375rem;
 }
 
 .site-footer__credit {
   flex-basis: 100%;
   margin: 0;
-  color: var(--color-text-muted);
+  color: #6b7280;
   font-size: 0.875rem;
 }
 
