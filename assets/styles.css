@@ -110,6 +110,10 @@ a:hover {
   color: var(--color-text);
 }
 
+.support-email {
+  overflow-wrap: anywhere;
+}
+
 main {
   max-width: var(--max-width);
   margin: 0 auto;

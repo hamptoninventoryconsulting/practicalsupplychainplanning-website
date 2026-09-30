@@ -492,6 +492,33 @@ def verify_welcome(errors: list[str]) -> None:
         fail("/welcome/ download must say it is coming soon", errors)
     if "Getting your data ready" not in text:
         fail("/welcome/ is missing the Getting your data ready section", errors)
+    if re.search(r"14[\s-]days", text, re.I):
+        fail(
+            "/welcome/ must not state the refund window; that belongs on /refunds/ "
+            "when the policy is published",
+            errors,
+        )
+    if "Refund details are on our" not in text or 'href="/refunds/"' not in text:
+        fail("/welcome/ must point to the /refunds/ page without restating the policy", errors)
+    stylesheet = (ROOT / "assets" / "styles.css").read_text(encoding="utf-8")
+    if not re.search(
+        r"\.support-email\s*\{[^}]*overflow-wrap:\s*anywhere",
+        stylesheet,
+    ):
+        fail("assets/styles.css must set overflow-wrap: anywhere on .support-email", errors)
+    for relative in ("welcome/index.html",) + tuple(
+        path for path, _loc in PLACEHOLDER_PAGES
+    ):
+        page = (SITE / relative).read_text(encoding="utf-8")
+        for match in re.finditer(
+            r"<(\w+)\b([^>]*)>[^<]*support@practicalsupplychainplanning\.com[^<]*</\1>",
+            page,
+        ):
+            if "support-email" not in match.group(2):
+                fail(
+                    f"{relative} shows the support email without the support-email class",
+                    errors,
+                )
     guides = export_guides()
     unpublished = [guide for guide in guides if not guide["href"]]
     if text.count("Guide coming soon.") != len(unpublished):
