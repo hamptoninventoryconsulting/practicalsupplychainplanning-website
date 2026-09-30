@@ -11,11 +11,11 @@
  */
 module.exports = {
   environment: "sandbox",
-  clientToken: "test_REPLACE_ME",
+  clientToken: "test_3dd1fd98b3c32496b6e8788b014",
   successUrl: "https://practicalsupplychainplanning.com/welcome/",
   campaigns: {
     default: {
-      priceId: "pri_REPLACE_ME",
+      priceId: "pri_01m3dtrhg3n7ydgnrvm7kvwgvz",
     },
   },
 };
