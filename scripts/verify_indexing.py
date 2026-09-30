@@ -47,12 +47,17 @@ CORE_PAGES = (
     "/about/",
     "/blog/",
     "/learn/safety-stock-simulator/",
+    "/learn/safety-stock-simulator/own-data/",
 )
 
 CANONICAL_PAGES = (
     ("about/index.html", f"{SITE_ORIGIN}/about/"),
     ("blog/index.html", f"{SITE_ORIGIN}/blog/"),
     ("learn/safety-stock-simulator/index.html", f"{SITE_ORIGIN}/learn/safety-stock-simulator/"),
+    (
+        "learn/safety-stock-simulator/own-data/index.html",
+        f"{SITE_ORIGIN}/learn/safety-stock-simulator/own-data/",
+    ),
 )
 
 LEGACY_PATHS = (

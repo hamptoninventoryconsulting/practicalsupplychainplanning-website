@@ -1,0 +1,447 @@
+---json
+{
+  "layout": "layouts/simulator.njk",
+  "title": "Own-data Safety Stock Simulator — Practical Supply Chain Planning",
+  "description": "An illustrative teaching simulation for up to 10 SKUs, using your forecast, stock, and prices. It runs in the browser and stores nothing.",
+  "canonical": "https://practicalsupplychainplanning.com/learn/safety-stock-simulator/own-data/",
+  "nav": "learn",
+  "permalink": "/learn/safety-stock-simulator/own-data/",
+  "scripts": [
+    "/assets/own-data-engine.js?v=2",
+    "/assets/own-data-simulator.js?v=2"
+  ]
+}
+---
+<h1 class="page-title">Own-data Safety Stock Simulator</h1>
+      <p class="tagline">
+        Illustrative estimates for up to 10 SKUs. One average weekly forecast,
+        your stock, and your prices.
+      </p>
+
+      <div class="sim-app" id="own-app">
+        <div id="own-errors" class="sim-error" hidden></div>
+
+        <section class="card">
+          <h2 class="card__title">Illustrative estimate</h2>
+          <p class="sim-badge">Illustrative estimate</p>
+          <div class="content">
+            <p>
+              These numbers are an illustrative estimate from a teaching
+              simulation of the scenario you ran. They are not a forecast, a
+              recommendation, or advice for your business.
+            </p>
+            <p>The estimate uses three assumptions:</p>
+            <ul>
+              <li>A single average weekly forecast stands in for the whole year.</li>
+              <li>Demand, lead time, and delivery quantity move inside fixed variability bands.</li>
+              <li>The reorder rule places an order only when calculated stock is strictly below safety stock.</li>
+            </ul>
+            <p>
+              The calculation runs in this browser. SKU names, forecasts, stock,
+              and prices are not stored and are not sent to a server. After you
+              edit, the page address holds those numbers after the #, in a
+              #d= fragment. That part of the address stays on your device.
+              Anyone with the link can read the numbers.
+            </p>
+            <p>
+              Stock Planner is a separate Windows app that plans stock by weeks
+              of cover. It does not calculate safety stock. This page is not a
+              cut-down version of that app.
+            </p>
+            <p>
+              The teaching example, with its fixed prices, is still at the
+              <a href="/learn/safety-stock-simulator/">safety stock simulator</a>.
+            </p>
+          </div>
+          <label class="sim-check" for="sim-explanations">
+            <input id="sim-explanations" type="checkbox" />
+            Show explanations
+          </label>
+        </section>
+
+        <section class="card" id="own-mode-band">
+          <h2 class="card__title">Mode</h2>
+          <div class="sim-mode-choices" role="group" aria-label="One year or Monte Carlo">
+            <button type="button" id="own-mode-year" class="sim-scenario sim-scenario--selected" aria-pressed="true">
+              <span class="sim-scenario__name">One year</span>
+              <span class="sim-scenario__summary">One 52-week year, with the weekly table and chart.</span>
+            </button>
+            <button type="button" id="own-mode-mc" class="sim-scenario" aria-pressed="false">
+              <span class="sim-scenario__name">Monte Carlo</span>
+              <span class="sim-scenario__summary">Fifty years under the same settings. Summary only, no chart.</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="card" id="own-skus">
+          <h2 class="card__title">SKUs</h2>
+          <p class="sim-meta" id="own-count"></p>
+          <div id="own-sku-bar" class="sim-sku-bar" role="group" aria-label="SKU selector"></div>
+          <div class="sim-actions">
+            <button type="button" id="own-add" class="sim-button sim-button--secondary">Add SKU</button>
+            <button type="button" id="own-remove" class="sim-button sim-button--secondary">Remove SKU</button>
+            <button type="button" id="own-copy" class="sim-button sim-button--secondary">Copy link</button>
+          </div>
+          <p id="own-copy-note" class="sim-meta" hidden></p>
+          <div id="own-warnings" class="sim-warning" hidden></div>
+          <p class="sim-help">
+            Up to 10 SKUs. Delivery quantity and the demand shock are shared.
+            Everything else belongs to the SKU selected above. Switching SKU
+            does not start a run.
+          </p>
+
+          <h3 class="card__title">Paste from a spreadsheet</h3>
+          <p>
+            Paste tab- or comma-separated rows, including a header. Preview the
+            rows before they replace the SKUs on this page.
+            <a href="/assets/simulator-example.csv" download>Download an example</a>.
+          </p>
+          <label class="sim-field" for="own-paste">
+            Spreadsheet rows
+            <textarea id="own-paste" class="own-paste" autocomplete="off" spellcheck="false" placeholder="sku, weekly_forecast, lead_time_weeks, current_stock, unit_cost, selling_price"></textarea>
+          </label>
+          <div class="sim-actions">
+            <button type="button" id="own-preview-btn" class="sim-button sim-button--secondary">Preview paste</button>
+          </div>
+          <div id="own-preview" hidden>
+            <div class="sim-table-wrap">
+              <table class="sim-table">
+                <caption>Preview. Nothing is applied until you use these SKUs.</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Row</th>
+                    <th scope="col">SKU</th>
+                    <th scope="col">Weekly forecast</th>
+                    <th scope="col">Lead time</th>
+                    <th scope="col">Current stock</th>
+                    <th scope="col">Unit cost</th>
+                    <th scope="col">Selling price</th>
+                    <th scope="col">Check</th>
+                  </tr>
+                </thead>
+                <tbody id="own-preview-body"></tbody>
+              </table>
+            </div>
+            <p id="own-preview-note" class="sim-meta"></p>
+            <button type="button" id="own-apply" class="sim-button" disabled>Use these SKUs</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">This SKU</h2>
+          <div class="sim-grid">
+            <label class="sim-field" for="own-label">
+              SKU name
+              <input id="own-label" type="text" maxlength="40" autocomplete="off" value="SKU 1" />
+            </label>
+            <label class="sim-field" for="own-forecast">
+              Weekly forecast
+              <input id="own-forecast" type="number" min="1" step="1" value="40" autocomplete="off" />
+            </label>
+            <label class="sim-field" for="own-stock">
+              Current stock
+              <input id="own-stock" type="number" min="0" step="1" value="80" autocomplete="off" />
+            </label>
+            <label class="sim-field" for="own-cost">
+              Unit cost
+              <input id="own-cost" type="number" min="0" step="0.01" value="70" autocomplete="off" />
+            </label>
+            <label class="sim-field" for="own-price">
+              Selling price
+              <input id="own-price" type="number" min="0" step="0.01" value="100" autocomplete="off" />
+            </label>
+          </div>
+          <p class="sim-help">
+            The weekly forecast is one average for all 52 weeks. It replaces the
+            Level, Seasonal, and Rising patterns on the teaching page. Current
+            stock is the opening balance. It is not calculated from the forecast.
+          </p>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Replenishment</h2>
+          <div class="sim-grid">
+            <label class="sim-field" for="own-lot-mode">
+              Lot size
+              <select id="own-lot-mode">
+                <option value="fixed">Fixed quantity</option>
+                <option value="weeks">Weeks cover</option>
+              </select>
+            </label>
+            <label class="sim-field" id="own-lot-qty-field" for="own-lot-qty">
+              Fixed lot quantity
+              <input id="own-lot-qty" type="number" min="1" step="1" value="40" autocomplete="off" />
+            </label>
+            <label class="sim-field" id="own-lot-weeks-field" for="own-lot-weeks" hidden>
+              Weeks of cover
+              <select id="own-lot-weeks">
+                <option value="2">2</option>
+                <option value="4" selected>4</option>
+                <option value="6">6</option>
+                <option value="10">10</option>
+              </select>
+            </label>
+            <label class="sim-field" for="own-ss-mode">
+              Safety stock
+              <select id="own-ss-mode">
+                <option value="fixed">Fixed quantity</option>
+                <option value="formula">Formula</option>
+                <option value="weeks">Weeks cover</option>
+              </select>
+            </label>
+            <label class="sim-field" id="own-ss-qty-field" for="own-ss-qty">
+              Fixed safety stock
+              <input id="own-ss-qty" type="number" min="0" step="1" value="20" autocomplete="off" />
+            </label>
+            <label class="sim-field" id="own-ss-weeks-field" for="own-ss-weeks" hidden>
+              Safety stock cover
+              <select id="own-ss-weeks">
+                <option value="2">2</option>
+                <option value="4" selected>4</option>
+                <option value="6">6</option>
+                <option value="10">10</option>
+              </select>
+            </label>
+            <label class="sim-field" id="own-service-field" for="own-service" hidden>
+              Formula service level
+              <select id="own-service">
+                <option value="90">90%</option>
+                <option value="95" selected>95%</option>
+                <option value="98">98%</option>
+                <option value="99">99%</option>
+              </select>
+            </label>
+            <label class="sim-field" for="own-lead">
+              Lead time (weeks)
+              <input id="own-lead" type="number" min="1" max="26" step="1" value="5" autocomplete="off" />
+            </label>
+          </div>
+          <p id="own-formula-note" class="sim-meta" hidden></p>
+          <p class="sim-help">
+            An order is placed only when calculated stock on hand is strictly
+            below safety stock. Calculated stock is beginning stock, plus
+            supply already due this week, minus this week's forecast. One lot
+            is ordered, or two if that lot would not lift calculated stock
+            above zero. The base lead time is any whole number of weeks from
+            1 to 26. It is not added onto the arrival week. It scales the
+            formula and the extra delay when lead-time variability is on.
+          </p>
+          <p class="sim-help">
+            Formula safety stock is round(Z × σD × √L). Z comes from the
+            service level you pick: a higher service level uses a bigger Z,
+            so the buffer is larger. σD is how far weekly demand usually sits
+            from the forecast. L is the lead time in weeks. Multiplying by
+            the square root of L spreads that weekly variation over the weeks
+            you wait for an order. The result is extra stock on top of the
+            forecast. It assumes a fixed lead time and random demand only.
+            With demand variability off and a flat forecast, σ is 0, so the
+            formula result is 0.
+          </p>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Variability</h2>
+          <div class="sim-grid">
+            <label class="sim-field" for="own-demand-var">
+              Demand for this SKU
+              <select id="own-demand-var">
+                <option value="off">Off</option>
+                <option value="small">Small</option>
+                <option value="medium" selected>Medium</option>
+                <option value="large">Large</option>
+              </select>
+            </label>
+            <label class="sim-field" for="own-lt-var">
+              Lead time for this SKU
+              <select id="own-lt-var">
+                <option value="off" selected>Off</option>
+                <option value="small">Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
+              </select>
+            </label>
+            <label class="sim-field" for="own-delivery-var">
+              Delivery quantity for every SKU
+              <select id="own-delivery-var">
+                <option value="off" selected>Off</option>
+                <option value="small">Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
+              </select>
+            </label>
+          </div>
+          <p class="sim-help">
+            Demand variability defaults to Medium. Off uses the weekly forecast
+            as the demand. Small, Medium, and Large are the same teaching bands
+            as the other simulator. Delivery quantity is shared by every SKU.
+          </p>
+        </section>
+
+        <section class="card" id="own-demand-shock">
+          <h2 class="card__title">Demand shock</h2>
+          <div class="sim-shock-run">
+            <div class="sim-shock-run__choice">
+              <label class="sim-check" for="own-shock">
+                <input id="own-shock" type="checkbox" />
+                Double three demand weeks
+              </label>
+              <p id="own-shock-weeks" class="sim-meta"></p>
+            </div>
+            <div class="sim-actions">
+              <button id="own-run-year" class="sim-button" type="button">Run year</button>
+              <button id="own-run-mc" class="sim-button" type="button" hidden>Run Monte Carlo</button>
+            </div>
+          </div>
+          <p id="own-linked" class="sim-meta" hidden>Press Run to see this scenario.</p>
+          <p id="own-progress" class="sim-meta" hidden></p>
+          <p class="sim-help">
+            The shock is shared by every SKU. When it is on, three weeks from
+            week 21 to week 52 are doubled. Those weeks are chosen from the
+            sample number, at least four weeks apart.
+          </p>
+        </section>
+
+        <section class="card sim-panel" id="own-year-panel" aria-live="polite">
+          <h2 class="card__title">One simulated year</h2>
+          <p id="own-year-empty" class="sim-meta">
+            No year yet. Press Run year at the end of the settings.
+          </p>
+          <div id="own-year-output" hidden>
+            <p class="sim-badge">Illustrative estimate</p>
+            <p id="own-status" class="sim-meta"></p>
+            <dl class="sim-params" id="own-snapshot"></dl>
+            <p id="own-callout" class="sim-callout" hidden></p>
+            <div id="own-commentary" class="own-commentary"></div>
+            <div class="sim-metrics" id="own-metrics"></div>
+            <p class="sim-note">
+              Annual gross profit counts only units actually sold. Demand
+              that could not be filled in a stockout is left out.
+            </p>
+            <figure class="sim-figure">
+              <svg id="own-chart" class="sim-chart" role="img" aria-label="Ending stock, safety stock, and zero"></svg>
+              <figcaption>
+                <ul class="sim-legend">
+                  <li class="sim-legend__ending">Ending SOH</li>
+                  <li class="sim-legend__ss">Safety stock</li>
+                  <li class="sim-legend__zero">Zero</li>
+                </ul>
+                <p class="sim-meta">One year only. Monte Carlo does not draw this chart.</p>
+              </figcaption>
+            </figure>
+            <p class="sim-help">
+              SOH means stock on hand, the units in stock. Beginning SOH is
+              the stock at the start of the week. Ending SOH is the stock
+              after this week's supply and demand. Ending below zero is a
+              stockout.
+            </p>
+            <details class="sim-details">
+              <summary>Weekly table</summary>
+              <div class="sim-table-wrap sim-scroll--weeks">
+                <table class="sim-table">
+                  <caption>Weekly results for this SKU. Illustrative estimate.</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Week</th>
+                      <th scope="col">Base demand</th>
+                      <th scope="col">Simulated demand</th>
+                      <th scope="col">Beginning SOH</th>
+                      <th scope="col">Planned supply</th>
+                      <th scope="col">Ending SOH</th>
+                      <th scope="col">Safety stock</th>
+                    </tr>
+                  </thead>
+                  <tbody id="own-weeks-body"></tbody>
+                </table>
+              </div>
+            </details>
+            <p class="sim-note">
+              These numbers are an illustrative estimate from a teaching
+              simulation of the scenario you ran. They are not a forecast, a
+              recommendation, or advice for your business.
+            </p>
+          </div>
+        </section>
+
+        <section class="card sim-panel" id="own-mc-panel" hidden>
+          <h2 class="card__title">Monte Carlo</h2>
+          <p id="own-mc-empty" class="sim-meta">
+            No Monte Carlo batch yet. Press Run Monte Carlo at the end of the settings.
+          </p>
+          <div id="own-mc-results" hidden>
+            <p class="sim-badge">Illustrative estimate</p>
+            <p id="own-mc-callout" class="sim-callout" hidden></p>
+            <div id="own-mc-commentary" class="own-commentary"></div>
+            <div class="sim-metrics" id="own-mc-card"></div>
+            <p class="sim-note">
+              Out-of-stock weeks, customer service, inventory turns, and
+              average working capital show the median and the P10–P90 band.
+              Annual gross profit (units sold) shows the median only. It
+              counts only units actually sold. Demand that could not be
+              filled in a stockout is left out.
+            </p>
+            <details class="sim-details">
+              <summary>Per-run results</summary>
+              <div class="sim-table-wrap sim-scroll--weeks">
+                <table class="sim-table">
+                  <caption>One row per retained year. There is no Monte Carlo chart.</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Run</th>
+                      <th scope="col">OOS weeks</th>
+                      <th scope="col">Customer service</th>
+                      <th scope="col">Inventory turns</th>
+                      <th scope="col">Average working capital</th>
+                      <th scope="col">Annual gross profit (units sold)</th>
+                      <th scope="col">Safety stock</th>
+                    </tr>
+                  </thead>
+                  <tbody id="own-mc-body"></tbody>
+                </table>
+              </div>
+            </details>
+            <p class="sim-note">
+              These numbers are an illustrative estimate from a teaching
+              simulation of the scenario you ran. They are not a forecast, a
+              recommendation, or advice for your business.
+            </p>
+          </div>
+          <p class="sim-help">
+            P10–P90 is the likely range. In 8 out of 10 simulated years, the
+            result falls inside it.
+          </p>
+        </section>
+
+        <section class="card" id="own-summary">
+          <h2 class="card__title">All SKUs</h2>
+          <p class="sim-badge">Illustrative estimate</p>
+          <p id="own-summary-empty" class="sim-meta">
+            No results yet. Press Run year or Run Monte Carlo.
+          </p>
+          <div id="own-summary-wrap" class="sim-table-wrap" hidden>
+            <table class="sim-table">
+              <caption id="own-summary-caption">
+                One row per SKU. The total adds working capital and gross profit only.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">SKU</th>
+                  <th scope="col">Out-of-stock weeks</th>
+                  <th scope="col">Customer service level</th>
+                  <th scope="col">Inventory turns</th>
+                  <th scope="col">Average working capital</th>
+                  <th scope="col">Annual gross profit (units sold)</th>
+                </tr>
+              </thead>
+              <tbody id="own-summary-body"></tbody>
+            </table>
+          </div>
+          <p class="sim-help">
+            In Monte Carlo, the table shows medians. P10–P90 is the likely
+            range: in 8 out of 10 simulated years, the result falls inside
+            it. The total adds those medians. It is not the median of one
+            combined year. Out-of-stock weeks, customer service, and turns
+            are not added across SKUs. Annual gross profit counts only units
+            actually sold.
+          </p>
+        </section>
+      </div>

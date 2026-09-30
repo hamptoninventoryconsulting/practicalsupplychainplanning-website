@@ -1055,6 +1055,86 @@ main {
   margin: 0;
 }
 
+.sim-badge {
+  display: inline-block;
+  margin: 0 0 0.75rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.sim-sku-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.sim-sku-bar .sim-scenario {
+  width: auto;
+}
+
+.sim-warning {
+  margin: 0.75rem 0 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-border);
+  border-left: 3px solid #b45309;
+  border-radius: var(--card-radius);
+  background: #fffbeb;
+}
+
+.sim-warning[hidden] {
+  display: none !important;
+}
+
+.sim-warning ul,
+.sim-error ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.own-paste {
+  width: 100%;
+  min-height: 8rem;
+  margin-top: 0.35rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--card-radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 500;
+}
+
+.own-commentary p {
+  margin: 0 0 0.75rem;
+}
+
+.sim-total th,
+.sim-total td {
+  font-weight: 700;
+  border-top: 2px solid var(--color-border);
+}
+
+.sim-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+#own-year-output[hidden],
+#own-mc-results[hidden],
+#own-preview[hidden],
+#own-summary-wrap[hidden],
+#own-mc-panel[hidden],
+#own-year-panel[hidden] {
+  display: none !important;
+}
+
 @media (max-width: 800px) {
   .sim-scenarios,
   .sim-params,
