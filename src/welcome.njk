@@ -1,0 +1,106 @@
+---json
+{
+  "layout": "layouts/sales.njk",
+  "title": "Welcome to Practical Stock Planner",
+  "description": "Your payment went through. Your Practical Stock Planner licence key is on its way by email from support@practicalsupplychainplanning.com.",
+  "canonical": "https://practicalsupplychainplanning.com/welcome/",
+  "robots": "noindex",
+  "stripQuery": true,
+  "eleventyExcludeFromCollections": true,
+  "permalink": "/welcome/"
+}
+---
+<h1 class="page-title">Thanks, you&rsquo;re in!</h1>
+<p class="sales-lead">
+  Your payment went through. Welcome to Practical Stock Planner.
+</p>
+
+<section class="sales-panel" aria-labelledby="licence-heading">
+  <h2 id="licence-heading">Check your email for your licence key</h2>
+  <p>
+    Within a few minutes you&rsquo;ll get an email from
+    <strong>
+      <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a>
+    </strong>
+    with the subject <em>&ldquo;Your Practical Stock Planner licence key&rdquo;</em>.
+    It contains your licence key and download link.
+  </p>
+  <p>
+    <strong>Can&rsquo;t see it?</strong>
+    Check your <strong>spam, junk or promotions</strong> folder and search for
+    <em class="support-email">support@practicalsupplychainplanning.com</em>.
+    Still nothing after 15 minutes? Email us with the address you used at checkout
+    and your Paddle order number, and we&rsquo;ll resend your key.
+  </p>
+  <p>
+    You&rsquo;ll also get a receipt from <strong>Paddle</strong>. Keep it: it has
+    the links to manage or cancel your subscription.
+  </p>
+  <div class="sales-download">
+    <button type="button" class="sales-button" disabled>
+      Download Practical Stock Planner for Windows
+    </button>
+    <p class="sales-placeholder">
+      <strong>Coming soon.</strong>
+      Placeholder: the Windows app is not available to download yet, so this
+      button stays disabled and does not link anywhere.
+    </p>
+  </div>
+</section>
+
+<section class="sales-panel" aria-labelledby="steps-heading">
+  <h2 id="steps-heading">Get started in 3 steps</h2>
+  <ol class="sales-steps">
+    <li>
+      <strong>Install and activate.</strong>
+      Run the installer, open Practical Stock Planner and enter your licence key.
+      You&rsquo;ll need an internet connection for this step.
+    </li>
+    <li>
+      <strong>Fill in the templates.</strong>
+      Download the Excel templates from the app, then export your products, stock,
+      orders and purchase orders from Shopify or Xero and paste them in. Follow
+      our step-by-step guide.
+      <span class="sales-placeholder">
+        <strong>Placeholder.</strong>
+        The step-by-step guide link is not published yet.
+      </span>
+    </li>
+    <li>
+      <strong>Run your plan.</strong>
+      Load the files, check your default lead time and safety stock settings, and
+      see week by week what to order and when.
+    </li>
+  </ol>
+</section>
+
+<section class="sales-panel" aria-labelledby="data-heading">
+  <h2 id="data-heading">Getting your data ready</h2>
+  <ul class="sales-guides">
+    {%- for guide in exportGuides %}
+    {%- set guideHref = guide.href | trim %}
+    <li>
+      {%- if guideHref %}
+      <a href="{{ guideHref }}">{{ guide.label }}</a>
+      {%- else %}
+      <span class="sales-placeholder">
+        <strong>Guide coming soon.</strong>
+        {{ guide.label }}
+      </span>
+      {%- endif %}
+    </li>
+    {%- endfor %}
+  </ul>
+</section>
+
+<section class="sales-panel" aria-labelledby="help-heading">
+  <h2 id="help-heading">Need a hand?</h2>
+  <p>
+    Email
+    <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a>
+    and Daniel will help you get set up.
+  </p>
+  <p>
+    Refund details are on our <a href="/refunds/">refunds page</a>.
+  </p>
+</section>
