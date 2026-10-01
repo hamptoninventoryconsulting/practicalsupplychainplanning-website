@@ -563,8 +563,8 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
   "week",
 ].sort());
 
-assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=2"/);
-assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=4"/);
+assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=3"/);
+assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=5"/);
 assert.match(page, /sessionStorage/);
 assert.match(page, /Teaching tool only/);
 assert.match(page, /not suitable for real\s+operational use/i);
@@ -661,6 +661,12 @@ assert.doesNotMatch(ui, /railway|streamlit|sqlite/i);
 const bootStart = ui.indexOf("function boot()");
 const bootBody = ui.slice(bootStart, ui.indexOf("if (document.readyState"));
 assert.doesNotMatch(bootBody, /runMonteCarloClicked|runYearClicked|engine\.runMonteCarlo|engine\.runYear/);
+assert.match(bootBody, /applyReopenLink\(\)/);
+const reopenBody = ui.slice(ui.indexOf("function applyReopenLink()"), bootStart);
+assert.match(reopenBody, /if \(!link\.present\)/);
+assert.ok(reopenBody.indexOf("if (link.run)") < reopenBody.indexOf("engine.runYear"));
+assert.doesNotMatch(ui, /fetch\(|RESEND|api\.resend/);
+assert.doesNotMatch(page, /type="email"/i);
 const changeBody = ui.slice(
   ui.indexOf("function onControlsChanged()"),
   ui.indexOf("function setMode(")
@@ -721,7 +727,8 @@ assert.match(scrollBody, /prefers-reduced-motion: reduce/);
 assert.match(scrollBody, /behavior: reduceMotion \? "instant" : "smooth"/);
 assert.match(scrollBody, /tabindex", "-1"/);
 assert.match(scrollBody, /preventScroll: true/);
-assert.doesNotMatch(bootBody, /scrollResultsIntoView/);
+assert.match(bootBody, /if \(reopened\.panel\) \{[^}]*scrollResultsIntoView\(reopened\.panel\);/);
+assert.strictEqual((bootBody.match(/scrollResultsIntoView/g) || []).length, 1);
 assert.doesNotMatch(changeBody, /scrollResultsIntoView/);
 assert.doesNotMatch(modeBody, /scrollResultsIntoView/);
 
@@ -790,5 +797,64 @@ const about = fs.readFileSync(path.join(SITE, "about", "index.html"), "utf8");
 assert.match(about, /free educational/);
 assert.match(about, /\/learn\/safety-stock-simulator\//);
 assert.match(about, />Learn<\/a>/);
+
+const reopenControls = {
+  patternId: "seasonal",
+  lotMode: "weeks",
+  lotQty: 15,
+  lotWeeks: 6,
+  ssMode: "formula",
+  ssQty: 3,
+  ssWeeks: 2,
+  serviceLevel: 98,
+  leadTimeWeeks: 10,
+  demandVariability: "medium",
+  leadTimeVariability: "small",
+  deliveryVariability: "large",
+  shock: true,
+};
+const reopenQuery = engine.encodeReopenQuery(reopenControls, 4242, "monte-carlo", true);
+assert.ok(!reopenQuery.includes("utm_"), reopenQuery);
+assert.ok(!reopenQuery.includes("@"), reopenQuery);
+const reopenBack = engine.decodeReopenQuery(
+  "https://practicalsupplychainplanning.com/learn/safety-stock-simulator/?" +
+    reopenQuery +
+    "&utm_source=results-email&utm_medium=email&utm_campaign=sim-results-v1"
+);
+assert.strictEqual(reopenBack.present, true);
+assert.strictEqual(reopenBack.run, true);
+assert.strictEqual(reopenBack.mode, "monte-carlo");
+assert.strictEqual(reopenBack.seed, 4242);
+assert.deepStrictEqual(reopenBack.controls, engine.normalizeControls(reopenControls));
+const reopenYear = engine.runYear(reopenControls, 4242);
+const reopenAgain = engine.runYear(reopenBack.controls, reopenBack.seed);
+assert.strictEqual(reopenYear.weeks[51].endingSoh, reopenAgain.weeks[51].endingSoh);
+assert.strictEqual(reopenYear.metrics.oosWeeks, reopenAgain.metrics.oosWeeks);
+assert.strictEqual(reopenYear.safetyStock, reopenAgain.safetyStock);
+const yearLink = engine.decodeReopenQuery(
+  "?" + engine.encodeReopenQuery(reopenControls, 4242, "year", true)
+);
+assert.strictEqual(yearLink.mode, "year");
+assert.strictEqual(yearLink.run, true);
+assert.deepStrictEqual(yearLink.controls, engine.normalizeControls(reopenControls));
+const quietLink = engine.decodeReopenQuery("");
+assert.strictEqual(quietLink.present, false);
+assert.strictEqual(quietLink.run, false);
+const utmOnly = engine.decodeReopenQuery(
+  "?utm_source=results-email&utm_medium=email&utm_campaign=sim-results-v1"
+);
+assert.strictEqual(utmOnly.present, false);
+assert.strictEqual(utmOnly.run, false);
+const runOnly = engine.decodeReopenQuery("?run=1");
+assert.strictEqual(runOnly.present, true);
+assert.strictEqual(runOnly.run, true);
+assert.strictEqual(runOnly.mode, "year");
+assert.strictEqual(runOnly.seed, 20260923);
+assert.deepStrictEqual(runOnly.controls, engine.normalizeControls(engine.DEFAULT_CONTROLS));
+const held = engine.decodeReopenQuery("?" + engine.encodeReopenQuery(engine.DEFAULT_CONTROLS, 7, "year", false));
+assert.strictEqual(held.run, false);
+assert.strictEqual(held.present, true);
+assert.strictEqual(held.seed, 7);
+assert.strictEqual(held.controls.shock, false);
 
 console.log("Safety stock simulator checks OK.");

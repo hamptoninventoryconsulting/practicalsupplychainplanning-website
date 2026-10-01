@@ -694,6 +694,33 @@ assert.deepStrictEqual(again.scenario, decoded.scenario);
 const resolved = own.resolveRunSeed(decoded.scenario, true, 5);
 assert.strictEqual(resolved.seed, 99);
 assert.strictEqual(own.resolveRunSeed(decoded.scenario, false, 5).seed, 5);
+const reopenSearch = own.encodeReopenSearch("monte-carlo", true);
+assert.strictEqual(reopenSearch, "?m=mc&run=1");
+assert.ok(!reopenSearch.includes("#"), "mode stays out of the fragment");
+const reopenHref =
+  "https://practicalsupplychainplanning.com/learn/safety-stock-simulator/own-data/" +
+  reopenSearch +
+  "&utm_source=results-email&utm_medium=email&utm_campaign=sim-results-v1" +
+  encoded.fragment;
+const reopenQuery = own.decodeReopenSearch(reopenHref);
+assert.strictEqual(reopenQuery.specified, true);
+assert.strictEqual(reopenQuery.mode, "monte-carlo");
+assert.strictEqual(reopenQuery.run, true);
+const reopenScenario = own.decodeScenario(reopenHref.slice(reopenHref.indexOf("#")));
+assert.strictEqual(reopenScenario.ok, true, reopenScenario.errors.join(" "));
+assert.strictEqual(reopenScenario.scenario.seed, 99);
+assert.deepStrictEqual(reopenScenario.scenario.skus, decoded.scenario.skus);
+assert.deepStrictEqual(reopenScenario.scenario, decoded.scenario);
+const copiedSearch = own.decodeReopenSearch("");
+assert.strictEqual(copiedSearch.specified, false);
+assert.strictEqual(copiedSearch.run, false);
+const utmOnly = own.decodeReopenSearch("?utm_source=share&utm_campaign=sim-results-v1");
+assert.strictEqual(utmOnly.specified, false);
+assert.strictEqual(utmOnly.run, false);
+const yearWait = own.decodeReopenSearch(own.encodeReopenSearch("year", false));
+assert.strictEqual(yearWait.mode, "year");
+assert.strictEqual(yearWait.run, false);
+assert.strictEqual(yearWait.specified, true);
 
 const badLink = own.decodeScenario("#d=not-valid");
 assert.strictEqual(badLink.ok, false);
@@ -788,14 +815,18 @@ assert.match(flat, /SOH means stock on hand/);
 assert.match(flat, /In 8 out of 10 simulated years, the result falls inside it/);
 assert.match(flat, /Z comes from the service level you pick/);
 assert.match(flat, /square root of L spreads that weekly variation/);
-assert.match(page, /src="\/assets\/own-data-engine\.js\?v=2"/);
-assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=2"/);
+assert.match(page, /src="\/assets\/own-data-engine\.js\?v=3"/);
+assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=3"/);
 assert.ok(page.indexOf("own-data-engine.js") < page.indexOf("own-data-simulator.js"));
 assert.doesNotMatch(page, /type="email"/i);
 assert.doesNotMatch(page, /sessionStorage/);
 assert.doesNotMatch(ui, /sessionStorage|localStorage|fetch\(|XMLHttpRequest|sendBeacon/);
 assert.match(ui, /setTimeout\(step, 0\)/);
 assert.match(ui, /encodeScenario/);
+assert.match(ui, /decodeReopenSearch/);
+const ownBoot = ui.slice(ui.indexOf("function boot()"), ui.indexOf("if (document.readyState"));
+assert.match(ownBoot, /if \(reopen\.run && state\.errors\.length === 0\)/);
+assert.doesNotMatch(ownBoot, /fetch\(|RESEND|api\.resend/);
 assert.match(ui, /prefers-reduced-motion: reduce/);
 assertClean(page, "page");
 assertClean(ui, "ui");

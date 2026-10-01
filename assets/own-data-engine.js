@@ -1600,6 +1600,41 @@
     return { seed: seed, holdSeed: false };
   }
 
+  function reopenParams(input) {
+    var text = String(input == null ? "" : input);
+    var hash = text.indexOf("#");
+    if (hash !== -1) {
+      text = text.slice(0, hash);
+    }
+    var query = text.indexOf("?");
+    if (query !== -1) {
+      text = text.slice(query + 1);
+    }
+    if (text.charAt(0) === "?") {
+      text = text.slice(1);
+    }
+    return new URLSearchParams(text);
+  }
+
+  function encodeReopenSearch(mode, run) {
+    var code = mode === "monte-carlo" || mode === "mc" ? "mc" : "year";
+    var query = "m=" + code;
+    if (run) {
+      query += "&run=1";
+    }
+    return "?" + query;
+  }
+
+  function decodeReopenSearch(input) {
+    var params = reopenParams(input);
+    var mode = params.get("m") === "mc" ? "monte-carlo" : "year";
+    return {
+      specified: params.has("m") || params.has("run"),
+      mode: mode,
+      run: params.get("run") === "1",
+    };
+  }
+
   function freshSeed() {
     var seed = (Date.now() ^ (Math.floor(Math.random() * 0x100000000))) >>> 0;
     return seed || 1;
@@ -1641,6 +1676,8 @@
     commentaryFromYear: commentaryFromYear,
     commentaryFromMonteCarlo: commentaryFromMonteCarlo,
     resolveRunSeed: resolveRunSeed,
+    encodeReopenSearch: encodeReopenSearch,
+    decodeReopenSearch: decodeReopenSearch,
     freshSeed: freshSeed,
     CONTRADICTIONS: [
       [1, 2],

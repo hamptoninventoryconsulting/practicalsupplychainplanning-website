@@ -2,6 +2,8 @@
  * Own-data simulator page.
  * Runs in the browser. Does not keep a saved copy and does not send SKU data.
  * Inputs for a copied link live in the URL fragment (#d=), which is not sent to the server.
+ * The query string may carry m (year or mc) and run=1. Those are not SKU data.
+ * A copied link without run=1 still waits for Run.
  */
 (function () {
   "use strict";
@@ -944,10 +946,17 @@
       return;
     }
     restoreFromHash();
+    var reopen = engine.decodeReopenSearch(window.location.search);
+    if (reopen.specified) {
+      state.mode = reopen.mode;
+    }
     bind();
     fillDom();
     renderProblems();
     renderResults();
+    if (reopen.run && state.errors.length === 0) {
+      runActive();
+    }
   }
 
   if (document.readyState === "loading") {

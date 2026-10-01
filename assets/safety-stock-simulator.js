@@ -1,6 +1,8 @@
 /**
  * Learn page controller for the 52-week safety stock simulator.
- * Visit state is kept in sessionStorage only.
+ * A normal visit is kept in sessionStorage for this tab.
+ * A reopen link in the query string (m, s, settings, and run=1) overrides that visit.
+ * Nothing on this page is sent to a server.
  */
 (function () {
   "use strict";
@@ -711,17 +713,52 @@
     scrollResultsIntoView("sim-mc-panel");
   }
 
+  function applyReopenLink() {
+    var link = engine.decodeReopenQuery(window.location.search);
+    if (!link.present) {
+      return { applied: false, panel: "" };
+    }
+    state.controls = link.controls;
+    state.seed = link.seed;
+    state.mode = link.mode;
+    state.explanations = false;
+    state.result = null;
+    state.monteCarlo = null;
+    state.yearStatus = "empty";
+    state.mcStatus = "empty";
+    var panel = "";
+    if (link.run) {
+      if (link.mode === "monte-carlo") {
+        var batch = engine.runMonteCarlo(state.controls, state.seed, { runs: 50 });
+        state.monteCarlo = compactMonteCarlo(batch);
+        state.mcStatus = "ready";
+        panel = "sim-mc-panel";
+      } else {
+        state.result = engine.runYear(state.controls, state.seed);
+        state.yearStatus = "ready";
+        panel = "sim-year-panel";
+      }
+    }
+    return { applied: true, panel: panel };
+  }
+
   function boot() {
     if (!engine) {
       fail("The simulator script did not load.");
       return;
     }
-    restoreSession();
+    var reopened = applyReopenLink();
+    if (!reopened.applied) {
+      restoreSession();
+    }
     writeControlsToDom();
     bindControls();
     renderSingle();
     renderMonteCarlo();
     writeSession();
+    if (reopened.panel) {
+      scrollResultsIntoView(reopened.panel);
+    }
   }
 
   if (document.readyState === "loading") {
