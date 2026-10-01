@@ -86,6 +86,7 @@
   }
 
   if (teamToggle && userField) {
+    teamToggle.setAttribute("data-wired", "true");
     teamToggle.addEventListener("click", function () {
       var expanded = teamToggle.getAttribute("aria-expanded") === "true";
       var next = !expanded;
