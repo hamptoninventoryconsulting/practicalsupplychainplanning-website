@@ -326,13 +326,15 @@ export function buildMessage(submission, token) {
   summary.settings.forEach(function (row) {
     blocks.push(row.label + ": " + row.value);
   });
-  blocks.push("");
-  blocks.push("Key numbers");
-  metricLines(summary.metrics).forEach(function (line) {
-    blocks.push(line);
-  });
-  if (summary.metrics.turnsNote) {
-    blocks.push(summary.metrics.turnsNote);
+  if (summary.kind !== "own-data") {
+    blocks.push("");
+    blocks.push("Key numbers");
+    metricLines(summary.metrics).forEach(function (line) {
+      blocks.push(line);
+    });
+    if (summary.metrics.turnsNote) {
+      blocks.push(summary.metrics.turnsNote);
+    }
   }
   if (summary.kind === "own-data") {
     blocks.push("");
@@ -424,13 +426,17 @@ function htmlMessage(submission, token, unsub) {
   summary.settings.forEach(function (row) {
     parts.push("<li>" + escapeHtml(row.label) + ": " + escapeHtml(row.value) + "</li>");
   });
-  parts.push("</ul><p><strong>Key numbers</strong></p><ul>");
-  metricLines(summary.metrics).forEach(function (line) {
-    parts.push("<li>" + escapeHtml(line) + "</li>");
-  });
-  parts.push("</ul>");
-  if (summary.metrics.turnsNote) {
-    parts.push("<p>" + escapeHtml(summary.metrics.turnsNote) + "</p>");
+  if (summary.kind !== "own-data") {
+    parts.push("</ul><p><strong>Key numbers</strong></p><ul>");
+    metricLines(summary.metrics).forEach(function (line) {
+      parts.push("<li>" + escapeHtml(line) + "</li>");
+    });
+    parts.push("</ul>");
+    if (summary.metrics.turnsNote) {
+      parts.push("<p>" + escapeHtml(summary.metrics.turnsNote) + "</p>");
+    }
+  } else {
+    parts.push("</ul>");
   }
   if (summary.kind === "own-data") {
     parts.push("<p><strong>Per SKU</strong></p>");

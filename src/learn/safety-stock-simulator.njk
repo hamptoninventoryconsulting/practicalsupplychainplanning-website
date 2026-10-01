@@ -7,8 +7,9 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/",
   "scripts": [
-    "/assets/safety-stock-engine.js?v=3",
-    "/assets/safety-stock-simulator.js?v=5"
+    "/assets/safety-stock-engine.js?v=4",
+    "/assets/sim-results-form.js?v=1",
+    "/assets/safety-stock-simulator.js?v=6"
   ]
 }
 ---
@@ -28,11 +29,17 @@
               This is a teaching tool only. It is not suitable for real
               operational use, and it is not a planner or an optimiser.
             </p>
-            <p>
+            <p id="sim-storage-off">
               The simulation runs in this browser. Nothing is stored on a
               server. Temporary choices stay in
               <code>sessionStorage</code> for this tab and clear when the tab
               closes.
+            </p>
+            <p id="sim-storage-on" hidden>
+              The simulation runs in this browser. Nothing is stored on a
+              server unless you ask to email yourself the results. That email
+              contains a summary of the scenario you ran. We do not keep that
+              summary.
             </p>
             <p>
               To use your own forecast, stock, and prices, open the separate
@@ -422,4 +429,7 @@
             fifty years. A single-run chart is not repeated here.
           </p>
         </section>
+
+        {% set resultsId = "sim-results-email" %}
+        {% include "partials/sim-results-form.njk" %}
       </div>
