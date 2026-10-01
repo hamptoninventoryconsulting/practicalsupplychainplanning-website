@@ -77,25 +77,3 @@
 {{ paddle | dump | safe }}
 </script>
 <script src="/assets/buy-checkout.js?v={{ site.cssVersion }}"></script>
-<script>
-  (function () {
-    var toggle = document.getElementById("team-toggle");
-    var field = document.getElementById("user-count-field");
-    if (!toggle || !field || toggle.getAttribute("data-wired") === "true") {
-      return;
-    }
-    toggle.addEventListener("click", function () {
-      var expanded = toggle.getAttribute("aria-expanded") === "true";
-      var next = !expanded;
-      toggle.setAttribute("aria-expanded", next ? "true" : "false");
-      field.hidden = !next;
-      var input = document.getElementById("user-count");
-      if (!next && input) {
-        input.value = "1";
-      }
-      if (next && input) {
-        input.focus();
-      }
-    });
-  })();
-</script>
