@@ -13,25 +13,6 @@
   var MIN_USERS = 1;
   var MAX_USERS = 10;
 
-  /**
-   * Display quote for a number of users.
-   *
-   * quantity is the Paddle seat count (one user, one computer). A later
-   * multi-user Paddle discount replaces `text` only and leaves quantity
-   * equal to the user count, for example:
-   * "3 users: US$99/month (save US$48)"
-   */
-  function quoteForUsers(users) {
-    var count = users;
-    var unitUsd = 49;
-    var listMonthlyUsd = unitUsd * count;
-    var people = count === 1 ? "1 user" : count + " users";
-    return {
-      quantity: count,
-      text: people + " × US$" + unitUsd + "/month = US$" + listMonthlyUsd + "/month",
-    };
-  }
-
   function parseUserCount(raw) {
     var text = String(raw == null ? "" : raw).trim();
     if (!/^[0-9]+$/.test(text)) {
@@ -44,25 +25,22 @@
     return count;
   }
 
-  function renderQuote(count) {
-    var quote = quoteForUsers(count);
-    if (totalEl && totalEl.textContent !== quote.text) {
-      totalEl.textContent = quote.text;
-    }
-    if (standaloneNote) {
-      standaloneNote.hidden = quote.quantity < 2;
-    }
-    if (userCount && licenceNote) {
-      userCount.setAttribute(
-        "aria-describedby",
-        quote.quantity < 2 ? "licence-note" : "licence-note standalone-note"
-      );
-    }
-    return quote;
+  function teamOpen() {
+    return !!(teamToggle && teamToggle.getAttribute("aria-expanded") === "true");
   }
 
-  function readUserCount(commit) {
-    var count = userCount ? parseUserCount(userCount.value) : MIN_USERS;
+  /**
+   * Seat count for this checkout. Closing "Buying for a team?" selects 1.
+   * Blank, fractional, and out-of-range entries also select 1.
+   */
+  function getSelectedUsers(commit) {
+    if (!teamOpen()) {
+      if (userCount) {
+        userCount.value = String(MIN_USERS);
+      }
+      return MIN_USERS;
+    }
+    var count = userCount ? parseUserCount(userCount.value) : null;
     if (count === null) {
       count = MIN_USERS;
     }
@@ -72,8 +50,39 @@
     return count;
   }
 
-  function refreshQuote(commit) {
-    return renderQuote(readUserCount(commit));
+  /**
+   * Display copy only. The count comes from getSelectedUsers().
+   * A later Paddle discount can return different copy for that same count,
+   * for example "3 users: US$99/month (save US$48)".
+   */
+  function quoteForUsers(users) {
+    var unitUsd = 49;
+    var listMonthlyUsd = unitUsd * users;
+    var people = users === 1 ? "1 user" : users + " users";
+    return (
+      people +
+      " × US$" +
+      unitUsd +
+      "/month = US$" +
+      listMonthlyUsd +
+      "/month (plus any applicable tax)"
+    );
+  }
+
+  function showQuote(users) {
+    var text = quoteForUsers(users);
+    if (totalEl && totalEl.textContent !== text) {
+      totalEl.textContent = text;
+    }
+    if (standaloneNote) {
+      standaloneNote.hidden = users < 2;
+    }
+    if (userCount && licenceNote) {
+      userCount.setAttribute(
+        "aria-describedby",
+        users < 2 ? "licence-note" : "licence-note standalone-note"
+      );
+    }
   }
 
   if (teamToggle && userField) {
@@ -82,6 +91,7 @@
       var next = !expanded;
       teamToggle.setAttribute("aria-expanded", next ? "true" : "false");
       userField.hidden = !next;
+      showQuote(getSelectedUsers(true));
       if (next && userCount) {
         userCount.focus();
       }
@@ -94,18 +104,16 @@
       if (raw.trim() === "") {
         return;
       }
-      var count = parseUserCount(raw);
-      if (count === null) {
-        refreshQuote(true);
-        return;
+      if (parseUserCount(raw) === null) {
+        userCount.value = String(MIN_USERS);
       }
-      renderQuote(count);
+      showQuote(getSelectedUsers(false));
     });
     userCount.addEventListener("change", function () {
-      refreshQuote(true);
+      showQuote(getSelectedUsers(true));
     });
     userCount.addEventListener("blur", function () {
-      refreshQuote(true);
+      showQuote(getSelectedUsers(true));
     });
     userCount.addEventListener(
       "wheel",
@@ -116,7 +124,7 @@
     );
   }
 
-  refreshQuote(false);
+  showQuote(getSelectedUsers(false));
 
   if (!button || !note || !loadNote || !configEl) {
     return;
@@ -199,7 +207,8 @@
   button.disabled = false;
   button.addEventListener("click", function () {
     try {
-      var quote = refreshQuote(true);
+      var quantity = getSelectedUsers(true);
+      showQuote(quantity);
       var customData = { campaign: campaignId };
       params.forEach(function (value, key) {
         if (key.indexOf("utm_") === 0 && value) {
@@ -207,7 +216,7 @@
         }
       });
       var openArgs = {
-        items: [{ priceId: campaign.priceId, quantity: quote.quantity }],
+        items: [{ priceId: campaign.priceId, quantity: quantity }],
         customData: customData,
         settings: {
           successUrl: config.successUrl,

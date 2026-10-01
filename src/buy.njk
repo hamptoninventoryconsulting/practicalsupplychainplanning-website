@@ -1,7 +1,7 @@
 ---json
 {
   "layout": "layouts/sales.njk",
-  "title": "Practical Stock Planner, US$49/month, tax included",
+  "title": "Practical Stock Planner, US$49/month",
   "description": "Checkout for Practical Stock Planner.",
   "canonical": "https://practicalsupplychainplanning.com/buy/",
   "robots": "noindex",
@@ -10,15 +10,16 @@
 }
 ---
 {%- set checkoutConfigured = ("REPLACE_ME" not in paddle.clientToken) and (paddle.campaigns.default.priceId) and ("REPLACE_ME" not in paddle.campaigns.default.priceId) -%}
-<h1 class="page-title">Practical Stock Planner, US$49/month, tax included</h1>
+<h1 class="page-title">Practical Stock Planner, US$49/month</h1>
 <p class="sales-licence" id="licence-note">
   Each user is a separate licence at US$49/month. One user is one computer.
+  Tax, where applicable, is calculated at checkout.
 </p>
 <div class="sales-summary" role="status" aria-live="polite" aria-atomic="true">
   <p class="sales-standalone" id="standalone-note" hidden>
     Each user gets their own stand-alone copy. Data and plans stay on that computer and aren't shared between users.
   </p>
-  <p class="sales-quote" id="checkout-total">1 user × US$49/month = US$49/month</p>
+  <p class="sales-quote" id="checkout-total">1 user × US$49/month = US$49/month (plus any applicable tax)</p>
 </div>
 <div class="sales-users">
   <button

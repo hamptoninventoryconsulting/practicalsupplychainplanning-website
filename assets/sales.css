@@ -124,7 +124,8 @@
 .sales-licence {
   margin: 0.35rem 0 0.75rem;
   max-width: 36rem;
-  color: var(--color-text-muted);
+  /* #6b7280 is 4.47:1 on #f5f6f7. #4b5563 clears WCAG AA for this size. */
+  color: #4b5563;
   font-size: 0.9375rem;
   line-height: 1.5;
 }

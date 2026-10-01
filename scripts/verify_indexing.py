@@ -626,14 +626,18 @@ def verify_buy(errors: list[str]) -> None:
         fail("/buy/ must include a noindex robots meta tag", errors)
     if "site-nav" in text:
         fail("/buy/ must not include the site menu", errors)
-    if "Practical Stock Planner, US$49/month, tax included" not in text:
+    if "Practical Stock Planner, US$49/month" not in text:
         fail("/buy/ is missing the checkout heading", errors)
+    if "tax included" in text.lower():
+        fail("/buy/ must not say tax is included; Paddle calculates tax at checkout", errors)
+    if "Tax, where applicable, is calculated at checkout" not in text:
+        fail("/buy/ must say tax, where applicable, is calculated at checkout", errors)
     if "Each user is a separate licence at US$49/month" not in text:
         fail("/buy/ must say each user is a separate licence at US$49/month", errors)
     if "One user is one computer" not in text:
         fail("/buy/ must say one user is one computer", errors)
-    if "1 user × US$49/month = US$49/month" not in text:
-        fail("/buy/ must show an always-visible one-user total", errors)
+    if "1 user × US$49/month = US$49/month (plus any applicable tax)" not in text:
+        fail("/buy/ must show an always-visible one-user total, plus any applicable tax", errors)
     if "Each user gets their own stand-alone copy" not in text:
         fail("/buy/ must explain that each user's copy is stand-alone", errors)
     if "aren't shared between users" not in text:
@@ -683,12 +687,14 @@ def verify_buy(errors: list[str]) -> None:
             "slice(0, 100)",
             "showLoadFailed",
             "discountId",
+            "getSelectedUsers",
             "quoteForUsers",
-            "quantity: quote.quantity",
+            "quantity: quantity",
+            "(plus any applicable tax)",
             "3 users: US$99/month (save US$48)",
             'getElementById("user-count")',
             'getElementById("standalone-note")',
-            "quote.quantity < 2",
+            "users < 2",
             "MAX_USERS = 10",
             "MIN_USERS = 1",
             'params.get("c")',
@@ -698,6 +704,11 @@ def verify_buy(errors: list[str]) -> None:
         if re.search(r"quantity:\s*1\b", script):
             fail(
                 "assets/buy-checkout.js must pass the selected user count to Paddle, not quantity: 1",
+                errors,
+            )
+        if "quote.quantity" in script:
+            fail(
+                "quoteForUsers() is display-only; the Paddle quantity must come from getSelectedUsers()",
                 errors,
             )
         if re.search(r"""\.get\(\s*['\"](?:priceId|discountId|price|discount)['\"]\s*\)""", script):
