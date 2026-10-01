@@ -612,6 +612,24 @@ def paddle_placeholders_block_checkout() -> bool:
     return "REPLACE_ME" in token_value or "REPLACE_ME" in price_value or not token_value or not price_value
 
 
+def verify_sales_script_cache(errors: list[str]) -> None:
+    """Sales-page scripts share site.cssVersion, same as the stylesheets."""
+    version = css_version()
+    for relative in ("buy/index.html", "welcome/index.html"):
+        path = SITE / relative
+        if not path.is_file():
+            continue
+        page = path.read_text(encoding="utf-8")
+        for src in re.findall(r'<script\b[^>]*\bsrc="([^"]+)"', page, re.I):
+            if not src.startswith("/assets/"):
+                continue
+            if f"?v={version}" not in src:
+                fail(
+                    f"{relative} must cache-bust {src} with ?v={version}",
+                    errors,
+                )
+
+
 def verify_buy(errors: list[str]) -> None:
     if not BUY_PATH.is_file():
         fail("/buy/ was not built; expected _site/buy/index.html", errors)
@@ -661,6 +679,15 @@ def verify_buy(errors: list[str]) -> None:
         fail("/buy/ must have exactly one h1", errors)
     if PADDLE_JS_URL not in text:
         fail("/buy/ must load Paddle.js v2 from cdn.paddle.com", errors)
+    checkout_src = f"/assets/buy-checkout.js?v={css_version()}"
+    if checkout_src not in text:
+        fail(
+            f"/buy/ must cache-bust the checkout script as {checkout_src}",
+            errors,
+        )
+    if re.search(r'src="/assets/buy-checkout\.js"', text):
+        fail("/buy/ must not load buy-checkout.js without a ?v= cache-bust", errors)
+    verify_sales_script_cache(errors)
     if "https://practicalsupplychainplanning.com/welcome/" not in text:
         fail("/buy/ must set the Paddle success URL to /welcome/", errors)
     if "<noscript" not in text.lower() or "mailto:support@practicalsupplychainplanning.com" not in text:

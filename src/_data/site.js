@@ -1,8 +1,7 @@
 module.exports = {
   name: "Practical Supply Chain Planning",
   url: "https://practicalsupplychainplanning.com",
-  // Shared by styles.css and sales.css. Bumped so the /buy/ user-count
-  // styles, including the darker licence line, are not served from cache.
+  // Bump whenever any versioned CSS or JS asset changes.
   cssVersion: "26",
   logoVersion: "2",
   copyrightYear: 2026,
