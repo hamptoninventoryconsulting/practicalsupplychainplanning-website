@@ -2,7 +2,8 @@
  * Learn page controller for the 52-week safety stock simulator.
  * A normal visit is kept in sessionStorage for this tab.
  * A reopen link in the query string (m, s, settings, and run=1) overrides that visit.
- * Nothing on this page is sent to a server.
+ * A results email link is built from the current controls, not from the address bar.
+ * The email panel stays off until data-results-email is "on".
  */
 (function () {
   "use strict";
@@ -17,10 +18,34 @@
     monteCarlo: null,
     yearStatus: "empty",
     mcStatus: "empty",
+    emailSnapshot: null,
   };
 
   function $(id) {
     return document.getElementById(id);
+  }
+
+  var resultsForm = { show: function () {}, hide: function () {} };
+
+  function syncStorageCopy() {
+    var showNew =
+      window.SimResultsForm &&
+      window.SimResultsForm.panelAvailable($("sim-results-email"));
+    var off = $("sim-storage-off");
+    var on = $("sim-storage-on");
+    if (!off || !on) {
+      return;
+    }
+    off.hidden = Boolean(showNew);
+    on.hidden = !showNew;
+  }
+
+  function rememberEmail(mode, batch) {
+    if (mode === "monte-carlo") {
+      state.emailSnapshot = engine.resultsSummary(state.controls, batch.parentSeed, "monte-carlo", null, batch);
+      return;
+    }
+    state.emailSnapshot = engine.resultsSummary(state.controls, state.seed, "year", state.result, null);
   }
 
   function fail(message) {
@@ -329,13 +354,28 @@
     svg.setAttribute("viewBox", "0 0 " + width + " " + height);
     add("line", {
       class: "sim-chart__zero",
+      stroke: "#000",
+      "stroke-width": "1.5",
       x1: String(left),
       x2: String(width - right),
       y1: y(0).toFixed(2),
       y2: y(0).toFixed(2),
     });
-    add("path", { class: "sim-chart__ss", d: seriesPath(function (week) { return week.safetyStock; }) });
-    add("path", { class: "sim-chart__ending", d: seriesPath(function (week) { return week.endingSoh; }) });
+    add("path", {
+      class: "sim-chart__ss",
+      fill: "none",
+      stroke: "#c2410c",
+      "stroke-width": "1.5",
+      "stroke-dasharray": "6 4",
+      d: seriesPath(function (week) { return week.safetyStock; }),
+    });
+    add("path", {
+      class: "sim-chart__ending",
+      fill: "none",
+      stroke: "#0e7490",
+      "stroke-width": "2",
+      d: seriesPath(function (week) { return week.endingSoh; }),
+    });
     [1, 13, 26, 39, 52].forEach(function (weekNo) {
       var label = add("text", {
         class: "sim-chart__label",
@@ -564,6 +604,8 @@
       state.monteCarlo = null;
       state.mcStatus = "stale";
     }
+    state.emailSnapshot = null;
+    resultsForm.hide();
   }
 
   function onControlsChanged() {
@@ -581,6 +623,11 @@
     }
     state.mode = mode;
     applyMode();
+    if (state.emailSnapshot && state.emailSnapshot.mode === state.mode) {
+      resultsForm.show();
+    } else {
+      resultsForm.hide();
+    }
     writeSession();
   }
 
@@ -688,8 +735,10 @@
     state.seed = freshSeed();
     state.result = engine.runYear(state.controls, state.seed);
     state.yearStatus = "ready";
+    rememberEmail("year");
     renderSingle();
     writeSession();
+    resultsForm.show();
     scrollResultsIntoView("sim-year-panel");
   }
 
@@ -706,10 +755,12 @@
       options.frozenSafetyStock = state.result.safetyStock;
     }
     var batch = engine.runMonteCarlo(state.controls, freshSeed(), options);
+    rememberEmail("monte-carlo", batch);
     state.monteCarlo = compactMonteCarlo(batch);
     state.mcStatus = "ready";
     renderMonteCarlo();
     writeSession();
+    resultsForm.show();
     scrollResultsIntoView("sim-mc-panel");
   }
 
@@ -730,12 +781,14 @@
     if (link.run) {
       if (link.mode === "monte-carlo") {
         var batch = engine.runMonteCarlo(state.controls, state.seed, { runs: 50 });
+        rememberEmail("monte-carlo", batch);
         state.monteCarlo = compactMonteCarlo(batch);
         state.mcStatus = "ready";
         panel = "sim-mc-panel";
       } else {
         state.result = engine.runYear(state.controls, state.seed);
         state.yearStatus = "ready";
+        rememberEmail("year");
         panel = "sim-year-panel";
       }
     }
@@ -755,6 +808,31 @@
     bindControls();
     renderSingle();
     renderMonteCarlo();
+    resultsForm = window.SimResultsForm.attach({
+      id: "sim-results-email",
+      formId: "safety-stock-simulator",
+      buildSummary: function () {
+        if (!state.emailSnapshot) {
+          return null;
+        }
+        var summary = JSON.parse(JSON.stringify(state.emailSnapshot));
+        if (summary.mode !== "year") {
+          summary.charts = [];
+          return summary;
+        }
+        return window.SimResultsForm.snapshotChart($("sim-chart")).then(function (png) {
+          if (!png) {
+            throw new Error("chart");
+          }
+          summary.charts = [{ title: "One year", pngBase64: png }];
+          return summary;
+        });
+      },
+    });
+    syncStorageCopy();
+    if (state.emailSnapshot) {
+      resultsForm.show();
+    }
     writeSession();
     if (reopened.panel) {
       scrollResultsIntoView(reopened.panel);

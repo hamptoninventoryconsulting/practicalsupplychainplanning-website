@@ -133,10 +133,11 @@
   }
 
   function clampInt(value, min, max, fallback) {
-    var n = roundHalfEven(Number(value));
-    if (!isFinite(n)) {
+    var parsed = Number(value);
+    if (!isFinite(parsed)) {
       return fallback;
     }
+    var n = roundHalfEven(parsed);
     if (n < min) {
       return min;
     }
@@ -910,6 +911,224 @@
     };
   }
 
+  var RESULTS_ORIGIN = "https://practicalsupplychainplanning.com";
+  var RESULTS_UTM = "utm_source=results-email&utm_medium=email&utm_campaign=sim-results-v1";
+
+  function levelLabel(value) {
+    if (value === "small") {
+      return "Small";
+    }
+    if (value === "medium") {
+      return "Medium";
+    }
+    if (value === "large") {
+      return "Large";
+    }
+    return "Off";
+  }
+
+  function settingsRows(controls) {
+    var normalized = normalizeControls(controls);
+    var lot =
+      normalized.lotMode === "weeks"
+        ? normalized.lotWeeks + " weeks of cover"
+        : normalized.lotQty + " units";
+    var safety;
+    if (normalized.ssMode === "formula") {
+      safety = "Formula, service level " + normalized.serviceLevel + "%";
+    } else if (normalized.ssMode === "weeks") {
+      safety = normalized.ssWeeks + " weeks of cover";
+    } else {
+      safety = normalized.ssQty + " units";
+    }
+    return [
+      { label: "Demand pattern", value: findPattern(normalized.patternId).name },
+      { label: "Lot size", value: lot },
+      { label: "Safety stock", value: safety },
+      { label: "Lead time", value: normalized.leadTimeWeeks + " weeks" },
+      { label: "Demand variability", value: levelLabel(normalized.demandVariability) },
+      { label: "Lead-time variability", value: levelLabel(normalized.leadTimeVariability) },
+      { label: "Delivery variability", value: levelLabel(normalized.deliveryVariability) },
+      { label: "Demand shock", value: normalized.shock ? "On" : "Off" },
+    ];
+  }
+
+  function shockHit(result) {
+    if (!result || !result.shockWeeks || !result.shockWeeks.length || !result.weeks) {
+      return false;
+    }
+    var earliest = result.shockWeeks[0];
+    for (var i = 1; i < result.shockWeeks.length; i += 1) {
+      if (result.shockWeeks[i] < earliest) {
+        earliest = result.shockWeeks[i];
+      }
+    }
+    for (var w = 0; w < result.weeks.length; w += 1) {
+      if (result.weeks[w].endingSoh < 0 && result.weeks[w].week >= earliest) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function commentaryLines(ctx) {
+    var rules = [];
+    var turns = ctx.inventoryTurns;
+    var oos = ctx.oosWeeks;
+    if (turns != null && isFinite(turns) && turns >= STRONG_TURNS && (ctx.csl < WEAK_CSL || oos >= HIGH_OOS)) {
+      rules.push("In the scenario you ran, high turns came with weak service: the stock looks busy because it is often missing.");
+    }
+    if (oos === 0 && ctx.safetyStock > 0) {
+      rules.push("In the scenario you ran, there were no stockouts. Try a lower safety stock to see where service starts to drop.");
+    }
+    if ((ctx.leadTimeVariability !== "off" || ctx.deliveryVariability !== "off") && oos > 0) {
+      rules.push(
+        ctx.safetyStock > 0
+          ? "In the scenario you ran, late or short deliveries showed up as stockouts even with safety stock in place."
+          : "In the scenario you ran, late or short deliveries showed up as stockouts."
+      );
+    }
+    if (ctx.shock && ctx.shockStockout) {
+      rules.push("In the scenario you ran, the doubled-demand weeks used up the buffer. Shocks are hard to plan for.");
+    }
+    if (ctx.ssMode === "formula" && (ctx.leadTimeVariability !== "off" || ctx.deliveryVariability !== "off" || ctx.shock)) {
+      var switched = [];
+      if (ctx.leadTimeVariability !== "off") {
+        switched.push("lead-time variability");
+      }
+      if (ctx.deliveryVariability !== "off") {
+        switched.push("short deliveries");
+      }
+      if (ctx.shock) {
+        switched.push("the demand shock");
+      }
+      rules.push(
+        "In the scenario you ran, safety stock used the textbook formula. That formula assumes a fixed lead time and random demand only, so it does not cover " +
+          switched.join(" or ") +
+          "."
+      );
+    }
+    if (ctx.lotMode === "weeks" && ctx.lotWeeks >= 6 && turns != null && isFinite(turns) && turns < 6) {
+      rules.push("In the scenario you ran, big lots raise average stock and working capital, which lowers turns.");
+    }
+    if (ctx.averageWc != null && isFinite(ctx.averageWc) && ctx.averageWc < 0) {
+      rules.push("In the scenario you ran, negative average stock means backorders outweighed stock on hand.");
+    }
+    if (ctx.mode === "monte-carlo" && ctx.oosSpread != null && ctx.oosSpread >= 4) {
+      rules.push("In the scenario you ran, the results vary a lot from year to year under the same settings.");
+    }
+    rules.push("In the scenario you ran, change one setting at a time to see what drives service and cash.");
+    return rules.slice(0, 3);
+  }
+
+  function yearContext(controls, result) {
+    return {
+      mode: "year",
+      demandVariability: controls.demandVariability,
+      leadTimeVariability: controls.leadTimeVariability,
+      deliveryVariability: controls.deliveryVariability,
+      shock: Boolean(controls.shock),
+      lotMode: controls.lotMode,
+      lotWeeks: controls.lotWeeks,
+      ssMode: controls.ssMode,
+      oosWeeks: result.metrics.oosWeeks,
+      csl: result.metrics.csl,
+      inventoryTurns: result.metrics.inventoryTurns,
+      averageWc: result.metrics.averageWc,
+      annualGp: result.metrics.annualGp,
+      safetyStock: result.safetyStock,
+      oosSpread: null,
+      shockStockout: shockHit(result),
+    };
+  }
+
+  function monteCarloContext(controls, batch) {
+    var summary = batch.summary;
+    var hits = 0;
+    for (var i = 0; i < batch.runs.length; i += 1) {
+      if (shockHit(batch.runs[i])) {
+        hits += 1;
+      }
+    }
+    var spread = null;
+    if (summary.oosWeeks && summary.oosWeeks.p90 != null && summary.oosWeeks.p10 != null) {
+      spread = summary.oosWeeks.p90 - summary.oosWeeks.p10;
+    }
+    return {
+      mode: "monte-carlo",
+      demandVariability: controls.demandVariability,
+      leadTimeVariability: controls.leadTimeVariability,
+      deliveryVariability: controls.deliveryVariability,
+      shock: Boolean(controls.shock),
+      lotMode: controls.lotMode,
+      lotWeeks: controls.lotWeeks,
+      ssMode: controls.ssMode,
+      oosWeeks: summary.oosWeeks.median,
+      csl: summary.csl.median,
+      inventoryTurns: summary.inventoryTurns.median,
+      averageWc: summary.averageWc.median,
+      annualGp: summary.annualGp.median,
+      safetyStock: batch.runs.length ? batch.runs[0].safetyStock : 0,
+      oosSpread: spread,
+      shockStockout: batch.runs.length > 0 && hits * 2 >= batch.runs.length,
+    };
+  }
+
+  function buildResultsUrl(controls, seed, mode) {
+    return (
+      RESULTS_ORIGIN +
+      "/learn/safety-stock-simulator/?" +
+      encodeReopenQuery(controls, seed, mode, true) +
+      "&" +
+      RESULTS_UTM
+    );
+  }
+
+  function bandFields(band) {
+    return { median: band.median, p10: band.p10, p90: band.p90 };
+  }
+
+  function resultsSummary(controls, seed, mode, yearResult, monteCarlo) {
+    var normalized = normalizeControls(controls);
+    var monte = mode === "monte-carlo" || mode === "mc";
+    var metrics;
+    var lines;
+    if (monte) {
+      var summary = monteCarlo.summary;
+      metrics = {
+        oosWeeks: bandFields(summary.oosWeeks),
+        csl: bandFields(summary.csl),
+        inventoryTurns: bandFields(summary.inventoryTurns),
+        averageWc: bandFields(summary.averageWc),
+        annualGp: { median: summary.annualGp.median },
+        safetyStock: monteCarlo.runs[0].safetyStock,
+      };
+      if (summary.inventoryTurns.observations < summary.runs) {
+        metrics.turnsNote = "Years with no on-hand stock are left out of the turns band only.";
+      }
+      lines = commentaryLines(monteCarloContext(normalized, monteCarlo));
+    } else {
+      metrics = {
+        oosWeeks: yearResult.metrics.oosWeeks,
+        csl: yearResult.metrics.csl,
+        inventoryTurns: yearResult.metrics.inventoryTurns,
+        averageWc: yearResult.metrics.averageWc,
+        annualGp: yearResult.metrics.annualGp,
+        safetyStock: yearResult.safetyStock,
+      };
+      lines = commentaryLines(yearContext(normalized, yearResult));
+    }
+    return {
+      kind: "teaching",
+      mode: monte ? "monte-carlo" : "year",
+      seed: (Number(seed) >>> 0) || 1,
+      settings: settingsRows(normalized),
+      metrics: metrics,
+      commentary: lines,
+      reopenUrl: buildResultsUrl(normalized, seed, monte ? "monte-carlo" : "year"),
+    };
+  }
+
   return {
     STORAGE_KEY: STORAGE_KEY,
     HORIZON: HORIZON,
@@ -948,5 +1167,8 @@
     runMonteCarlo: runMonteCarlo,
     encodeReopenQuery: encodeReopenQuery,
     decodeReopenQuery: decodeReopenQuery,
+    buildResultsUrl: buildResultsUrl,
+    resultsSummary: resultsSummary,
+    commentaryLines: commentaryLines,
   };
 });

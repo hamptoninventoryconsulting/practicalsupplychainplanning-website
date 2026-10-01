@@ -815,10 +815,14 @@ assert.match(flat, /SOH means stock on hand/);
 assert.match(flat, /In 8 out of 10 simulated years, the result falls inside it/);
 assert.match(flat, /Z comes from the service level you pick/);
 assert.match(flat, /square root of L spreads that weekly variation/);
-assert.match(page, /src="\/assets\/own-data-engine\.js\?v=3"/);
-assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=3"/);
+assert.match(page, /src="\/assets\/own-data-engine\.js\?v=4"/);
+assert.match(page, /src="\/assets\/sim-results-form\.js\?v=1"/);
+assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=4"/);
 assert.ok(page.indexOf("own-data-engine.js") < page.indexOf("own-data-simulator.js"));
-assert.doesNotMatch(page, /type="email"/i);
+assert.match(page, /id="own-results-email" hidden/);
+assert.match(page, /data-results-email="off"/);
+assert.match(page, /id="own-storage-on" hidden/);
+assert.match(page, /We do not keep the summary or the link/);
 assert.doesNotMatch(page, /sessionStorage/);
 assert.doesNotMatch(ui, /sessionStorage|localStorage|fetch\(|XMLHttpRequest|sendBeacon/);
 assert.match(ui, /setTimeout\(step, 0\)/);
@@ -827,6 +831,32 @@ assert.match(ui, /decodeReopenSearch/);
 const ownBoot = ui.slice(ui.indexOf("function boot()"), ui.indexOf("if (document.readyState"));
 assert.match(ownBoot, /if \(reopen\.run && state\.errors\.length === 0\)/);
 assert.doesNotMatch(ownBoot, /fetch\(|RESEND|api\.resend/);
+const copyBody = ui.slice(ui.indexOf("function copyLink()"), ui.indexOf("function onEdit("));
+assert.match(copyBody, /buildResultsUrl/);
+assert.doesNotMatch(copyBody, /location\.href|location\.search/);
+const share = own.buildResultsUrl({
+  origin: "https://practicalsupplychainplanning.com",
+  pathname: "/learn/safety-stock-simulator/own-data/",
+  scenario: own.defaultScenario(),
+  mode: "year",
+  run: false,
+  utm: false,
+});
+assert.ok(share.includes("?m=year"));
+assert.ok(!share.includes("run=1"));
+assert.ok(share.includes("#d="));
+const emailed = own.buildResultsUrl({
+  origin: "https://practicalsupplychainplanning.com",
+  pathname: "/learn/safety-stock-simulator/own-data/",
+  scenario: own.defaultScenario(),
+  mode: "monte-carlo",
+  run: true,
+  utm: true,
+});
+assert.ok(emailed.includes("m=mc"));
+assert.ok(emailed.includes("run=1"));
+assert.ok(emailed.includes("utm_campaign=sim-results-v1"));
+assert.ok(emailed.indexOf("#d=") > emailed.indexOf("run=1"));
 assert.match(ui, /prefers-reduced-motion: reduce/);
 assertClean(page, "page");
 assertClean(ui, "ui");

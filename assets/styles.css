@@ -1130,6 +1130,26 @@ main {
   cursor: not-allowed;
 }
 
+.sim-hp {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.sim-results__status:empty {
+  display: none;
+}
+
+.sim-results[hidden],
+.sim-results__sent[hidden],
+#sim-storage-on[hidden],
+#own-storage-on[hidden] {
+  display: none !important;
+}
+
 #own-year-output[hidden],
 #own-mc-results[hidden],
 #own-preview[hidden],
