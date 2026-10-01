@@ -779,6 +779,45 @@ def verify_buy(errors: list[str]) -> None:
             fail(f"/buy/ is linked from {relative}", errors)
 
 
+SELLER_PHRASE = "Practical Supply Chain Planning (Daniel Hampton, sole trader)"
+ABN_PLACEHOLDER = "[ABN]"
+
+
+def site_abn() -> str:
+    text = SITE_DATA_PATH.read_text(encoding="utf-8")
+    match = re.search(r"abn:\s*(['\"])(?P<value>.*?)\1", text)
+    if not match:
+        raise ValueError("src/_data/site.js is missing abn")
+    return match.group("value")
+
+
+def verify_seller(errors: list[str]) -> None:
+    abn = site_abn()
+    html_files = sorted(SITE.rglob("*.html"))
+    if not html_files:
+        fail("no HTML files were built into _site", errors)
+        return
+    for path in html_files:
+        page = path.read_text(encoding="utf-8")
+        relative = path.relative_to(SITE).as_posix()
+        if ABN_PLACEHOLDER in page:
+            fail(f"{relative} renders the ABN placeholder", errors)
+        if abn == ABN_PLACEHOLDER and re.search(r"\bABN\b", page):
+            fail(f"{relative} shows an ABN before one is set", errors)
+    for relative in (
+        "terms/index.html",
+        "refunds/index.html",
+        "privacy/index.html",
+        "contact/index.html",
+        "about/index.html",
+        "buy/index.html",
+        "welcome/index.html",
+    ):
+        page = (SITE / relative).read_text(encoding="utf-8")
+        if SELLER_PHRASE not in page:
+            fail(f"{relative} is missing the seller name", errors)
+
+
 def verify_simulator_assets(errors: list[str]) -> None:
     scenarios = SITE / "learn" / "safety-stock-simulator" / "scenarios.json"
     if not scenarios.is_file():
@@ -807,6 +846,7 @@ def main() -> int:
         verify_stylesheet_version(errors, version)
         verify_listing_fix(errors, posts)
         verify_simulator_assets(errors)
+        verify_seller(errors)
     except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
         fail(str(exc), errors)
     if errors:

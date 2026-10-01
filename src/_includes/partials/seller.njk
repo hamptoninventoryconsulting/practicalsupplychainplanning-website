@@ -1,0 +1,2 @@
+{#- Seller line. site.abn stays "[ABN]" until the number is known; that marker is not rendered. -#}
+{{ site.name }} (Daniel Hampton, sole trader){%- if site.abn and site.abn != "[ABN]" %}, ABN {{ site.abn }}{% endif -%}
