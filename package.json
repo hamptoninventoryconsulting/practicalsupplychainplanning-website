@@ -5,7 +5,7 @@
   "scripts": {
     "build": "eleventy",
     "dev": "eleventy --serve",
-    "check": "npm run build && python3 scripts/verify_indexing.py && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/verify_redirects.mjs && node scripts/verify_simulator.js && node scripts/verify_own_data.js"
+    "check": "npm run build && python3 scripts/verify_indexing.py && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/verify_redirects.mjs && node scripts/verify_simulator.js && node scripts/verify_own_data.js && node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/verify_sim_results.mjs"
   },
   "engines": {
     "node": ">=18"
