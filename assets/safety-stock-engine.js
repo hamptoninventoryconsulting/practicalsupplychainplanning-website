@@ -725,6 +725,155 @@
     };
   }
 
+  var REOPEN_QUERY_KEYS = [
+    "m",
+    "s",
+    "p",
+    "lm",
+    "lq",
+    "lw",
+    "sm",
+    "sq",
+    "sw",
+    "sl",
+    "lt",
+    "dv",
+    "lv",
+    "qv",
+    "sh",
+    "run",
+  ];
+
+  function reopenParams(input) {
+    var text = String(input == null ? "" : input);
+    var hash = text.indexOf("#");
+    if (hash !== -1) {
+      text = text.slice(0, hash);
+    }
+    var query = text.indexOf("?");
+    if (query !== -1) {
+      text = text.slice(query + 1);
+    }
+    if (text.charAt(0) === "?") {
+      text = text.slice(1);
+    }
+    return new URLSearchParams(text);
+  }
+
+  function encodeReopenQuery(controls, seed, mode, run) {
+    var normalized = normalizeControls(controls);
+    var modeCode = mode === "monte-carlo" || mode === "mc" ? "mc" : "year";
+    var seedNum = (Number(seed) >>> 0) || 1;
+    var parts = [
+      ["m", modeCode],
+      ["s", String(seedNum)],
+      ["p", normalized.patternId],
+      ["lm", normalized.lotMode],
+      ["lq", String(normalized.lotQty)],
+      ["lw", String(normalized.lotWeeks)],
+      ["sm", normalized.ssMode],
+      ["sq", String(normalized.ssQty)],
+      ["sw", String(normalized.ssWeeks)],
+      ["sl", String(normalized.serviceLevel)],
+      ["lt", String(normalized.leadTimeWeeks)],
+      ["dv", normalized.demandVariability],
+      ["lv", normalized.leadTimeVariability],
+      ["qv", normalized.deliveryVariability],
+      ["sh", normalized.shock ? "1" : "0"],
+    ];
+    if (run) {
+      parts.push(["run", "1"]);
+    }
+    return parts
+      .map(function (pair) {
+        return encodeURIComponent(pair[0]) + "=" + encodeURIComponent(pair[1]);
+      })
+      .join("&");
+  }
+
+  function decodeReopenQuery(input) {
+    var params = reopenParams(input);
+    var present = false;
+    for (var i = 0; i < REOPEN_QUERY_KEYS.length; i += 1) {
+      if (params.has(REOPEN_QUERY_KEYS[i])) {
+        present = true;
+        break;
+      }
+    }
+    var seed = 20260923;
+    if (params.has("s") && params.get("s") !== "") {
+      var parsed = Number(params.get("s"));
+      seed = (isFinite(parsed) ? parsed : 1) >>> 0 || 1;
+    }
+    function given(key) {
+      if (!params.has(key) || params.get(key) === "") {
+        return undefined;
+      }
+      return params.get(key);
+    }
+    var fields = {
+      patternId: DEFAULT_CONTROLS.patternId,
+      lotMode: DEFAULT_CONTROLS.lotMode,
+      lotQty: DEFAULT_CONTROLS.lotQty,
+      lotWeeks: DEFAULT_CONTROLS.lotWeeks,
+      ssMode: DEFAULT_CONTROLS.ssMode,
+      ssQty: DEFAULT_CONTROLS.ssQty,
+      ssWeeks: DEFAULT_CONTROLS.ssWeeks,
+      serviceLevel: DEFAULT_CONTROLS.serviceLevel,
+      leadTimeWeeks: DEFAULT_CONTROLS.leadTimeWeeks,
+      demandVariability: DEFAULT_CONTROLS.demandVariability,
+      leadTimeVariability: DEFAULT_CONTROLS.leadTimeVariability,
+      deliveryVariability: DEFAULT_CONTROLS.deliveryVariability,
+      shock: false,
+    };
+    if (given("p") !== undefined) {
+      fields.patternId = given("p");
+    }
+    if (given("lm") !== undefined) {
+      fields.lotMode = given("lm");
+    }
+    if (given("lq") !== undefined) {
+      fields.lotQty = given("lq");
+    }
+    if (given("lw") !== undefined) {
+      fields.lotWeeks = given("lw");
+    }
+    if (given("sm") !== undefined) {
+      fields.ssMode = given("sm");
+    }
+    if (given("sq") !== undefined) {
+      fields.ssQty = given("sq");
+    }
+    if (given("sw") !== undefined) {
+      fields.ssWeeks = given("sw");
+    }
+    if (given("sl") !== undefined) {
+      fields.serviceLevel = given("sl");
+    }
+    if (given("lt") !== undefined) {
+      fields.leadTimeWeeks = given("lt");
+    }
+    if (given("dv") !== undefined) {
+      fields.demandVariability = given("dv");
+    }
+    if (given("lv") !== undefined) {
+      fields.leadTimeVariability = given("lv");
+    }
+    if (given("qv") !== undefined) {
+      fields.deliveryVariability = given("qv");
+    }
+    if (params.has("sh")) {
+      fields.shock = params.get("sh") === "1";
+    }
+    return {
+      present: present,
+      run: params.get("run") === "1",
+      mode: params.get("m") === "mc" ? "monte-carlo" : "year",
+      seed: seed,
+      controls: normalizeControls(fields),
+    };
+  }
+
   function runMonteCarlo(controlsInput, parentSeed, options) {
     var controls = normalizeControls(controlsInput);
     var opts = options || {};
@@ -797,5 +946,7 @@
     summariseMonteCarlo: summariseMonteCarlo,
     runYear: runYear,
     runMonteCarlo: runMonteCarlo,
+    encodeReopenQuery: encodeReopenQuery,
+    decodeReopenQuery: decodeReopenQuery,
   };
 });
