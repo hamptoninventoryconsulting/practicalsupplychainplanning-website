@@ -1,0 +1,25 @@
+<section class="card sim-results" id="{{ resultsId }}" hidden data-results-email="off">
+  <h2 class="card__title">Email me my results</h2>
+  <form id="{{ resultsId }}-form" novalidate>
+    <p class="sim-results__status" id="{{ resultsId }}-status" role="status"></p>
+    <label class="sim-field" for="{{ resultsId }}-address">
+      Email address
+      <input id="{{ resultsId }}-address" name="email" type="email" autocomplete="email" maxlength="254" />
+    </label>
+    <label class="sim-check" for="{{ resultsId }}-results">
+      <input id="{{ resultsId }}-results" name="results" type="checkbox" />
+      Email me the results of the scenario I ran. This is a one-off email.
+    </label>
+    <label class="sim-check" for="{{ resultsId }}-articles">
+      <input id="{{ resultsId }}-articles" name="articles" type="checkbox" />
+      Also send me new articles from Practical Supply Chain Planning. Unsubscribe any time.
+    </label>
+    <p class="sim-meta">We'll use your email only as described above. <a href="/privacy/">Privacy</a></p>
+    <div class="sim-hp" aria-hidden="true">
+      <label for="{{ resultsId }}-company">Company</label>
+      <input id="{{ resultsId }}-company" name="company" type="text" tabindex="-1" autocomplete="off" />
+    </div>
+    <button id="{{ resultsId }}-send" class="sim-button" type="submit" disabled>Send</button>
+  </form>
+  <p class="sim-results__sent" id="{{ resultsId }}-sent" hidden>Sent. Check your inbox (and spam folder).</p>
+</section>

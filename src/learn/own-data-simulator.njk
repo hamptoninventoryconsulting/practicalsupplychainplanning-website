@@ -7,8 +7,9 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/own-data/",
   "scripts": [
-    "/assets/own-data-engine.js?v=3",
-    "/assets/own-data-simulator.js?v=3"
+    "/assets/own-data-engine.js?v=4",
+    "/assets/sim-results-form.js?v=1",
+    "/assets/own-data-simulator.js?v=4"
   ]
 }
 ---
@@ -36,12 +37,19 @@
               <li>Demand, lead time, and delivery quantity move inside fixed variability bands.</li>
               <li>The reorder rule places an order only when calculated stock is strictly below safety stock.</li>
             </ul>
-            <p>
+            <p id="own-storage-off">
               The calculation runs in this browser. SKU names, forecasts, stock,
               and prices are not stored and are not sent to a server. After you
               edit, the page address holds those numbers after the #, in a
               #d= fragment. That part of the address stays on your device.
               Anyone with the link can read the numbers.
+            </p>
+            <p id="own-storage-on" hidden>
+              SKU names, forecasts, stock, and prices stay in this browser and
+              in the #d= part of the link. They are not stored on a server. If
+              you ask to email yourself the results, the email contains a
+              summary and a reopen link. Anyone who has that email can read the
+              numbers. We do not keep the summary or the link.
             </p>
             <p>
               Stock Planner is a separate Windows app that plans stock by weeks
@@ -444,4 +452,7 @@
             actually sold.
           </p>
         </section>
+
+        {% set resultsId = "own-results-email" %}
+        {% include "partials/sim-results-form.njk" %}
       </div>
