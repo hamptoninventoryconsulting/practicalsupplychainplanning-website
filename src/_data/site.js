@@ -6,5 +6,5 @@ module.exports = {
   logoVersion: "2",
   copyrightYear: 2026,
   // Replace "[ABN]" with the ABN. Until then the ABN is not shown.
-  abn: "[ABN]",
+  abn: "56 757 743 802",
 };
