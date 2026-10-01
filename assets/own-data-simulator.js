@@ -4,6 +4,7 @@
  * Inputs for a copied link live in the URL fragment (#d=), which is not sent to the server.
  * The query string may carry m (year or mc) and run=1. Those are not SKU data.
  * A copied link without run=1 still waits for Run.
+ * Share and results links are built from the current scenario, not from the address bar.
  */
 (function () {
   "use strict";
@@ -21,7 +22,28 @@
     paste: null,
     running: false,
     explanations: false,
+    emailSnapshot: null,
   };
+
+  var resultsForm = { show: function () {}, hide: function () {} };
+
+  function syncStorageCopy() {
+    var showNew =
+      window.SimResultsForm &&
+      window.SimResultsForm.panelAvailable($("own-results-email"));
+    var off = $("own-storage-off");
+    var on = $("own-storage-on");
+    if (!off || !on) {
+      return;
+    }
+    off.hidden = Boolean(showNew);
+    on.hidden = !showNew;
+  }
+
+  function clearEmail() {
+    state.emailSnapshot = null;
+    resultsForm.hide();
+  }
 
   function $(id) {
     return document.getElementById(id);
@@ -422,13 +444,28 @@
     svg.setAttribute("viewBox", "0 0 " + width + " " + height);
     add("line", {
       class: "sim-chart__zero",
+      stroke: "#000",
+      "stroke-width": "1.5",
       x1: String(left),
       x2: String(width - right),
       y1: y(0).toFixed(2),
       y2: y(0).toFixed(2),
     });
-    add("path", { class: "sim-chart__ss", d: seriesPath(function (week) { return week.safetyStock; }) });
-    add("path", { class: "sim-chart__ending", d: seriesPath(function (week) { return week.endingSoh; }) });
+    add("path", {
+      class: "sim-chart__ss",
+      fill: "none",
+      stroke: "#c2410c",
+      "stroke-width": "1.5",
+      "stroke-dasharray": "6 4",
+      d: seriesPath(function (week) { return week.safetyStock; }),
+    });
+    add("path", {
+      class: "sim-chart__ending",
+      fill: "none",
+      stroke: "#0e7490",
+      "stroke-width": "2",
+      d: seriesPath(function (week) { return week.endingSoh; }),
+    });
     [1, 13, 26, 39, 52].forEach(function (weekNo) {
       var label = add("text", {
         class: "sim-chart__label",
@@ -759,10 +796,12 @@
       } else {
         state.yearRows = rows;
       }
+      state.emailSnapshot = engine.resultsSummary(state.scenario, mode, rows);
       setBusy(false);
       $("own-progress").hidden = true;
       writeHash();
       renderResults();
+      resultsForm.show();
       scrollResults();
     }
     step();
@@ -810,6 +849,7 @@
     state.holdSeed = false;
     state.yearRows = null;
     state.mcRows = null;
+    clearEmail();
     state.errors = [];
     state.warnings = state.paste.warnings.slice();
     fillDom();
@@ -824,7 +864,14 @@
       $("own-copy-note").textContent = "Fix the values above before copying. The link keeps the last valid scenario.";
       return;
     }
-    var url = window.location.origin + window.location.pathname + window.location.search + engine.encodeScenario(state.scenario).fragment;
+    var url = engine.buildResultsUrl({
+      origin: window.location.origin,
+      pathname: window.location.pathname,
+      scenario: state.scenario,
+      mode: state.mode,
+      run: false,
+      utm: false,
+    });
     $("own-copy-note").hidden = false;
     function show(text) {
       $("own-copy-note").textContent = text;
@@ -850,6 +897,7 @@
     state.yearRows = null;
     state.mcRows = null;
     state.holdSeed = false;
+    clearEmail();
     $("own-linked").hidden = true;
     $("own-lot-qty-field").hidden = $("own-lot-mode").value !== "fixed";
     $("own-lot-weeks-field").hidden = $("own-lot-mode").value !== "weeks";
@@ -911,11 +959,21 @@
       state.mode = "year";
       applyMode();
       renderResults();
+      if (state.emailSnapshot && state.emailSnapshot.mode === "year") {
+        resultsForm.show();
+      } else {
+        resultsForm.hide();
+      }
     });
     $("own-mode-mc").addEventListener("click", function () {
       state.mode = "monte-carlo";
       applyMode();
       renderResults();
+      if (state.emailSnapshot && state.emailSnapshot.mode === "monte-carlo") {
+        resultsForm.show();
+      } else {
+        resultsForm.hide();
+      }
     });
     $("own-add").addEventListener("click", addSku);
     $("own-remove").addEventListener("click", removeSku);
@@ -934,6 +992,7 @@
     });
     window.addEventListener("hashchange", function () {
       restoreFromHash();
+      clearEmail();
       fillDom();
       renderProblems();
       renderResults();
@@ -954,6 +1013,42 @@
     fillDom();
     renderProblems();
     renderResults();
+    resultsForm = window.SimResultsForm.attach({
+      id: "own-results-email",
+      formId: "own-data-simulator",
+      buildSummary: function () {
+        if (!state.emailSnapshot) {
+          return null;
+        }
+        var summary = JSON.parse(JSON.stringify(state.emailSnapshot));
+        if (summary.mode !== "year" || !state.yearRows) {
+          summary.charts = [];
+          return summary;
+        }
+        var saved = state.selected;
+        var charts = [];
+        var chain = Promise.resolve();
+        state.yearRows.forEach(function (row) {
+          chain = chain.then(function () {
+            renderChart(row.result.weeks);
+            return window.SimResultsForm.snapshotChart($("own-chart")).then(function (png) {
+              if (!png) {
+                throw new Error("chart");
+              }
+              charts.push({ title: row.sku.label, pngBase64: png });
+            });
+          });
+        });
+        return chain.then(function () {
+          if (state.yearRows[saved]) {
+            renderChart(state.yearRows[saved].result.weeks);
+          }
+          summary.charts = charts;
+          return summary;
+        });
+      },
+    });
+    syncStorageCopy();
     if (reopen.run && state.errors.length === 0) {
       runActive();
     }

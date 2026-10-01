@@ -1635,6 +1635,141 @@
     };
   }
 
+  function namedLevel(value) {
+    if (value === "small") {
+      return "Small";
+    }
+    if (value === "medium") {
+      return "Medium";
+    }
+    if (value === "large") {
+      return "Large";
+    }
+    return "Off";
+  }
+
+  function skuSettingRows(sku) {
+    var lot = sku.lotMode === "weeks" ? sku.lotWeeks + " weeks of cover" : sku.lotQty + " units";
+    var safety;
+    if (sku.ssMode === "formula") {
+      safety = "Formula, service level " + sku.serviceLevel + "%";
+    } else if (sku.ssMode === "weeks") {
+      safety = sku.ssWeeks + " weeks of cover";
+    } else {
+      safety = sku.ssQty + " units";
+    }
+    return [
+      { label: "Weekly forecast", value: String(sku.forecast) },
+      { label: "Current stock", value: String(sku.currentStock) },
+      { label: "Unit cost", value: String(sku.unitCost) },
+      { label: "Selling price", value: String(sku.sellingPrice) },
+      { label: "Lead time", value: sku.leadTimeWeeks + " weeks" },
+      { label: "Lot size", value: lot },
+      { label: "Safety stock", value: safety },
+      { label: "Demand variability", value: namedLevel(sku.demandVariability) },
+      { label: "Lead-time variability", value: namedLevel(sku.leadTimeVariability) },
+    ];
+  }
+
+  function pointMetrics(result) {
+    return {
+      oosWeeks: result.metrics.oosWeeks,
+      csl: result.metrics.csl,
+      inventoryTurns: result.metrics.inventoryTurns,
+      averageWc: result.metrics.averageWc,
+      annualGp: result.metrics.annualGp,
+      safetyStock: result.safetyStock,
+    };
+  }
+
+  function bandMetrics(batch) {
+    var summary = batch.summary;
+    var metrics = {
+      oosWeeks: { median: summary.oosWeeks.median, p10: summary.oosWeeks.p10, p90: summary.oosWeeks.p90 },
+      csl: { median: summary.csl.median, p10: summary.csl.p10, p90: summary.csl.p90 },
+      inventoryTurns: {
+        median: summary.inventoryTurns.median,
+        p10: summary.inventoryTurns.p10,
+        p90: summary.inventoryTurns.p90,
+      },
+      averageWc: { median: summary.averageWc.median, p10: summary.averageWc.p10, p90: summary.averageWc.p90 },
+      annualGp: { median: summary.annualGp.median },
+      safetyStock: batch.runs.length ? batch.runs[0].safetyStock : 0,
+    };
+    if (summary.inventoryTurns.observations < summary.runs) {
+      metrics.turnsNote = "Years with no on-hand stock are left out of the turns band only.";
+    }
+    return metrics;
+  }
+
+  function resultsSummary(scenario, mode, rows) {
+    var monte = mode === "monte-carlo" || mode === "mc";
+    var lines = [];
+    var averageWc = 0;
+    var annualGp = 0;
+    var skus = (rows || []).map(function (row) {
+      var texts = row.commentary && row.commentary.lines ? row.commentary.lines : [];
+      texts.forEach(function (line) {
+        var text = typeof line === "string" ? line : line.text;
+        if (text && lines.indexOf(text) === -1 && lines.length < 3) {
+          lines.push(text);
+        }
+      });
+      var metrics = monte ? bandMetrics(row.monteCarlo) : pointMetrics(row.result);
+      averageWc += monte ? metrics.averageWc.median : metrics.averageWc;
+      annualGp += monte ? metrics.annualGp.median : metrics.annualGp;
+      return {
+        label: row.sku.label,
+        settings: skuSettingRows(row.sku),
+        metrics: metrics,
+      };
+    });
+    if (!lines.length) {
+      lines.push("In the scenario you ran, change one setting at a time to see what drives service and cash.");
+    }
+    return {
+      kind: "own-data",
+      mode: monte ? "monte-carlo" : "year",
+      seed: (Number(scenario.seed) >>> 0) || 1,
+      settings: [
+        { label: "Delivery variability", value: namedLevel(scenario.deliveryVariability) },
+        { label: "Demand shock", value: scenario.shock ? "On" : "Off" },
+      ],
+      metrics: {
+        oosWeeks: null,
+        csl: null,
+        inventoryTurns: null,
+        averageWc: averageWc,
+        annualGp: annualGp,
+        safetyStock: null,
+      },
+      commentary: lines,
+      skus: skus,
+      totals: { averageWc: averageWc, annualGp: annualGp },
+      reopenUrl: buildResultsUrl({
+        scenario: scenario,
+        mode: monte ? "monte-carlo" : "year",
+        run: true,
+        utm: true,
+      }),
+    };
+  }
+
+  function buildResultsUrl(options) {
+    var opts = options || {};
+    var origin = String(opts.origin || "https://practicalsupplychainplanning.com").replace(/\/$/, "");
+    var path = opts.pathname || "/learn/safety-stock-simulator/own-data/";
+    if (path.charAt(0) !== "/") {
+      path = "/" + path;
+    }
+    var query = encodeReopenSearch(opts.mode, Boolean(opts.run)).slice(1);
+    if (opts.utm) {
+      query += "&utm_source=results-email&utm_medium=email&utm_campaign=sim-results-v1";
+    }
+    var encoded = encodeScenario(opts.scenario);
+    return origin + path + "?" + query + (encoded.fragment || "");
+  }
+
   function freshSeed() {
     var seed = (Date.now() ^ (Math.floor(Math.random() * 0x100000000))) >>> 0;
     return seed || 1;
@@ -1678,6 +1813,8 @@
     resolveRunSeed: resolveRunSeed,
     encodeReopenSearch: encodeReopenSearch,
     decodeReopenSearch: decodeReopenSearch,
+    buildResultsUrl: buildResultsUrl,
+    resultsSummary: resultsSummary,
     freshSeed: freshSeed,
     CONTRADICTIONS: [
       [1, 2],

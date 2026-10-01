@@ -563,8 +563,9 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
   "week",
 ].sort());
 
-assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=3"/);
-assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=5"/);
+assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=4"/);
+assert.match(page, /src="\/assets\/sim-results-form\.js\?v=1"/);
+assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=6"/);
 assert.match(page, /sessionStorage/);
 assert.match(page, /Teaching tool only/);
 assert.match(page, /not suitable for real\s+operational use/i);
@@ -666,7 +667,12 @@ const reopenBody = ui.slice(ui.indexOf("function applyReopenLink()"), bootStart)
 assert.match(reopenBody, /if \(!link\.present\)/);
 assert.ok(reopenBody.indexOf("if (link.run)") < reopenBody.indexOf("engine.runYear"));
 assert.doesNotMatch(ui, /fetch\(|RESEND|api\.resend/);
-assert.doesNotMatch(page, /type="email"/i);
+assert.match(page, /id="sim-results-email" hidden/);
+assert.match(page, /data-results-email="off"/);
+assert.match(page, /id="sim-storage-on" hidden/);
+assert.match(page, /unless you ask to email yourself the results/);
+assert.doesNotMatch(ui, /location\.href/);
+assert.match(ui, /buildResultsUrl|resultsSummary/);
 const changeBody = ui.slice(
   ui.indexOf("function onControlsChanged()"),
   ui.indexOf("function setMode(")
@@ -856,5 +862,47 @@ assert.strictEqual(held.run, false);
 assert.strictEqual(held.present, true);
 assert.strictEqual(held.seed, 7);
 assert.strictEqual(held.controls.shock, false);
+const garbageQty = engine.decodeReopenQuery("?lq=abc&sq=nope&lw=4&run=1");
+assert.strictEqual(garbageQty.controls.lotQty, engine.DEFAULT_CONTROLS.lotQty);
+assert.strictEqual(garbageQty.controls.ssQty, engine.DEFAULT_CONTROLS.ssQty);
+assert.strictEqual(garbageQty.controls.lotQty, 40);
+assert.strictEqual(garbageQty.controls.ssQty, 20);
+const belowMin = engine.decodeReopenQuery("?lq=0&sq=-4");
+assert.strictEqual(belowMin.controls.lotQty, 1);
+assert.strictEqual(belowMin.controls.ssQty, 0);
+const aboveMax = engine.decodeReopenQuery("?lq=5000&sq=5000");
+assert.strictEqual(aboveMax.controls.lotQty, 1000);
+assert.strictEqual(aboveMax.controls.ssQty, 1000);
+const resultsUrl = engine.buildResultsUrl(reopenControls, 4242, "year");
+assert.ok(resultsUrl.startsWith("https://practicalsupplychainplanning.com/learn/safety-stock-simulator/?"));
+assert.ok(resultsUrl.includes("lq=15"));
+assert.ok(resultsUrl.includes("sq=3"));
+assert.ok(resultsUrl.includes("run=1"));
+assert.ok(resultsUrl.includes("utm_source=results-email"));
+assert.ok(!resultsUrl.includes("location"));
+const changedUrl = engine.buildResultsUrl(
+  Object.assign({}, reopenControls, { lotQty: 80, ssQty: 11 }),
+  4242,
+  "year"
+);
+assert.ok(changedUrl.includes("lq=80"));
+assert.ok(changedUrl.includes("sq=11"));
+assert.ok(!changedUrl.includes("lq=15"));
+const yearResult = engine.runYear(engine.DEFAULT_CONTROLS, 7);
+const summary = engine.resultsSummary(engine.DEFAULT_CONTROLS, 7, "year", yearResult, null);
+assert.ok(summary.commentary.length >= 1 && summary.commentary.length <= 3);
+summary.commentary.forEach(function (line) {
+  assert.ok(line.indexOf("In the scenario you ran") === 0, line);
+});
+assert.strictEqual(summary.reopenUrl, engine.buildResultsUrl(engine.DEFAULT_CONTROLS, 7, "year"));
+assert.ok(!summary.reopenUrl.includes("abc"));
+const sentPage = fs.readFileSync(
+  path.join(SITE, "learn", "safety-stock-simulator", "sent", "index.html"),
+  "utf8"
+);
+assert.match(sentPage, /noindex/);
+assert.match(sentPage, /Check your inbox \(and spam folder\)\./);
+const sitemap = fs.readFileSync(path.join(SITE, "sitemap.xml"), "utf8");
+assert.ok(!sitemap.includes("/sent/"));
 
 console.log("Safety stock simulator checks OK.");
