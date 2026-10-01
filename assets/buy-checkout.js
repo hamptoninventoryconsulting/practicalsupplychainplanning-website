@@ -101,12 +101,11 @@
   if (userCount) {
     userCount.addEventListener("input", function () {
       var raw = String(userCount.value);
-      if (raw.trim() === "") {
-        return;
-      }
-      if (parseUserCount(raw) === null) {
+      if (parseUserCount(raw) === null && raw.trim() !== "") {
         userCount.value = String(MIN_USERS);
       }
+      // Blank counts select 1 immediately. Waiting for blur hides the
+      // stand-alone note under the pointer, and the Checkout click misses.
       showQuote(getSelectedUsers(false));
     });
     userCount.addEventListener("change", function () {
