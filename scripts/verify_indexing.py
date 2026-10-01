@@ -626,8 +626,37 @@ def verify_buy(errors: list[str]) -> None:
         fail("/buy/ must include a noindex robots meta tag", errors)
     if "site-nav" in text:
         fail("/buy/ must not include the site menu", errors)
-    if "Practical Stock Planner, US$49/month, tax included" not in text:
+    if "Practical Stock Planner, US$49/month" not in text:
         fail("/buy/ is missing the checkout heading", errors)
+    if "tax included" in text.lower():
+        fail("/buy/ must not say tax is included; Paddle calculates tax at checkout", errors)
+    if "Tax, where applicable, is calculated at checkout" not in text:
+        fail("/buy/ must say tax, where applicable, is calculated at checkout", errors)
+    if "Each user is a separate licence at US$49/month" not in text:
+        fail("/buy/ must say each user is a separate licence at US$49/month", errors)
+    if "One user is one computer" not in text:
+        fail("/buy/ must say one user is one computer", errors)
+    if "1 user × US$49/month = US$49/month (plus any applicable tax)" not in text:
+        fail("/buy/ must show an always-visible one-user total, plus any applicable tax", errors)
+    if "Each user gets their own stand-alone copy" not in text:
+        fail("/buy/ must explain that each user's copy is stand-alone", errors)
+    if "aren't shared between users" not in text:
+        fail("/buy/ must say data and plans are not shared between users", errors)
+    if not re.search(r'id="standalone-note"[^>]*\bhidden\b', text):
+        fail("/buy/ must keep the stand-alone note hidden until more than one user is selected", errors)
+    if "Buying for a team?" not in text:
+        fail("/buy/ must include a Buying for a team? toggle", errors)
+    if "How many users?" not in text or 'for="user-count"' not in text:
+        fail("/buy/ must label the How many users? field", errors)
+    if not re.search(r'id="user-count-field"[^>]*\bhidden\b', text):
+        fail("/buy/ must keep How many users? hidden until Buying for a team? is opened", errors)
+    user_count = re.search(r"<input\b[^>]*\bid=\"user-count\"[^>]*>", text, re.I)
+    if not user_count:
+        fail("/buy/ must include the How many users? number field", errors)
+    else:
+        field = user_count.group(0)
+        if 'type="number"' not in field or 'min="1"' not in field or 'max="10"' not in field:
+            fail("/buy/ user count must be a number from 1 to 10", errors)
     if text.lower().count("<h1") != 1:
         fail("/buy/ must have exactly one h1", errors)
     if PADDLE_JS_URL not in text:
@@ -658,11 +687,30 @@ def verify_buy(errors: list[str]) -> None:
             "slice(0, 100)",
             "showLoadFailed",
             "discountId",
-            "quantity: 1",
+            "getSelectedUsers",
+            "quoteForUsers",
+            "quantity: quantity",
+            "(plus any applicable tax)",
+            "3 users: US$99/month (save US$48)",
+            'getElementById("user-count")',
+            'getElementById("standalone-note")',
+            "users < 2",
+            "MAX_USERS = 10",
+            "MIN_USERS = 1",
             'params.get("c")',
         ):
             if snippet not in script:
                 fail(f"assets/buy-checkout.js is missing {snippet}", errors)
+        if re.search(r"quantity:\s*1\b", script):
+            fail(
+                "assets/buy-checkout.js must pass the selected user count to Paddle, not quantity: 1",
+                errors,
+            )
+        if "quote.quantity" in script:
+            fail(
+                "quoteForUsers() is display-only; the Paddle quantity must come from getSelectedUsers()",
+                errors,
+            )
         if re.search(r"""\.get\(\s*['\"](?:priceId|discountId|price|discount)['\"]\s*\)""", script):
             fail("/buy/ must not read a price or discount from the URL", errors)
         if "REPLACE_ME" not in script and "isPlaceholder" not in script:
