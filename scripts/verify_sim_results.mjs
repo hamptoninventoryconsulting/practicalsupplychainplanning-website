@@ -103,6 +103,7 @@ function liveEnv(db, fetchImpl, extra) {
       RESEND_API_KEY: "re_test_not_live",
       RESEND_ARTICLES_AUDIENCE_ID: "aud_articles",
       RESEND_WEBHOOK_SECRET: SECRET,
+      UNSUBSCRIBE_SIGNING_KEY: "test-unsubscribe-signing-key",
     },
     extra || {}
   );
@@ -121,7 +122,7 @@ function deps(fetchImpl) {
 function okFetch() {
   const calls = [];
   const fetchImpl = async function (url, options) {
-    calls.push({ url: String(url), body: options && options.body });
+    calls.push({ url: String(url), method: options && options.method, body: options && options.body });
     if (String(url).includes("siteverify")) {
       return jsonResponse(200, { success: true });
     }
@@ -258,9 +259,11 @@ assert.strictEqual(
 );
 assert.strictEqual(emailBody.reply_to, "support@practicalsupplychainplanning.com");
 assert.match(emailBody.headers["List-Unsubscribe"], /mailto:support@practicalsupplychainplanning.com\?subject=Unsubscribe/);
-assert.match(emailBody.headers["List-Unsubscribe"], /https:\/\/practicalsupplychainplanning.com\/learn\/safety-stock-simulator\/unsubscribe\/\?t=[a-f0-9]{64}/);
+assert.match(emailBody.headers["List-Unsubscribe"], /https:\/\/practicalsupplychainplanning.com\/learn\/safety-stock-simulator\/unsubscribe\/\?t=[a-f0-9]{64}\.[a-f0-9]{64}/);
 assert.strictEqual(emailBody.headers["List-Unsubscribe-Post"], "List-Unsubscribe=One-Click");
 assert.ok(!emailBody.headers["List-Unsubscribe"].includes("reader@example.com"));
+assert.match(emailBody.text, /Unsubscribe: https:\/\/practicalsupplychainplanning.com\/learn\/safety-stock-simulator\/unsubscribe\/\?t=[a-f0-9]{64}\.[a-f0-9]{64}/);
+assert.match(emailBody.html, /<a href="https:\/\/practicalsupplychainplanning.com\/learn\/safety-stock-simulator\/unsubscribe\/\?t=[a-f0-9]{64}\.[a-f0-9]{64}">Unsubscribe<\/a>/);
 assert.match(emailBody.text, new RegExp(DISCLAIMER.replace(/[.]/g, "\\.")));
 assert.match(emailBody.text, /Seed: 4242/);
 assert.match(emailBody.text, /Stock Planner plans by weeks of cover/);
@@ -313,6 +316,11 @@ assert.strictEqual(contactBody.email, "articles@example.com");
 assert.strictEqual(contactBody.unsubscribed, false);
 assert.deepStrictEqual(contactBody.segments, [{ id: "aud_articles" }]);
 assert.match(articles.calls.find(function (call) { return call.url.includes("/emails"); }).body, /new articles/);
+const articlesMail = JSON.parse(articles.calls.find(function (call) { return call.url.includes("/emails"); }).body);
+assert.match(articlesMail.text, /Unsubscribe: https:\/\/practicalsupplychainplanning\.com\/learn\/safety-stock-simulator\/unsubscribe\/\?t=/);
+assert.match(articlesMail.html, />Unsubscribe<\/a>/);
+assert.match(articlesMail.headers["List-Unsubscribe"], /<https:\/\/practicalsupplychainplanning\.com\/learn\/safety-stock-simulator\/unsubscribe\/\?t=/);
+assert.strictEqual(articlesMail.headers["List-Unsubscribe-Post"], "List-Unsubscribe=One-Click");
 
 const failContact = okFetch();
 const original = failContact;
@@ -529,43 +537,138 @@ const noSecret = await handleResendWebhook(
 );
 assert.strictEqual(noSecret.status, 404);
 
+const switchedOffHook = openDb();
+const closedHook = await handleResendWebhook(
+  new Request("https://practicalsupplychainplanning.com/api/resend-webhook", {
+    method: "POST",
+    body: JSON.stringify({ type: "email.complained", data: { to: ["closed@example.com"] } }),
+  }),
+  liveEnv(switchedOffHook.db, null, { SIM_RESULTS_EMAIL: "off" })
+);
+assert.strictEqual(closedHook.status, 404);
+assert.strictEqual(switchedOffHook.sqlite.prepare("SELECT COUNT(*) AS n FROM suppression").get().n, 0);
+
+const audienceOff = await webhook(hookDb.db, "contact.updated", {
+  email: "still-on@example.com",
+  unsubscribed: false,
+});
+assert.strictEqual(audienceOff.status, 200);
+assert.strictEqual(
+  hookDb.sqlite.prepare("SELECT email FROM suppression WHERE email = ?").get("still-on@example.com"),
+  undefined
+);
+const audienceUnsub = await webhook(hookDb.db, "contact.updated", {
+  email: "Audience@Example.com",
+  unsubscribed: true,
+});
+assert.strictEqual(audienceUnsub.status, 200);
+assert.strictEqual(
+  hookDb.sqlite.prepare("SELECT reason FROM suppression WHERE email = ?").get("audience@example.com").reason,
+  "unsubscribe"
+);
+
+function emailLink(message) {
+  const match = String(message.text).match(
+    /https:\/\/practicalsupplychainplanning\.com\/learn\/safety-stock-simulator\/unsubscribe\/\?t=[a-f0-9]{64}\.[a-f0-9]{64}/
+  );
+  assert.ok(match, "email is missing the unsubscribe link");
+  return match[0];
+}
+
 const unsubDb = openDb();
 const seeded = await send(unsubDb.db, payload({ email: "leave@example.com" }), { "CF-Connecting-IP": "203.0.113.90" });
 assert.strictEqual(seeded.status, 200, JSON.stringify(seeded.json));
-const token = unsubDb.sqlite.prepare("SELECT unsubscribe_token FROM consent").get().unsubscribe_token;
+const seededMail = JSON.parse(seeded.calls.find(function (call) { return call.url.includes("/emails"); }).body);
+const link = emailLink(seededMail);
+const storedId = unsubDb.sqlite.prepare("SELECT unsubscribe_token FROM consent").get().unsubscribe_token;
+assert.strictEqual(new URL(link).searchParams.get("t").slice(0, 64), storedId);
 const page = await handleUnsubscribe(
-  new Request("https://practicalsupplychainplanning.com/learn/safety-stock-simulator/unsubscribe/?t=" + token),
+  new Request(link),
   liveEnv(unsubDb.db),
   deps(okFetch())
 );
 const html = await page.text();
 assert.strictEqual(page.status, 200);
-assert.match(html, /You are unsubscribed/);
+assert.match(html, /Confirm you want to unsubscribe/);
+assert.match(html, /<button[^>]*>Unsubscribe<\/button>/);
+assert.doesNotMatch(html, /You are unsubscribed/);
 assert.match(html, /noindex/);
 assert.ok(!html.includes("leave@example.com"));
+assert.strictEqual(unsubDb.sqlite.prepare("SELECT COUNT(*) AS n FROM suppression").get().n, 0);
+const scanned = await handleUnsubscribe(
+  new Request(link, { method: "POST", body: "" }),
+  liveEnv(unsubDb.db),
+  deps(okFetch())
+);
+assert.match(await scanned.text(), /Confirm you want to unsubscribe/);
+assert.strictEqual(unsubDb.sqlite.prepare("SELECT COUNT(*) AS n FROM suppression").get().n, 0);
+const confirmFetch = okFetch();
+const confirmed = await handleUnsubscribe(
+  new Request(link, { method: "POST", body: "confirm=unsubscribe" }),
+  liveEnv(unsubDb.db),
+  deps(confirmFetch)
+);
+assert.match(await confirmed.text(), /You are unsubscribed/);
 assert.strictEqual(
   unsubDb.sqlite.prepare("SELECT reason FROM suppression WHERE email = ?").get("leave@example.com").reason,
   "unsubscribe"
 );
+const removed = confirmFetch.calls.find(function (call) {
+  return call.method === "DELETE" && call.url === "https://api.resend.com/contacts/leave@example.com/segments/aud_articles";
+});
+assert.ok(removed, JSON.stringify(confirmFetch.calls));
+const confirmedAgain = await handleUnsubscribe(
+  new Request(link, { method: "POST", body: "confirm=unsubscribe" }),
+  liveEnv(unsubDb.db),
+  deps(okFetch())
+);
+assert.match(await confirmedAgain.text(), /You are unsubscribed/);
+assert.strictEqual(unsubDb.sqlite.prepare("SELECT COUNT(*) AS n FROM suppression").get().n, 1);
 const after = await send(unsubDb.db, payload({ email: "leave@example.com" }), { "CF-Connecting-IP": "203.0.113.91" });
 assert.strictEqual(after.status, 403);
+
+const switchedOffPage = await handleUnsubscribe(
+  new Request(link),
+  liveEnv(unsubDb.db, null, { SIM_RESULTS_EMAIL: "off" })
+);
+assert.match(await switchedOffPage.text(), /not available yet/);
 
 const oneClickDb = openDb();
 const seededClick = await send(oneClickDb.db, payload({ email: "click@example.com" }), { "CF-Connecting-IP": "203.0.113.92" });
 assert.strictEqual(seededClick.status, 200);
-const clickToken = oneClickDb.sqlite.prepare("SELECT unsubscribe_token FROM consent").get().unsubscribe_token;
+const clickMail = JSON.parse(seededClick.calls.find(function (call) { return call.url.includes("/emails"); }).body);
+const clickLink = emailLink(clickMail);
+const clickFetch = okFetch();
 const oneClick = await handleUnsubscribe(
-  new Request("https://practicalsupplychainplanning.com/learn/safety-stock-simulator/unsubscribe/?t=" + clickToken, {
+  new Request(clickLink, {
     method: "POST",
     body: "List-Unsubscribe=One-Click",
   }),
   liveEnv(oneClickDb.db),
-  deps(okFetch())
+  deps(clickFetch)
 );
 assert.match(await oneClick.text(), /You are unsubscribed/);
+assert.ok(clickFetch.calls.some(function (call) {
+  return call.method === "DELETE" && call.url.includes("/segments/aud_articles");
+}));
+const oneClickAgain = await handleUnsubscribe(
+  new Request(clickLink, { method: "POST", body: "List-Unsubscribe=One-Click" }),
+  liveEnv(oneClickDb.db),
+  deps(okFetch())
+);
+assert.match(await oneClickAgain.text(), /You are unsubscribed/);
+assert.strictEqual(oneClickDb.sqlite.prepare("SELECT COUNT(*) AS n FROM suppression").get().n, 1);
+
+const tampered = clickLink.slice(0, -1) + (clickLink.endsWith("0") ? "1" : "0");
+const badSig = await handleUnsubscribe(
+  new Request(tampered, { method: "POST", body: "List-Unsubscribe=One-Click" }),
+  liveEnv(oneClickDb.db),
+  deps(okFetch())
+);
+assert.match(await badSig.text(), /not valid/);
 
 const missing = await handleUnsubscribe(
-  new Request("https://practicalsupplychainplanning.com/learn/safety-stock-simulator/unsubscribe/?t=" + "ab".repeat(32)),
+  new Request("https://practicalsupplychainplanning.com/learn/safety-stock-simulator/unsubscribe/?t=" + "ab".repeat(32) + "." + "cd".repeat(32)),
   liveEnv(openDb().db),
   deps(okFetch())
 );
