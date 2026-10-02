@@ -144,7 +144,11 @@ function okFetch() {
   const fetchImpl = async function (url, options) {
     calls.push({ url: String(url), method: options && options.method, body: options && options.body });
     if (String(url).includes("siteverify")) {
-      return jsonResponse(200, { success: true });
+      return jsonResponse(200, {
+        success: true,
+        hostname: "practicalsupplychainplanning.com",
+        "error-codes": [],
+      });
     }
     if (String(url).includes("/emails")) {
       return jsonResponse(200, { id: "msg_test_1" });
@@ -379,7 +383,11 @@ const contactDown = async function (url, options) {
     return jsonResponse(500, { message: "audience down" });
   }
   if (String(url).includes("siteverify")) {
-    return jsonResponse(200, { success: true });
+    return jsonResponse(200, {
+      success: true,
+      hostname: "practicalsupplychainplanning.com",
+      "error-codes": [],
+    });
   }
   if (String(url).includes("/emails")) {
     return jsonResponse(200, { id: "msg_test_1" });
@@ -400,7 +408,11 @@ const sendDown = async function (url) {
     return jsonResponse(502, { message: "resend down" });
   }
   if (String(url).includes("siteverify")) {
-    return jsonResponse(200, { success: true });
+    return jsonResponse(200, {
+      success: true,
+      hostname: "practicalsupplychainplanning.com",
+      "error-codes": [],
+    });
   }
   throw new Error("should not continue");
 };
@@ -427,7 +439,11 @@ const sendGarbage = async function (url) {
     };
   }
   if (String(url).includes("siteverify")) {
-    return jsonResponse(200, { success: true });
+    return jsonResponse(200, {
+      success: true,
+      hostname: "practicalsupplychainplanning.com",
+      "error-codes": [],
+    });
   }
   throw new Error("should not continue");
 };
@@ -455,6 +471,76 @@ const failedCheck = await handleResultsEmail(
 assert.strictEqual(failedCheck.status, 400);
 assert.match((await failedCheck.json()).error, /Refresh the page/);
 assert.strictEqual(rejected.sqlite.prepare("SELECT COUNT(*) AS n FROM rate_hits").get().n, 0);
+
+const logged = [];
+const originalLog = console.log;
+console.log = function (line) {
+  logged.push(String(line));
+};
+let foreignHost;
+let previewHost;
+let wwwHost;
+try {
+foreignHost = await handleResultsEmail(
+  post(payload({ email: "foreign-host@example.com" }), { "CF-Connecting-IP": "203.0.113.40" }),
+  liveEnv(openDb().db),
+  deps(async function (url) {
+    if (String(url).includes("siteverify")) {
+      return jsonResponse(200, {
+        success: true,
+        hostname: "evil.example",
+        "error-codes": ["bad-request"],
+      });
+    }
+    throw new Error("should not send");
+  })
+);
+assert.strictEqual(foreignHost.status, 400);
+const foreignLog = logged.find(function (line) {
+  return line.includes("turnstile-siteverify");
+});
+assert.ok(foreignLog, "siteverify failure was not logged");
+assert.match(foreignLog, /"hostname":"evil\.example"/);
+assert.match(foreignLog, /"errorCodes":\["bad-request"\]/);
+assert.ok(!foreignLog.includes("token-ok-1234"));
+assert.ok(!foreignLog.includes("turnstile-test"));
+const previewHost = await handleResultsEmail(
+  post(payload({ email: "preview-host@example.com" }), { "CF-Connecting-IP": "203.0.113.41" }),
+  liveEnv(openDb().db),
+  deps(async function (url) {
+    if (String(url).includes("siteverify")) {
+      return jsonResponse(200, {
+        success: true,
+        hostname: "abc.practicalsupplychainplanning-website.pages.dev",
+        "error-codes": [],
+      });
+    }
+    throw new Error("should not send");
+  })
+);
+assert.strictEqual(previewHost.status, 400);
+const wwwHost = await send(
+  openDb().db,
+  payload({ email: "www-host@example.com" }),
+  { "CF-Connecting-IP": "203.0.113.42" },
+  async function (url, options) {
+    if (String(url).includes("siteverify")) {
+      return jsonResponse(200, {
+        success: true,
+        hostname: "www.practicalsupplychainplanning.com",
+        "error-codes": [],
+      });
+    }
+    if (String(url).includes("/emails")) {
+      return jsonResponse(200, { id: "msg_www" });
+    }
+    throw new Error("unexpected fetch " + url);
+  }
+);
+assert.strictEqual(wwwHost.status, 200, JSON.stringify(wwwHost.json));
+} finally {
+  console.log = originalLog;
+}
 
 const limited = openDb();
 for (let i = 0; i < IP_LIMIT; i += 1) {
