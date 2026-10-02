@@ -239,7 +239,7 @@ For this first version, the mailto link lands in the support inbox. The https li
 Browser (both simulator pages)
   after a run, the person ticks the box and presses Send
         |
-        |  POST /api/sim-results
+        |  POST /api/results-email
         |  summary only (see below)
         v
 Pages Function on this website
@@ -484,7 +484,7 @@ Each step is its own small pull request, after you approve this plan. None of th
 ### PR 2 — Send path, still hidden from the pages
 
 - D1 tables for consent, suppression, and rate limits.
-- `POST /api/sim-results` with Turnstile, honeypot, rate limits, suppression check, Resend send, consent row, and the Articles contact.
+- `POST /api/results-email` with Turnstile, honeypot, rate limits, suppression check, Resend send, consent row, and the Articles contact.
 - Signed webhook endpoint.
 - Unsubscribe page and one-click POST.
 - A feature switch, off by default, so nothing on the public pages calls it until you have pasted the keys and verified the domain.
@@ -599,9 +599,9 @@ The developer cannot do these. They need your login.
 8. Create a Resend webhook pointing at `https://practicalsupplychainplanning.com/api/resend-webhook` for bounces, complaints, and unsubscribes. Paste the signing secret into `RESEND_WEBHOOK_SECRET`.
 9. Create an audience named `Articles`. Paste its id into `RESEND_ARTICLES_AUDIENCE_ID`.
 10. In Cloudflare Turnstile, create a widget for `practicalsupplychainplanning.com` and `www.practicalsupplychainplanning.com`. The site key can go in the page. The secret key goes into `TURNSTILE_SECRET_KEY`.
-11. Replace the Privacy placeholder before the form is switched on. Draft you can edit:
+11. Replace the Privacy placeholder before the form is switched on. Approved published wording:
 
-    > If you ask the Safety Stock Simulator to email you the results, we send one email to the address you typed. We keep a record of that request: your email address, the time, the network address, the page, the wording you agreed to, and whether you also asked for new articles. We do not keep your SKU names, forecasts, prices, stock levels, or the result numbers. If you tick the articles box, we add your address to the Articles list. You can unsubscribe at any time. If a message bounces, or you unsubscribe, we keep the address on a do-not-email list so we do not write to you again. Questions: support@practicalsupplychainplanning.com.
+    > If you ask a page on this website to email you the results, we send one email to the address you typed. We keep a record of that request for 24 months: your email address, the time, the network address, which page you used, the wording you agreed to, and whether you also asked for new articles. We do not keep your SKU names, forecasts, prices, stock levels, or the result numbers. If you tick the articles box, we add your address to the Articles list. You can unsubscribe at any time. If a message bounces, or you unsubscribe, we keep the address on a do-not-email list so we do not write to you again. Questions: support@practicalsupplychainplanning.com.
 
 12. After launch, watch `support@` for subjects that say Unsubscribe, and add those addresses to the suppression list until that step is automated.
 13. Do not send an Articles broadcast, and do not aim a campaign at the US, until the footer has a PO Box.
