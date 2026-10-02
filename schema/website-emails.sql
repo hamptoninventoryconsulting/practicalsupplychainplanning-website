@@ -1,4 +1,4 @@
--- Consent, do-not-email, and rate-limit tables for the simulator results email.
+-- Consent, do-not-email, and rate-limit tables for website results emails.
 -- Applied by the Pages Function (CREATE IF NOT EXISTS) and safe to run by hand.
 -- No SKU names, forecasts, prices, charts, or result numbers belong in these tables.
 

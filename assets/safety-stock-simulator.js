@@ -3,7 +3,7 @@
  * A normal visit is kept in sessionStorage for this tab.
  * A reopen link in the query string (m, s, settings, and run=1) overrides that visit.
  * A results email link is built from the current controls, not from the address bar.
- * The email panel stays off until data-results-email is "on".
+ * The email panel sends when data-results-email is "on".
  */
 (function () {
   "use strict";

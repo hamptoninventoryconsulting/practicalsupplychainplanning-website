@@ -564,7 +564,7 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
 ].sort());
 
 assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=4"/);
-assert.match(page, /src="\/assets\/sim-results-form\.js\?v=1"/);
+assert.match(page, /src="\/assets\/sim-results-form\.js\?v=2"/);
 assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=6"/);
 assert.match(page, /sessionStorage/);
 assert.match(page, /Teaching tool only/);
@@ -668,7 +668,9 @@ assert.match(reopenBody, /if \(!link\.present\)/);
 assert.ok(reopenBody.indexOf("if (link.run)") < reopenBody.indexOf("engine.runYear"));
 assert.doesNotMatch(ui, /fetch\(|RESEND|api\.resend/);
 assert.match(page, /id="sim-results-email" hidden/);
-assert.match(page, /data-results-email="off"/);
+assert.match(page, /data-results-email="on"/);
+assert.match(page, /data-sitekey="0x4AAAAAAFMWJU5owYhGcyrK"/);
+assert.match(page, /challenges\.cloudflare\.com\/turnstile\/v0\/api\.js\?render=explicit/);
 assert.match(page, /id="sim-storage-on" hidden/);
 assert.match(page, /unless you ask to email yourself the results/);
 assert.doesNotMatch(ui, /location\.href/);

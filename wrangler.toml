@@ -1,13 +1,42 @@
 # Cloudflare Pages project: Eleventy output + functions/_middleware.js
 # functions/ stays at the project root (sibling of _site), not inside the output.
-# Flip the Pages dashboard build settings at the same time this lands on main.
+# This file is the source of truth for bindings and plain variables.
+# Secrets stay in the Pages dashboard, not in this file, including
+# RESEND_API_KEY, RESEND_WEBHOOK_SECRET, TURNSTILE_SECRET_KEY,
+# RESEND_ARTICLES_AUDIENCE_ID, and UNSUBSCRIBE_SIGNING_KEY.
+# UNSUBSCRIBE_SIGNING_KEY_PREVIOUS is optional and only accepts links signed
+# before a key rotation. Do not change DNS.
 name = "practicalsupplychainplanning-website"
 compatibility_date = "2026-09-18"
 pages_build_output_dir = "_site"
 
-# The results-email route stays closed until the Pages environment is switched
-# on later. The D1 binding, when it is added, will be named SIM_RESULTS_DB.
-# Secrets stay in the Pages dashboard, not in this file, including
-# UNSUBSCRIBE_SIGNING_KEY. UNSUBSCRIBE_SIGNING_KEY_PREVIOUS is optional and
-# only accepts links signed before a key rotation. This config does not
-# attach a live database. Schema: schema/sim-results.sql. Do not change DNS.
+# website-emails holds consent, the do-not-email list, and rate limits.
+# Top-level bindings apply to production and to preview. There is one database.
+# Schema: schema/website-emails.sql.
+[[d1_databases]]
+binding = "EMAIL_DB"
+database_name = "website-emails"
+database_id = "e356b3c9-a1b8-4a2e-b236-8bf7bea2137d"
+
+[vars]
+RESULTS_EMAIL = "on"
+
+# RESULTS_EMAIL = "on" allows a results email to be sent.
+# Production is the launch switch. Preview is the same value so a draft
+# deployment can exercise the same path before merge. Overriding either
+# environment must repeat every plain variable and binding for that environment.
+[env.production.vars]
+RESULTS_EMAIL = "on"
+
+[[env.production.d1_databases]]
+binding = "EMAIL_DB"
+database_name = "website-emails"
+database_id = "e356b3c9-a1b8-4a2e-b236-8bf7bea2137d"
+
+[env.preview.vars]
+RESULTS_EMAIL = "on"
+
+[[env.preview.d1_databases]]
+binding = "EMAIL_DB"
+database_name = "website-emails"
+database_id = "e356b3c9-a1b8-4a2e-b236-8bf7bea2137d"

@@ -1,7 +1,8 @@
 /**
- * Results-email panel. The pages keep data-results-email="off", so Send
- * does not call the server. A preview host can show the panel for review.
+ * Results-email panel. data-results-email="on" lets Send call the server.
+ * A preview host can still show the panel when the switch is off.
  * The reopen link is supplied by the page from the current controls.
+ * The Turnstile widget is rendered when the panel is shown.
  */
 (function () {
   "use strict";
@@ -9,6 +10,7 @@
   var SUCCESS = "Sent. Check your inbox (and spam folder).";
   var UNAVAILABLE = "This form is not available yet.";
   var NEED_EMAIL = "Enter an email address.";
+  var CHECK_FAILED = "The check failed. Refresh the page and try again.";
 
   function sendingOn(root) {
     return root.getAttribute("data-results-email") === "on";
@@ -96,7 +98,58 @@
     var send = root.querySelector("button");
     var status = root.querySelector(".sim-results__status");
     var sent = root.querySelector(".sim-results__sent");
+    var turnstileSlot = root.querySelector(".sim-turnstile");
+    var widgetId = null;
     var allowed = panelAvailable(root);
+
+    function renderWidget() {
+      if (!turnstileSlot || widgetId !== null || !window.turnstile) {
+        return;
+      }
+      var sitekey = turnstileSlot.getAttribute("data-sitekey");
+      if (!sitekey) {
+        return;
+      }
+      widgetId = window.turnstile.render(turnstileSlot, {
+        sitekey: sitekey,
+        size: "flexible",
+      });
+    }
+
+    function whenTurnstile(done) {
+      if (window.turnstile && window.turnstile.ready) {
+        window.turnstile.ready(done);
+        return;
+      }
+      var tries = 0;
+      var timer = setInterval(function () {
+        tries += 1;
+        if (window.turnstile && window.turnstile.ready) {
+          clearInterval(timer);
+          window.turnstile.ready(done);
+        } else if (tries > 40) {
+          clearInterval(timer);
+          done();
+        }
+      }, 100);
+    }
+
+    function currentToken() {
+      if (window.turnstile && widgetId !== null) {
+        var value = window.turnstile.getResponse(widgetId);
+        if (value) {
+          return value;
+        }
+      }
+      var input = root.querySelector('[name="cf-turnstile-response"]');
+      return input && input.value ? input.value : "";
+    }
+
+    function resetWidget() {
+      if (window.turnstile && widgetId !== null) {
+        window.turnstile.reset(widgetId);
+      }
+    }
 
     function syncButton() {
       send.disabled = !results.checked || send.getAttribute("data-busy") === "1";
@@ -117,6 +170,7 @@
       sent.hidden = true;
       form.hidden = false;
       root.hidden = false;
+      whenTurnstile(renderWidget);
     }
 
     form.addEventListener("submit", function (event) {
@@ -132,6 +186,12 @@
         status.textContent = UNAVAILABLE;
         return;
       }
+      var token = options.turnstileToken ? options.turnstileToken() : currentToken();
+      if (!token) {
+        status.textContent = CHECK_FAILED;
+        whenTurnstile(renderWidget);
+        return;
+      }
       send.setAttribute("data-busy", "1");
       send.disabled = true;
       status.textContent = "";
@@ -143,7 +203,7 @@
           if (!summary || !summary.reopenUrl) {
             throw new Error("summary");
           }
-          return fetch("/api/sim-results", {
+          return fetch("/api/results-email", {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
@@ -151,7 +211,7 @@
               resultsConsent: true,
               articlesConsent: articles.checked === true,
               company: company.value,
-              turnstileToken: options.turnstileToken ? options.turnstileToken() : "",
+              turnstileToken: token,
               pageUrl: window.location.origin + window.location.pathname + window.location.search,
               utm: readUtm(),
               wordingVersion: "sim-results-v1",
@@ -183,12 +243,14 @@
             root.appendChild(frame);
             return;
           }
+          resetWidget();
           status.textContent =
             (result.data && result.data.error) || "We couldn't send that. Try again in a minute.";
         })
         .catch(function () {
           send.removeAttribute("data-busy");
           syncButton();
+          resetWidget();
           status.textContent = "We couldn't send that. Try again in a minute.";
         });
     });
