@@ -7,5 +7,7 @@ pages_build_output_dir = "_site"
 
 # The results-email route stays closed until the Pages environment is switched
 # on later. The D1 binding, when it is added, will be named SIM_RESULTS_DB.
-# Secrets stay in the Pages dashboard, not in this file. This config does not
+# Secrets stay in the Pages dashboard, not in this file, including
+# UNSUBSCRIBE_SIGNING_KEY. UNSUBSCRIBE_SIGNING_KEY_PREVIOUS is optional and
+# only accepts links signed before a key rotation. This config does not
 # attach a live database. Schema: schema/sim-results.sql. Do not change DNS.

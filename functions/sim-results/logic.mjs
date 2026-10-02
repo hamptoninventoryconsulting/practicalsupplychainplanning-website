@@ -5,6 +5,8 @@
  * The summary used to build an email is not stored.
  */
 
+import site from "../../src/_data/site.js";
+
 export const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS consent (
   id TEXT PRIMARY KEY,
@@ -105,7 +107,12 @@ export async function handleSimResults(request, env, deps) {
     if (!originAllowed(request)) {
       return json(403, { ok: false, error: "Check the form and try again." });
     }
-    if (!env.SIM_RESULTS_DB || !env.TURNSTILE_SECRET_KEY || !env.RESEND_API_KEY) {
+    if (
+      !env.SIM_RESULTS_DB ||
+      !env.TURNSTILE_SECRET_KEY ||
+      !env.RESEND_API_KEY ||
+      !env.UNSUBSCRIBE_SIGNING_KEY
+    ) {
       return json(503, { ok: false, error: UNAVAILABLE });
     }
     const raw = await readBody(request, MAX_BODY);
@@ -153,7 +160,7 @@ export async function handleSimResults(request, env, deps) {
       );
     }
     const token = tools.randomToken();
-    const message = buildMessage(submission, token);
+    const message = await buildMessage(submission, token, env.UNSUBSCRIBE_SIGNING_KEY);
     assertCleanCopy(message.text);
     const sent = await sendEmail(tools.fetch, env.RESEND_API_KEY, message);
     const consentId = tools.randomToken();
@@ -253,28 +260,35 @@ export async function handleUnsubscribe(request, env, deps) {
   if (request.method !== "GET" && request.method !== "POST") {
     return html(405, "This unsubscribe link is not valid.");
   }
-  if (!env || !env.SIM_RESULTS_DB) {
+  if (!env || !env.SIM_RESULTS_DB || !env.UNSUBSCRIBE_SIGNING_KEY) {
     return html(200, "Unsubscribe is not available yet.");
   }
   try {
-    if (request.method === "POST") {
-      await readBody(request, 2000);
-    }
+    const raw = request.method === "POST" ? await readBody(request, 2000) : "";
     await ensureSchema(env.SIM_RESULTS_DB);
     const token = new URL(request.url).searchParams.get("t") || "";
-    if (!/^[a-f0-9]{64}$/.test(token)) {
+    const id = await unsubscribeId(
+      token,
+      env.UNSUBSCRIBE_SIGNING_KEY,
+      env.UNSUBSCRIBE_SIGNING_KEY_PREVIOUS
+    );
+    if (!id) {
       return html(200, "This unsubscribe link is not valid.");
     }
     const row = await first(
       env.SIM_RESULTS_DB,
       "SELECT email FROM consent WHERE unsubscribe_token = ?",
-      [token]
+      [id]
     );
     if (!row || !row.email) {
       return html(200, "This unsubscribe link is not valid.");
     }
+    if (request.method !== "POST" || (!isOneClick(raw) && !isConfirmPost(raw))) {
+      return confirmPage(request.url);
+    }
     const createdAt = new Date(tools.now()).toISOString();
-    await suppress(env.SIM_RESULTS_DB, row.email, "unsubscribe", "link:" + token, createdAt);
+    await suppress(env.SIM_RESULTS_DB, row.email, "unsubscribe", "link:" + id, createdAt);
+    await removeArticlesContact(tools.fetch, env, row.email);
     return html(200, "You are unsubscribed. We will not email this address again.");
   } catch (err) {
     return html(500, "This unsubscribe link is not valid.");
@@ -315,9 +329,9 @@ export async function signWebhook(secret, id, timestamp, body) {
   return "v1," + mac;
 }
 
-export function buildMessage(submission, token) {
+export async function buildMessage(submission, token, signingKey) {
   const summary = submission.summary;
-  const unsub = SITE + "/learn/safety-stock-simulator/unsubscribe/?t=" + encodeURIComponent(token);
+  const unsub = await unsubscribeUrl(token, signingKey);
   const blocks = [];
   blocks.push("Mode: " + (summary.mode === "monte-carlo" ? "Monte Carlo (fifty years)" : "One year"));
   blocks.push("Seed: " + String(summary.seed));
@@ -383,7 +397,7 @@ export function buildMessage(submission, token) {
   blocks.push("");
   blocks.push(DISCLAIMER);
   blocks.push("");
-  blocks.push("Practical Supply Chain Planning (Daniel Hampton, sole trader), ABN 56 757 743 802");
+  blocks.push(sellerLine());
   blocks.push("You're receiving this because you asked for the results of the scenario you ran.");
   if (submission.articles) {
     blocks.push("You also asked to hear about new articles. Unsubscribe any time.");
@@ -476,7 +490,9 @@ function htmlMessage(submission, token, unsub) {
   );
   parts.push("<p>" + escapeHtml(DISCLAIMER) + "</p>");
   parts.push(
-    "<p>Practical Supply Chain Planning (Daniel Hampton, sole trader), ABN 56 757 743 802<br>You're receiving this because you asked for the results of the scenario you ran."
+    "<p>" +
+      escapeHtml(sellerLine()) +
+      "<br>You're receiving this because you asked for the results of the scenario you ran."
   );
   if (submission.articles) {
     parts.push("<br>You also asked to hear about new articles. Unsubscribe any time.");
@@ -857,10 +873,22 @@ function clientIp(request) {
   return trimmed;
 }
 
+export function sellerLineText(abn) {
+  const base = site.name + " (Daniel Hampton, sole trader)";
+  if (abn && abn !== "[ABN]") {
+    return base + ", ABN " + abn;
+  }
+  return base;
+}
+
+function sellerLine() {
+  return sellerLineText(site.abn);
+}
+
 function originAllowed(request) {
   const origin = request.headers.get("origin");
   if (!origin) {
-    return true;
+    return false;
   }
   try {
     const url = new URL(origin);
@@ -918,6 +946,63 @@ async function sendEmail(fetchImpl, apiKey, message) {
   return data;
 }
 
+export async function signUnsubscribeToken(id, signingKey) {
+  const sig = await hmacHex(signingKey, id);
+  return id + "." + sig;
+}
+
+async function unsubscribeUrl(token, signingKey) {
+  const signed = await signUnsubscribeToken(token, signingKey);
+  return SITE + "/learn/safety-stock-simulator/unsubscribe/?t=" + encodeURIComponent(signed);
+}
+
+async function unsubscribeId(token, signingKey, previousKey) {
+  if (!/^[a-f0-9]{64}\.[a-f0-9]{64}$/.test(token)) {
+    return "";
+  }
+  const id = token.slice(0, 64);
+  const sig = token.slice(65);
+  if (await signatureMatches(signingKey, id, sig)) {
+    return id;
+  }
+  if (previousKey && (await signatureMatches(previousKey, id, sig))) {
+    return id;
+  }
+  return "";
+}
+
+async function signatureMatches(key, id, sig) {
+  try {
+    return safeEqual(sig, await hmacHex(key, id));
+  } catch (err) {
+    return false;
+  }
+}
+
+function isOneClick(raw) {
+  return String(raw || "").trim() === "List-Unsubscribe=One-Click";
+}
+
+function isConfirmPost(raw) {
+  return new URLSearchParams(String(raw || "")).get("confirm") === "unsubscribe";
+}
+
+function confirmPage(action) {
+  const page =
+    "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"robots\" content=\"noindex\"><title>Confirm unsubscribe</title></head><body>" +
+    "<p>Confirm you want to unsubscribe. We will not email this address again after you press the button.</p>" +
+    "<form method=\"post\" action=\"" +
+    escapeHtml(action) +
+    "\"><button type=\"submit\" name=\"confirm\" value=\"unsubscribe\">Unsubscribe</button></form></body></html>";
+  return new Response(page, {
+    status: 200,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+    },
+  });
+}
+
 async function addArticlesContact(fetchImpl, env, email) {
   try {
     const response = await fetchImpl("https://api.resend.com/contacts", {
@@ -935,6 +1020,30 @@ async function addArticlesContact(fetchImpl, env, email) {
     await response.text();
   } catch (err) {
     // The results email already went out. A missed audience add is not shown to the reader.
+  }
+}
+
+async function removeArticlesContact(fetchImpl, env, email) {
+  if (!env.RESEND_API_KEY || !env.RESEND_ARTICLES_AUDIENCE_ID) {
+    return;
+  }
+  const url =
+    "https://api.resend.com/contacts/" +
+    encodeURIComponent(email).replace(/%40/g, "@") +
+    "/segments/" +
+    encodeURIComponent(env.RESEND_ARTICLES_AUDIENCE_ID);
+  try {
+    const response = await fetchImpl(url, {
+      method: "DELETE",
+      headers: {
+        authorization: "Bearer " + env.RESEND_API_KEY,
+      },
+    });
+    if (response && response.text) {
+      await response.text();
+    }
+  } catch (err) {
+    // The do-not-email row is already stored. Pressing the button again tries the segment removal once more.
   }
 }
 
@@ -1113,6 +1222,23 @@ function escapeHtml(value) {
 
 function isUniqueError(err) {
   return /unique/i.test(String(err && err.message));
+}
+
+async function hmacHex(secret, content) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(String(secret)),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(String(content)));
+  const bytes = new Uint8Array(mac);
+  let hex = "";
+  for (let i = 0; i < bytes.length; i += 1) {
+    hex += bytes[i].toString(16).padStart(2, "0");
+  }
+  return hex;
 }
 
 async function hmacSha256(secret, content) {
