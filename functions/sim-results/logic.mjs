@@ -5,6 +5,8 @@
  * The summary used to build an email is not stored.
  */
 
+import site from "../../src/_data/site.js";
+
 export const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS consent (
   id TEXT PRIMARY KEY,
@@ -383,7 +385,7 @@ export function buildMessage(submission, token) {
   blocks.push("");
   blocks.push(DISCLAIMER);
   blocks.push("");
-  blocks.push("Practical Supply Chain Planning (Daniel Hampton, sole trader), ABN 56 757 743 802");
+  blocks.push(sellerLine());
   blocks.push("You're receiving this because you asked for the results of the scenario you ran.");
   if (submission.articles) {
     blocks.push("You also asked to hear about new articles. Unsubscribe any time.");
@@ -476,7 +478,9 @@ function htmlMessage(submission, token, unsub) {
   );
   parts.push("<p>" + escapeHtml(DISCLAIMER) + "</p>");
   parts.push(
-    "<p>Practical Supply Chain Planning (Daniel Hampton, sole trader), ABN 56 757 743 802<br>You're receiving this because you asked for the results of the scenario you ran."
+    "<p>" +
+      escapeHtml(sellerLine()) +
+      "<br>You're receiving this because you asked for the results of the scenario you ran."
   );
   if (submission.articles) {
     parts.push("<br>You also asked to hear about new articles. Unsubscribe any time.");
@@ -857,10 +861,14 @@ function clientIp(request) {
   return trimmed;
 }
 
+function sellerLine() {
+  return "Practical Supply Chain Planning (Daniel Hampton, sole trader), ABN " + site.abn;
+}
+
 function originAllowed(request) {
   const origin = request.headers.get("origin");
   if (!origin) {
-    return true;
+    return false;
   }
   try {
     const url = new URL(origin);

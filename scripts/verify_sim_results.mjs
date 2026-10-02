@@ -7,6 +7,7 @@ import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import site from "../src/_data/site.js";
 import {
   DISCLAIMER,
   EMAIL_LIMIT,
@@ -137,16 +138,22 @@ function okFetch() {
 }
 
 function post(body, headers) {
+  const merged = Object.assign(
+    {
+      "content-type": "application/json",
+      origin: "https://practicalsupplychainplanning.com",
+      "CF-Connecting-IP": "203.0.113.8",
+    },
+    headers || {}
+  );
+  Object.keys(merged).forEach(function (key) {
+    if (merged[key] == null) {
+      delete merged[key];
+    }
+  });
   return new Request("https://practicalsupplychainplanning.com/api/sim-results", {
     method: "POST",
-    headers: Object.assign(
-      {
-        "content-type": "application/json",
-        origin: "https://practicalsupplychainplanning.com",
-        "CF-Connecting-IP": "203.0.113.8",
-      },
-      headers || {}
-    ),
+    headers: merged,
     body: JSON.stringify(body),
   });
 }
@@ -227,7 +234,13 @@ assert.strictEqual(opened.sqlite.prepare("SELECT COUNT(*) AS n FROM consent").ge
 
 const badOrigin = await send(opened.db, payload(), { origin: "https://evil.example" });
 assert.strictEqual(badOrigin.status, 403);
+assert.strictEqual(badOrigin.json.error, "Check the form and try again.");
 assert.strictEqual(badOrigin.calls.length, 0);
+
+const missingOrigin = await send(opened.db, payload(), { origin: null });
+assert.strictEqual(missingOrigin.status, 403);
+assert.strictEqual(missingOrigin.json.error, badOrigin.json.error);
+assert.strictEqual(missingOrigin.calls.length, 0);
 
 const firstSend = await send(opened.db, payload());
 assert.strictEqual(firstSend.status, 200, JSON.stringify(firstSend.json));
@@ -251,6 +264,12 @@ assert.ok(!emailBody.headers["List-Unsubscribe"].includes("reader@example.com"))
 assert.match(emailBody.text, new RegExp(DISCLAIMER.replace(/[.]/g, "\\.")));
 assert.match(emailBody.text, /Seed: 4242/);
 assert.match(emailBody.text, /Stock Planner plans by weeks of cover/);
+const sellerLine = "Practical Supply Chain Planning (Daniel Hampton, sole trader), ABN " + site.abn;
+assert.ok(emailBody.text.includes(sellerLine));
+assert.ok(emailBody.html.includes(sellerLine));
+const logicSource = fs.readFileSync(path.join(ROOT, "functions", "sim-results", "logic.mjs"), "utf8");
+assert.ok(logicSource.includes("site.abn"));
+assert.ok(!logicSource.includes(site.abn));
 assert.match(emailBody.html, /cid:chart1/);
 assert.strictEqual(emailBody.attachments[0].content_id, "chart1");
 assert.doesNotMatch(emailBody.text, /your business should|\brecommended\b/i);
