@@ -209,10 +209,7 @@ export async function handleResendWebhook(request, env, deps) {
     if (request.method !== "POST") {
       return json(405, { ok: false, error: UNAVAILABLE });
     }
-    if (!sendingEnabled(env)) {
-      return json(404, { ok: false, error: UNAVAILABLE });
-    }
-    if (!env.RESEND_WEBHOOK_SECRET) {
+    if (!env || !env.RESEND_WEBHOOK_SECRET) {
       return json(404, { ok: false, error: UNAVAILABLE });
     }
     const raw = await readBody(request, WEBHOOK_MAX);
@@ -263,14 +260,18 @@ export async function handleUnsubscribe(request, env, deps) {
   if (request.method !== "GET" && request.method !== "POST") {
     return html(405, "This unsubscribe link is not valid.");
   }
-  if (!sendingEnabled(env) || !env.SIM_RESULTS_DB || !env.UNSUBSCRIBE_SIGNING_KEY) {
+  if (!env || !env.SIM_RESULTS_DB || !env.UNSUBSCRIBE_SIGNING_KEY) {
     return html(200, "Unsubscribe is not available yet.");
   }
   try {
     const raw = request.method === "POST" ? await readBody(request, 2000) : "";
     await ensureSchema(env.SIM_RESULTS_DB);
     const token = new URL(request.url).searchParams.get("t") || "";
-    const id = await unsubscribeId(token, env.UNSUBSCRIBE_SIGNING_KEY);
+    const id = await unsubscribeId(
+      token,
+      env.UNSUBSCRIBE_SIGNING_KEY,
+      env.UNSUBSCRIBE_SIGNING_KEY_PREVIOUS
+    );
     if (!id) {
       return html(200, "This unsubscribe link is not valid.");
     }
@@ -872,8 +873,16 @@ function clientIp(request) {
   return trimmed;
 }
 
+export function sellerLineText(abn) {
+  const base = site.name + " (Daniel Hampton, sole trader)";
+  if (abn && abn !== "[ABN]") {
+    return base + ", ABN " + abn;
+  }
+  return base;
+}
+
 function sellerLine() {
-  return "Practical Supply Chain Planning (Daniel Hampton, sole trader), ABN " + site.abn;
+  return sellerLineText(site.abn);
 }
 
 function originAllowed(request) {
@@ -937,27 +946,37 @@ async function sendEmail(fetchImpl, apiKey, message) {
   return data;
 }
 
-async function unsubscribeUrl(token, signingKey) {
-  const sig = await hmacHex(signingKey, token);
-  return SITE + "/learn/safety-stock-simulator/unsubscribe/?t=" + encodeURIComponent(token + "." + sig);
+export async function signUnsubscribeToken(id, signingKey) {
+  const sig = await hmacHex(signingKey, id);
+  return id + "." + sig;
 }
 
-async function unsubscribeId(token, signingKey) {
+async function unsubscribeUrl(token, signingKey) {
+  const signed = await signUnsubscribeToken(token, signingKey);
+  return SITE + "/learn/safety-stock-simulator/unsubscribe/?t=" + encodeURIComponent(signed);
+}
+
+async function unsubscribeId(token, signingKey, previousKey) {
   if (!/^[a-f0-9]{64}\.[a-f0-9]{64}$/.test(token)) {
     return "";
   }
   const id = token.slice(0, 64);
   const sig = token.slice(65);
-  let expected;
+  if (await signatureMatches(signingKey, id, sig)) {
+    return id;
+  }
+  if (previousKey && (await signatureMatches(previousKey, id, sig))) {
+    return id;
+  }
+  return "";
+}
+
+async function signatureMatches(key, id, sig) {
   try {
-    expected = await hmacHex(signingKey, id);
+    return safeEqual(sig, await hmacHex(key, id));
   } catch (err) {
-    return "";
+    return false;
   }
-  if (!safeEqual(sig, expected)) {
-    return "";
-  }
-  return id;
 }
 
 function isOneClick(raw) {
