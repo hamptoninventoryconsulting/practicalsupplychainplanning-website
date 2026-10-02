@@ -17,12 +17,12 @@ import {
   SUCCESS_MESSAGE,
   WORDING_VERSION,
   handleResendWebhook,
-  handleSimResults,
+  handleResultsEmail,
   handleUnsubscribe,
   sellerLineText,
   signUnsubscribeToken,
   signWebhook,
-} from "../functions/sim-results/logic.mjs";
+} from "../functions/email/logic.mjs";
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const TINY_PNG =
@@ -30,20 +30,38 @@ const TINY_PNG =
 const NOW = Date.parse("2026-10-01T12:00:00.000Z");
 const SECRET = "whsec_" + Buffer.from("super-secret-webhook-key").toString("base64");
 
-const schemaFile = fs.readFileSync(path.join(ROOT, "schema", "sim-results.sql"), "utf8");
+const schemaFile = fs.readFileSync(path.join(ROOT, "schema", "website-emails.sql"), "utf8");
 ["consent", "suppression", "webhook_events", "rate_hits"].forEach(function (name) {
   assert.ok(schemaFile.includes("CREATE TABLE IF NOT EXISTS " + name), name);
   assert.ok(SCHEMA_SQL.includes("CREATE TABLE IF NOT EXISTS " + name), name);
 });
 
 const wrangler = fs.readFileSync(path.join(ROOT, "wrangler.toml"), "utf8");
-assert.doesNotMatch(wrangler, /database_id|RESEND_API_KEY|TURNSTILE_SECRET|whsec_|SIM_RESULTS_EMAIL\s*=\s*"on"/);
+assert.match(wrangler, /binding = "EMAIL_DB"/);
+assert.match(wrangler, /database_name = "website-emails"/);
+assert.match(wrangler, /database_id = "e356b3c9-a1b8-4a2e-b236-8bf7bea2137d"/);
+assert.match(wrangler, /\[vars\]\s+RESULTS_EMAIL = "on"/);
+assert.match(wrangler, /\[env\.production\.vars\]\s+RESULTS_EMAIL = "on"/);
+assert.match(wrangler, /\[env\.preview\.vars\]\s+RESULTS_EMAIL = "on"/);
+assert.doesNotMatch(wrangler, /RESEND_API_KEY\s*=|TURNSTILE_SECRET_KEY\s*=|whsec_|UNSUBSCRIBE_SIGNING_KEY\s*=|SIM_RESULTS_/);
 assert.doesNotMatch(wrangler, /resend\._domainkey|send\.news/);
+assert.match(wrangler, /^name = "practicalsupplychainplanning-website"$/m);
+assert.match(wrangler, /^compatibility_date = "2026-09-18"$/m);
+assert.match(wrangler, /^pages_build_output_dir = "_site"$/m);
 
 ["assets/safety-stock-simulator.js", "assets/own-data-simulator.js"].forEach(function (file) {
   const source = fs.readFileSync(path.join(ROOT, file), "utf8");
-  assert.doesNotMatch(source, /\/api\/sim-results|api\.resend|TURNSTILE/);
+  assert.doesNotMatch(source, /\/api\/results-email|api\.resend|TURNSTILE/);
 });
+
+const privacy = fs.readFileSync(path.join(ROOT, "src", "privacy.njk"), "utf8");
+assert.match(
+  privacy,
+  /If you ask a page on this website to email you the results, we send one email to the address you typed\./
+);
+assert.match(privacy, /for 24 months/);
+assert.match(privacy, /which page you used/);
+assert.doesNotMatch(privacy, /not published on this site yet/);
 
 function adapter(sqlite) {
   return {
@@ -99,8 +117,8 @@ function jsonResponse(status, obj) {
 function liveEnv(db, fetchImpl, extra) {
   return Object.assign(
     {
-      SIM_RESULTS_EMAIL: "on",
-      SIM_RESULTS_DB: db,
+      RESULTS_EMAIL: "on",
+      EMAIL_DB: db,
       TURNSTILE_SECRET_KEY: "turnstile-test",
       RESEND_API_KEY: "re_test_not_live",
       RESEND_ARTICLES_AUDIENCE_ID: "aud_articles",
@@ -154,7 +172,7 @@ function post(body, headers) {
       delete merged[key];
     }
   });
-  return new Request("https://practicalsupplychainplanning.com/api/sim-results", {
+  return new Request("https://practicalsupplychainplanning.com/api/results-email", {
     method: "POST",
     headers: merged,
     body: JSON.stringify(body),
@@ -200,7 +218,7 @@ function payload(overrides) {
 
 async function send(db, body, headers, fetchImpl, envExtra) {
   const net = fetchImpl || okFetch();
-  const response = await handleSimResults(
+  const response = await handleResultsEmail(
     post(body, headers),
     liveEnv(db, net, envExtra),
     deps(net)
@@ -209,16 +227,16 @@ async function send(db, body, headers, fetchImpl, envExtra) {
   return { status: response.status, json: json, calls: net.calls };
 }
 
-const missingKey = await handleSimResults(
+const missingKey = await handleResultsEmail(
   post(payload()),
-  { SIM_RESULTS_EMAIL: "on" },
+  { RESULTS_EMAIL: "on" },
   deps(async function () {
     throw new Error("network");
   })
 );
 assert.strictEqual(missingKey.status, 503);
 
-const missingSign = await handleSimResults(
+const missingSign = await handleResultsEmail(
   post(payload({ email: "unsigned@example.com" })),
   liveEnv(openDb().db, null, { UNSUBSCRIBE_SIGNING_KEY: "" }),
   deps(async function () {
@@ -227,9 +245,9 @@ const missingSign = await handleSimResults(
 );
 assert.strictEqual(missingSign.status, 503);
 
-const closed = await handleSimResults(
+const closed = await handleResultsEmail(
   post(payload()),
-  { SIM_RESULTS_EMAIL: "off" },
+  { RESULTS_EMAIL: "off" },
   deps(async function () {
     throw new Error("network");
   })
@@ -270,11 +288,11 @@ assert.strictEqual(
 );
 assert.strictEqual(emailBody.reply_to, "support@practicalsupplychainplanning.com");
 assert.match(emailBody.headers["List-Unsubscribe"], /mailto:support@practicalsupplychainplanning.com\?subject=Unsubscribe/);
-assert.match(emailBody.headers["List-Unsubscribe"], /https:\/\/practicalsupplychainplanning.com\/learn\/safety-stock-simulator\/unsubscribe\/\?t=[a-f0-9]{64}\.[a-f0-9]{64}/);
+assert.match(emailBody.headers["List-Unsubscribe"], /https:\/\/practicalsupplychainplanning.com\/unsubscribe\/\?t=[a-f0-9]{64}\.[a-f0-9]{64}/);
 assert.strictEqual(emailBody.headers["List-Unsubscribe-Post"], "List-Unsubscribe=One-Click");
 assert.ok(!emailBody.headers["List-Unsubscribe"].includes("reader@example.com"));
-assert.match(emailBody.text, /Unsubscribe: https:\/\/practicalsupplychainplanning.com\/learn\/safety-stock-simulator\/unsubscribe\/\?t=[a-f0-9]{64}\.[a-f0-9]{64}/);
-assert.match(emailBody.html, /<a href="https:\/\/practicalsupplychainplanning.com\/learn\/safety-stock-simulator\/unsubscribe\/\?t=[a-f0-9]{64}\.[a-f0-9]{64}">Unsubscribe<\/a>/);
+assert.match(emailBody.text, /Unsubscribe: https:\/\/practicalsupplychainplanning.com\/unsubscribe\/\?t=[a-f0-9]{64}\.[a-f0-9]{64}/);
+assert.match(emailBody.html, /<a href="https:\/\/practicalsupplychainplanning.com\/unsubscribe\/\?t=[a-f0-9]{64}\.[a-f0-9]{64}">Unsubscribe<\/a>/);
 assert.match(emailBody.text, new RegExp(DISCLAIMER.replace(/[.]/g, "\\.")));
 assert.match(emailBody.text, /Seed: 4242/);
 assert.match(emailBody.text, /Stock Planner plans by weeks of cover/);
@@ -287,7 +305,8 @@ assert.strictEqual(sellerLineText(undefined), bareSeller);
 assert.strictEqual(sellerLineText(""), bareSeller);
 assert.strictEqual(sellerLineText("[ABN]"), bareSeller);
 assert.ok(!sellerLineText("[ABN]").includes("ABN"));
-const logicSource = fs.readFileSync(path.join(ROOT, "functions", "sim-results", "logic.mjs"), "utf8");
+const logicSource = fs.readFileSync(path.join(ROOT, "functions", "email", "logic.mjs"), "utf8");
+assert.doesNotMatch(logicSource, /SIM_RESULTS_/);
 assert.ok(logicSource.includes("site.abn"));
 assert.ok(!logicSource.includes(site.abn));
 assert.match(emailBody.html, /cid:chart1/);
@@ -334,9 +353,9 @@ assert.strictEqual(contactBody.unsubscribed, false);
 assert.deepStrictEqual(contactBody.segments, [{ id: "aud_articles" }]);
 assert.match(articles.calls.find(function (call) { return call.url.includes("/emails"); }).body, /new articles/);
 const articlesMail = JSON.parse(articles.calls.find(function (call) { return call.url.includes("/emails"); }).body);
-assert.match(articlesMail.text, /Unsubscribe: https:\/\/practicalsupplychainplanning\.com\/learn\/safety-stock-simulator\/unsubscribe\/\?t=/);
+assert.match(articlesMail.text, /Unsubscribe: https:\/\/practicalsupplychainplanning\.com\/unsubscribe\/\?t=/);
 assert.match(articlesMail.html, />Unsubscribe<\/a>/);
-assert.match(articlesMail.headers["List-Unsubscribe"], /<https:\/\/practicalsupplychainplanning\.com\/learn\/safety-stock-simulator\/unsubscribe\/\?t=/);
+assert.match(articlesMail.headers["List-Unsubscribe"], /<https:\/\/practicalsupplychainplanning\.com\/unsubscribe\/\?t=/);
 assert.strictEqual(articlesMail.headers["List-Unsubscribe-Post"], "List-Unsubscribe=One-Click");
 
 const failContact = okFetch();
@@ -348,7 +367,7 @@ const wrapped = async function (url, options) {
   return original(url, options);
 };
 wrapped.calls = original.calls;
-const contactFail = await handleSimResults(
+const contactFail = await handleResultsEmail(
   post(payload({ email: "still-sent@example.com", articlesConsent: true }), { "CF-Connecting-IP": "203.0.113.10" }),
   liveEnv(openDb().db),
   deps(wrapped)
@@ -368,7 +387,7 @@ const contactDown = async function (url, options) {
   throw new Error("unexpected fetch " + url);
 };
 const contactHttp = openDb();
-const contactHttpFail = await handleSimResults(
+const contactHttpFail = await handleResultsEmail(
   post(payload({ email: "contact-http@example.com", articlesConsent: true }), { "CF-Connecting-IP": "203.0.113.11" }),
   liveEnv(contactHttp.db),
   deps(contactDown)
@@ -386,7 +405,7 @@ const sendDown = async function (url) {
   throw new Error("should not continue");
 };
 const sendFail = openDb();
-const sendHttpFail = await handleSimResults(
+const sendHttpFail = await handleResultsEmail(
   post(payload({ email: "send-http@example.com" }), { "CF-Connecting-IP": "203.0.113.12" }),
   liveEnv(sendFail.db),
   deps(sendDown)
@@ -413,7 +432,7 @@ const sendGarbage = async function (url) {
   throw new Error("should not continue");
 };
 const garbageDb = openDb();
-const garbageSend = await handleSimResults(
+const garbageSend = await handleResultsEmail(
   post(payload({ email: "send-garbage@example.com" }), { "CF-Connecting-IP": "203.0.113.13" }),
   liveEnv(garbageDb.db),
   deps(sendGarbage)
@@ -428,7 +447,7 @@ const turnstileNo = async function (url) {
   }
   throw new Error("should not send");
 };
-const failedCheck = await handleSimResults(
+const failedCheck = await handleResultsEmail(
   post(payload({ email: "nope@example.com" })),
   liveEnv(rejected.db),
   deps(turnstileNo)
@@ -625,7 +644,7 @@ assert.strictEqual(noSecretDb.sqlite.prepare("SELECT COUNT(*) AS n FROM suppress
 const offNoSecretDb = openDb();
 const offNoSecret = await handleResendWebhook(
   new Request("https://practicalsupplychainplanning.com/api/resend-webhook", { method: "POST", body: "{}" }),
-  { SIM_RESULTS_EMAIL: "off", SIM_RESULTS_DB: offNoSecretDb.db }
+  { RESULTS_EMAIL: "off", EMAIL_DB: offNoSecretDb.db }
 );
 assert.strictEqual(offNoSecret.status, 404);
 assert.strictEqual(offNoSecretDb.sqlite.prepare("SELECT COUNT(*) AS n FROM suppression").get().n, 0);
@@ -635,7 +654,7 @@ const offHook = await webhook(
   offHookDb.db,
   "email.complained",
   { to: ["offhook@example.com"] },
-  { env: { SIM_RESULTS_EMAIL: "off" } }
+  { env: { RESULTS_EMAIL: "off" } }
 );
 assert.strictEqual(offHook.status, 200);
 assert.strictEqual(
@@ -664,7 +683,7 @@ assert.strictEqual(
 
 function emailLink(message) {
   const match = String(message.text).match(
-    /https:\/\/practicalsupplychainplanning\.com\/learn\/safety-stock-simulator\/unsubscribe\/\?t=[a-f0-9]{64}\.[a-f0-9]{64}/
+    /https:\/\/practicalsupplychainplanning\.com\/unsubscribe\/\?t=[a-f0-9]{64}\.[a-f0-9]{64}/
   );
   assert.ok(match, "email is missing the unsubscribe link");
   return match[0];
@@ -729,14 +748,14 @@ const offMail = JSON.parse(offSeed.calls.find(function (call) { return call.url.
 const offLink = emailLink(offMail);
 const offPage = await handleUnsubscribe(
   new Request(offLink),
-  liveEnv(offClickDb.db, null, { SIM_RESULTS_EMAIL: "off" }),
+  liveEnv(offClickDb.db, null, { RESULTS_EMAIL: "off" }),
   deps(okFetch())
 );
 assert.match(await offPage.text(), /Confirm you want to unsubscribe/);
 assert.strictEqual(offClickDb.sqlite.prepare("SELECT COUNT(*) AS n FROM suppression").get().n, 0);
 const offClick = await handleUnsubscribe(
   new Request(offLink, { method: "POST", body: "List-Unsubscribe=One-Click" }),
-  liveEnv(offClickDb.db, null, { SIM_RESULTS_EMAIL: "off" }),
+  liveEnv(offClickDb.db, null, { RESULTS_EMAIL: "off" }),
   deps(okFetch())
 );
 assert.match(await offClick.text(), /You are unsubscribed/);
@@ -747,7 +766,7 @@ assert.strictEqual(
 
 const offNoKey = await handleUnsubscribe(
   new Request(offLink, { method: "POST", body: "List-Unsubscribe=One-Click" }),
-  { SIM_RESULTS_EMAIL: "off", SIM_RESULTS_DB: openDb().db }
+  { RESULTS_EMAIL: "off", EMAIL_DB: openDb().db }
 );
 assert.match(await offNoKey.text(), /not available yet/);
 
@@ -794,21 +813,21 @@ const badSig = await handleUnsubscribe(
 assert.match(await badSig.text(), /not valid/);
 
 const missing = await handleUnsubscribe(
-  new Request("https://practicalsupplychainplanning.com/learn/safety-stock-simulator/unsubscribe/?t=" + "ab".repeat(32) + "." + "cd".repeat(32)),
+  new Request("https://practicalsupplychainplanning.com/unsubscribe/?t=" + "ab".repeat(32) + "." + "cd".repeat(32)),
   liveEnv(openDb().db),
   deps(okFetch())
 );
 assert.match(await missing.text(), /not valid/);
 
 const unavailable = await handleUnsubscribe(
-  new Request("https://practicalsupplychainplanning.com/learn/safety-stock-simulator/unsubscribe/?t=" + "ab".repeat(32)),
+  new Request("https://practicalsupplychainplanning.com/unsubscribe/?t=" + "ab".repeat(32)),
   {}
 );
 assert.match(await unavailable.text(), /not available yet/);
 
 const bareId = "ab".repeat(32);
 const noDot = await handleUnsubscribe(
-  new Request("https://practicalsupplychainplanning.com/learn/safety-stock-simulator/unsubscribe/?t=" + bareId, {
+  new Request("https://practicalsupplychainplanning.com/unsubscribe/?t=" + bareId, {
     method: "POST",
     body: "List-Unsubscribe=One-Click",
   }),
@@ -831,7 +850,7 @@ const rotateSend = await send(rotateDb.db, payload({ email: "rotate@example.com"
 assert.strictEqual(rotateSend.status, 200, JSON.stringify(rotateSend.json));
 const rotateId = rotateDb.sqlite.prepare("SELECT unsubscribe_token FROM consent").get().unsubscribe_token;
 const oldSigned = await signUnsubscribeToken(rotateId, previousKey);
-const oldLink = "https://practicalsupplychainplanning.com/learn/safety-stock-simulator/unsubscribe/?t=" + oldSigned;
+const oldLink = "https://practicalsupplychainplanning.com/unsubscribe/?t=" + oldSigned;
 const rejectedOld = await handleUnsubscribe(
   new Request(oldLink, { method: "POST", body: "List-Unsubscribe=One-Click" }),
   liveEnv(rotateDb.db),

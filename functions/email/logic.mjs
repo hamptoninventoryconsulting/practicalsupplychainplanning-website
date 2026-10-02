@@ -1,6 +1,9 @@
 /**
- * Simulator results email. The public pages do not call this.
- * SIM_RESULTS_EMAIL must be the string "on" or the send route stays closed.
+ * Website results email. Any page that posts a checked summary can reuse this.
+ * RESULTS_EMAIL must be the string "on" or the send route stays closed.
+ * EMAIL_DB stores consent, the do-not-email list, and rate limits.
+ * Unsubscribe and bounce handling stay available when their own secrets are set,
+ * even if RESULTS_EMAIL is not "on".
  * Secrets are read from the Pages environment. None are written here.
  * The summary used to build an email is not stored.
  */
@@ -81,7 +84,7 @@ const METRIC_FIELDS = [
 ];
 
 export function sendingEnabled(env) {
-  return Boolean(env && env.SIM_RESULTS_EMAIL === "on");
+  return Boolean(env && env.RESULTS_EMAIL === "on");
 }
 
 export async function ensureSchema(db) {
@@ -95,7 +98,7 @@ export async function ensureSchema(db) {
   }
 }
 
-export async function handleSimResults(request, env, deps) {
+export async function handleResultsEmail(request, env, deps) {
   const tools = deps || defaultDeps();
   try {
     if (request.method !== "POST") {
@@ -108,7 +111,7 @@ export async function handleSimResults(request, env, deps) {
       return json(403, { ok: false, error: "Check the form and try again." });
     }
     if (
-      !env.SIM_RESULTS_DB ||
+      !env.EMAIL_DB ||
       !env.TURNSTILE_SECRET_KEY ||
       !env.RESEND_API_KEY ||
       !env.UNSUBSCRIBE_SIGNING_KEY
@@ -128,20 +131,20 @@ export async function handleSimResults(request, env, deps) {
     await verifyTurnstile(tools.fetch, env.TURNSTILE_SECRET_KEY, submission.turnstileToken, ip);
     const now = new Date(tools.now());
     const createdAt = now.toISOString();
-    await ensureSchema(env.SIM_RESULTS_DB);
-    await prune(env.SIM_RESULTS_DB, now);
+    await ensureSchema(env.EMAIL_DB);
+    await prune(env.EMAIL_DB, now);
     await run(
-      env.SIM_RESULTS_DB,
+      env.EMAIL_DB,
       "INSERT INTO rate_hits (email, ip, created_at) VALUES (?, ?, ?)",
       [submission.email, ip, createdAt]
     );
     const ipCount = await countSince(
-      env.SIM_RESULTS_DB,
+      env.EMAIL_DB,
       "SELECT COUNT(*) AS n FROM rate_hits WHERE ip = ? AND created_at > ?",
       [ip, new Date(now.getTime() - HOUR_MS).toISOString()]
     );
     const emailCount = await countSince(
-      env.SIM_RESULTS_DB,
+      env.EMAIL_DB,
       "SELECT COUNT(*) AS n FROM rate_hits WHERE email = ? AND created_at > ?",
       [submission.email, new Date(now.getTime() - DAY_MS).toISOString()]
     );
@@ -149,7 +152,7 @@ export async function handleSimResults(request, env, deps) {
       throw new HttpError(429, "That address or network has sent several of these already. Try again later.");
     }
     const blocked = await first(
-      env.SIM_RESULTS_DB,
+      env.EMAIL_DB,
       "SELECT reason FROM suppression WHERE email = ?",
       [submission.email]
     );
@@ -165,7 +168,7 @@ export async function handleSimResults(request, env, deps) {
     const sent = await sendEmail(tools.fetch, env.RESEND_API_KEY, message);
     const consentId = tools.randomToken();
     await run(
-      env.SIM_RESULTS_DB,
+      env.EMAIL_DB,
       `INSERT INTO consent (
         id, email, created_at, ip, form_id, page_url, wording_version, wording_text,
         utm_source, utm_medium, utm_campaign, utm_term, utm_content,
@@ -227,15 +230,15 @@ export async function handleResendWebhook(request, env, deps) {
     if (!valid) {
       return json(400, { ok: false });
     }
-    if (!env.SIM_RESULTS_DB) {
+    if (!env.EMAIL_DB) {
       return json(503, { ok: false, error: UNAVAILABLE });
     }
-    await ensureSchema(env.SIM_RESULTS_DB);
+    await ensureSchema(env.EMAIL_DB);
     const payload = parseJson(raw);
     const createdAt = new Date(tools.now()).toISOString();
     try {
       await run(
-        env.SIM_RESULTS_DB,
+        env.EMAIL_DB,
         "INSERT INTO webhook_events (event_id, created_at) VALUES (?, ?)",
         [id, createdAt]
       );
@@ -245,7 +248,7 @@ export async function handleResendWebhook(request, env, deps) {
       }
       throw err;
     }
-    await applyWebhook(env.SIM_RESULTS_DB, payload, id, createdAt);
+    await applyWebhook(env.EMAIL_DB, payload, id, createdAt);
     return json(200, { ok: true });
   } catch (err) {
     if (err instanceof HttpError) {
@@ -260,12 +263,12 @@ export async function handleUnsubscribe(request, env, deps) {
   if (request.method !== "GET" && request.method !== "POST") {
     return html(405, "This unsubscribe link is not valid.");
   }
-  if (!env || !env.SIM_RESULTS_DB || !env.UNSUBSCRIBE_SIGNING_KEY) {
+  if (!env || !env.EMAIL_DB || !env.UNSUBSCRIBE_SIGNING_KEY) {
     return html(200, "Unsubscribe is not available yet.");
   }
   try {
     const raw = request.method === "POST" ? await readBody(request, 2000) : "";
-    await ensureSchema(env.SIM_RESULTS_DB);
+    await ensureSchema(env.EMAIL_DB);
     const token = new URL(request.url).searchParams.get("t") || "";
     const id = await unsubscribeId(
       token,
@@ -276,7 +279,7 @@ export async function handleUnsubscribe(request, env, deps) {
       return html(200, "This unsubscribe link is not valid.");
     }
     const row = await first(
-      env.SIM_RESULTS_DB,
+      env.EMAIL_DB,
       "SELECT email FROM consent WHERE unsubscribe_token = ?",
       [id]
     );
@@ -287,7 +290,7 @@ export async function handleUnsubscribe(request, env, deps) {
       return confirmPage(request.url);
     }
     const createdAt = new Date(tools.now()).toISOString();
-    await suppress(env.SIM_RESULTS_DB, row.email, "unsubscribe", "link:" + id, createdAt);
+    await suppress(env.EMAIL_DB, row.email, "unsubscribe", "link:" + id, createdAt);
     await removeArticlesContact(tools.fetch, env, row.email);
     return html(200, "You are unsubscribed. We will not email this address again.");
   } catch (err) {
@@ -595,6 +598,7 @@ function validateSubmission(body) {
   if (!wording || wording.required !== REQUIRED_WORDING || wording.optional !== OPTIONAL_WORDING) {
     throw new HttpError(400, "Check the form and try again.");
   }
+  // A later results page adds its form id here. The check, the record, and the do-not-email list stay shared.
   if (body.formId !== "safety-stock-simulator" && body.formId !== "own-data-simulator") {
     throw new HttpError(400, "Check the form and try again.");
   }
@@ -887,6 +891,7 @@ function sellerLine() {
 
 function originAllowed(request) {
   const origin = request.headers.get("origin");
+  // A missing Origin is refused. Browsers send Origin on this POST.
   if (!origin) {
     return false;
   }
@@ -953,7 +958,7 @@ export async function signUnsubscribeToken(id, signingKey) {
 
 async function unsubscribeUrl(token, signingKey) {
   const signed = await signUnsubscribeToken(token, signingKey);
-  return SITE + "/learn/safety-stock-simulator/unsubscribe/?t=" + encodeURIComponent(signed);
+  return SITE + "/unsubscribe/?t=" + encodeURIComponent(signed);
 }
 
 async function unsubscribeId(token, signingKey, previousKey) {
