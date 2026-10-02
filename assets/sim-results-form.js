@@ -10,7 +10,7 @@
   var SUCCESS = "Sent. Check your inbox (and spam folder).";
   var UNAVAILABLE = "This form is not available yet.";
   var NEED_EMAIL = "Enter an email address.";
-  var CHECK_FAILED = "The check failed. Refresh the page and try again.";
+  var CHECK_PENDING = "The check didn't finish. Try again in a moment.";
 
   function sendingOn(root) {
     return root.getAttribute("data-results-email") === "on";
@@ -100,10 +100,17 @@
     var sent = root.querySelector(".sim-results__sent");
     var turnstileSlot = root.querySelector(".sim-turnstile");
     var widgetId = null;
+    var latestToken = "";
+    var waitTimer = null;
+    var resetting = false;
     var allowed = panelAvailable(root);
 
+    function turnstileRenderable() {
+      return Boolean(window.turnstile && typeof window.turnstile.render === "function");
+    }
+
     function renderWidget() {
-      if (!turnstileSlot || widgetId !== null || !window.turnstile) {
+      if (!turnstileSlot || widgetId !== null || !turnstileRenderable()) {
         return;
       }
       var sitekey = turnstileSlot.getAttribute("data-sitekey");
@@ -113,42 +120,84 @@
       widgetId = window.turnstile.render(turnstileSlot, {
         sitekey: sitekey,
         size: "flexible",
+        callback: function (token) {
+          latestToken = token || "";
+        },
+        "expired-callback": function () {
+          latestToken = "";
+          resetWidget();
+        },
+        "error-callback": function () {
+          latestToken = "";
+          resetWidget();
+        },
       });
     }
 
     function whenTurnstile(done) {
-      if (window.turnstile && window.turnstile.ready) {
-        window.turnstile.ready(done);
+      if (turnstileRenderable()) {
+        done();
+        return;
+      }
+      var queue = window.pscpTurnstileQueue;
+      if (queue && typeof queue.push === "function") {
+        queue.push(function () {
+          if (turnstileRenderable()) {
+            done();
+          }
+        });
+      }
+      if (waitTimer !== null) {
         return;
       }
       var tries = 0;
-      var timer = setInterval(function () {
+      waitTimer = setInterval(function () {
         tries += 1;
-        if (window.turnstile && window.turnstile.ready) {
-          clearInterval(timer);
-          window.turnstile.ready(done);
-        } else if (tries > 40) {
-          clearInterval(timer);
+        if (turnstileRenderable()) {
+          clearInterval(waitTimer);
+          waitTimer = null;
           done();
+        } else if (tries > 50) {
+          clearInterval(waitTimer);
+          waitTimer = null;
         }
       }, 100);
     }
 
     function currentToken() {
-      if (window.turnstile && widgetId !== null) {
-        var value = window.turnstile.getResponse(widgetId);
+      if (window.turnstile && widgetId !== null && typeof window.turnstile.getResponse === "function") {
+        var value = window.turnstile.getResponse(widgetId) || "";
         if (value) {
+          latestToken = value;
           return value;
         }
+        latestToken = "";
+      } else if (latestToken) {
+        return latestToken;
       }
       var input = root.querySelector('[name="cf-turnstile-response"]');
       return input && input.value ? input.value : "";
     }
 
     function resetWidget() {
-      if (window.turnstile && widgetId !== null) {
-        window.turnstile.reset(widgetId);
+      latestToken = "";
+      if (resetting || !window.turnstile || widgetId === null || typeof window.turnstile.reset !== "function") {
+        return;
       }
+      resetting = true;
+      try {
+        window.turnstile.reset(widgetId);
+      } finally {
+        resetting = false;
+      }
+    }
+
+    function rerunCheck() {
+      if (widgetId === null) {
+        whenTurnstile(renderWidget);
+        return;
+      }
+      resetWidget();
     }
 
     function syncButton() {
@@ -188,8 +237,8 @@
       }
       var token = options.turnstileToken ? options.turnstileToken() : currentToken();
       if (!token) {
-        status.textContent = CHECK_FAILED;
-        whenTurnstile(renderWidget);
+        status.textContent = CHECK_PENDING;
+        rerunCheck();
         return;
       }
       send.setAttribute("data-busy", "1");

@@ -24,4 +24,20 @@
   </form>
   <p class="sim-results__sent" id="{{ resultsId }}-sent" hidden>Sent. Check your inbox (and spam folder).</p>
 </section>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+<script>
+  window.pscpTurnstileQueue = window.pscpTurnstileQueue || [];
+  window.pscpTurnstileLoaded = function () {
+    var waiting = window.pscpTurnstileQueue;
+    window.pscpTurnstileQueue = {
+      push: function (fn) {
+        fn();
+      },
+    };
+    if (waiting && waiting.forEach) {
+      waiting.forEach(function (fn) {
+        fn();
+      });
+    }
+  };
+</script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=pscpTurnstileLoaded" async></script>

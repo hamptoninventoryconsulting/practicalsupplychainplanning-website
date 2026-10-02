@@ -911,6 +911,13 @@ function hostAllowed(hostname) {
   );
 }
 
+function turnstileHostnameAllowed(hostname) {
+  return (
+    hostname === "practicalsupplychainplanning.com" ||
+    hostname === "www.practicalsupplychainplanning.com"
+  );
+}
+
 async function verifyTurnstile(fetchImpl, secret, token, ip) {
   const body = new URLSearchParams();
   body.set("secret", secret);
@@ -921,7 +928,16 @@ async function verifyTurnstile(fetchImpl, secret, token, ip) {
     body: body,
   });
   const data = await response.json();
-  if (!data || data.success !== true) {
+  const hostname = data && typeof data.hostname === "string" ? data.hostname : "";
+  const errorCodes = data && Array.isArray(data["error-codes"]) ? data["error-codes"] : [];
+  if (!data || data.success !== true || !turnstileHostnameAllowed(hostname)) {
+    console.log(
+      JSON.stringify({
+        source: "turnstile-siteverify",
+        hostname: hostname,
+        errorCodes: errorCodes,
+      })
+    );
     throw new HttpError(400, "The check failed. Refresh the page and try again.");
   }
 }
