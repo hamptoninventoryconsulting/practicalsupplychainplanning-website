@@ -655,6 +655,99 @@ assert.ok(!stored.includes("sku@example.com?"));
 const ownPage = ownDb.sqlite.prepare("SELECT page_url FROM consent").get().page_url;
 assert.strictEqual(ownPage, "/learn/safety-stock-simulator/own-data/");
 
+function times(text, needle) {
+  return text.split(needle).length - 1;
+}
+
+function ownBody(email, labels, mode) {
+  const year = mode !== "monte-carlo";
+  const body = payload({
+    email: email,
+    formId: "own-data-simulator",
+    pageUrl: "https://practicalsupplychainplanning.com/learn/safety-stock-simulator/own-data/",
+  });
+  body.summary.kind = "own-data";
+  body.summary.mode = year ? "year" : "monte-carlo";
+  body.summary.settings = [
+    { label: "Delivery variability", value: "Off" },
+    { label: "Demand shock", value: "On" },
+  ];
+  body.summary.skus = labels.map(function (label) {
+    return {
+      label: label,
+      settings: [{ label: "Weekly forecast", value: "40" }],
+      metrics: body.summary.metrics,
+    };
+  });
+  body.summary.charts = year
+    ? labels.map(function (label) {
+        return { title: label, pngBase64: TINY_PNG };
+      })
+    : [];
+  body.summary.reopenUrl =
+    "https://practicalsupplychainplanning.com/learn/safety-stock-simulator/own-data/?m=" +
+    (year ? "year" : "mc") +
+    "&run=1&utm_source=results-email&utm_medium=email&utm_campaign=sim-results-v1#d=abc";
+  return body;
+}
+
+function sentMail(result) {
+  return JSON.parse(result.calls.find(function (call) {
+    return call.url.includes("/emails");
+  }).body);
+}
+
+const oneSku = await send(
+  openDb().db,
+  ownBody("one-sku@example.com", ["SKU 1"], "year"),
+  { "CF-Connecting-IP": "203.0.113.71" }
+);
+assert.strictEqual(oneSku.status, 200, JSON.stringify(oneSku.json));
+const oneMail = sentMail(oneSku);
+assert.strictEqual(times(oneMail.text, "SKU 1"), 1);
+assert.strictEqual(times(oneMail.html, "SKU 1"), 1);
+assert.ok(oneMail.text.indexOf("SKU 1") < oneMail.text.indexOf("Chart: ending stock and safety stock across 52 weeks."));
+assert.match(oneMail.html, /<p>SKU 1<\/p><ul>[\s\S]*<\/ul><img src="cid:chart1"/);
+assert.strictEqual(oneMail.attachments.length, 1);
+
+const twoSku = await send(
+  openDb().db,
+  ownBody("two-sku@example.com", ["SKU 1", "Widget"], "year"),
+  { "CF-Connecting-IP": "203.0.113.72" }
+);
+assert.strictEqual(twoSku.status, 200, JSON.stringify(twoSku.json));
+const twoMail = sentMail(twoSku);
+assert.strictEqual(times(twoMail.text, "SKU 1"), 1);
+assert.strictEqual(times(twoMail.text, "Widget"), 1);
+assert.strictEqual(times(twoMail.html, "SKU 1"), 1);
+assert.strictEqual(times(twoMail.html, "Widget"), 1);
+const textSku = twoMail.text.indexOf("SKU 1");
+const textChart = twoMail.text.indexOf("Chart: ending stock and safety stock across 52 weeks.");
+const textWidget = twoMail.text.indexOf("Widget");
+const textChart2 = twoMail.text.indexOf("Chart: ending stock and safety stock across 52 weeks.", textChart + 1);
+assert.ok(textSku < textChart && textChart < textWidget && textWidget < textChart2);
+const htmlSku = twoMail.html.indexOf("SKU 1");
+const htmlChart = twoMail.html.indexOf("cid:chart1");
+const htmlWidget = twoMail.html.indexOf("Widget");
+const htmlChart2 = twoMail.html.indexOf("cid:chart2");
+assert.ok(htmlSku < htmlChart && htmlChart < htmlWidget && htmlWidget < htmlChart2);
+assert.strictEqual(twoMail.attachments.length, 2);
+
+const ownMc = await send(
+  openDb().db,
+  ownBody("sku-mc@example.com", ["SKU 1"], "monte-carlo"),
+  { "CF-Connecting-IP": "203.0.113.73" }
+);
+assert.strictEqual(ownMc.status, 200, JSON.stringify(ownMc.json));
+const ownMcMail = sentMail(ownMc);
+assert.strictEqual(times(ownMcMail.text, "SKU 1"), 1);
+assert.strictEqual(times(ownMcMail.html, "SKU 1"), 1);
+assert.doesNotMatch(ownMcMail.text, /Chart:/);
+assert.doesNotMatch(ownMcMail.html, /cid:chart/);
+
+assert.match(emailBody.text, /Chart: ending stock and safety stock across 52 weeks\.\nOne year\n/);
+assert.match(emailBody.html, /<p>One year<\/p><img src="cid:chart1"/);
+
 async function webhook(db, type, data, options) {
   const body = JSON.stringify({ type: type, data: data });
   const timestamp = String(Math.floor(NOW / 1000) + ((options && options.skew) || 0));
