@@ -577,6 +577,18 @@ def export_guides() -> list[dict]:
     return guides
 
 
+SMARTSCREEN_COPY = (
+    "Windows SmartScreen may show",
+    "Windows protected your PC",
+    "Unknown publisher",
+    "because Practical Stock Planner isn&rsquo;t code-signed yet",
+    "More info",
+    "Run anyway",
+    "The download comes only from practicalsupplychainplanning.com.",
+    "Code signing is planned.",
+)
+
+
 def verify_welcome(errors: list[str]) -> None:
     if not WELCOME_PATH.is_file():
         fail("/welcome/ was not built; expected _site/welcome/index.html", errors)
@@ -698,6 +710,11 @@ def verify_welcome(errors: list[str]) -> None:
         fail("/welcome/ must say the 14-day free trial has started", errors)
     if "be charged until it ends" not in text:
         fail("/welcome/ must say nothing is charged until the trial ends", errors)
+    if "Unblock" in text:
+        fail("/welcome/ must not mention the Unblock flag", errors)
+    for phrase in SMARTSCREEN_COPY:
+        if phrase not in text:
+            fail(f"/welcome/ is missing the SmartScreen note: {phrase}", errors)
 
 
 def paddle_placeholders_block_checkout() -> bool:
@@ -970,6 +987,13 @@ def verify_policy_pages(errors: list[str]) -> None:
                 fail(f"/pricing/ is missing approved copy: {phrase}", errors)
         if re.search(r"launch deal|launch offer", pricing, re.I):
             fail("/pricing/ must not mention a launch deal", errors)
+        if "Unblock" in pricing:
+            fail("/pricing/ must not mention the Unblock flag", errors)
+        if "Will Windows warn me when I install it?" not in pricing:
+            fail("/pricing/ is missing the SmartScreen question", errors)
+        for phrase in SMARTSCREEN_COPY:
+            if phrase not in pricing:
+                fail(f"/pricing/ is missing the SmartScreen note: {phrase}", errors)
         if not paddle_placeholders_block_checkout():
             if not re.search(r'id="trial-note"[^>]*\bhidden\b', pricing):
                 fail("/pricing/ must hide the unconfigured note when Paddle config is set", errors)
