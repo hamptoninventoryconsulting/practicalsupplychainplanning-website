@@ -1,5 +1,5 @@
 /**
- * Overlay checkout for /pricing/.
+ * Overlay checkout for /products/practical-stock-planner/.
  * Uses the Paddle config in src/_data/paddle.js.
  * Quantity is fixed at 1. No discount is applied.
  */

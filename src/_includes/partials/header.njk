@@ -1,4 +1,5 @@
 {%- set learnSection = page.url.startsWith('/learn/') -%}
+{%- set productsSection = page.url.startsWith('/products/') -%}
 <header class="site-header">
   <div class="site-header__inner">
     <a class="site-header__link" href="/">
@@ -14,7 +15,7 @@
           <a class="site-nav__link{% if nav == 'home' %} site-nav__link--active{% endif %}" href="/"{% if nav == 'home' %} aria-current="page"{% endif %}>Home</a>
         </li>
         <li>
-          <a class="site-nav__link{% if nav == 'pricing' %} site-nav__link--active{% endif %}" href="/pricing/"{% if nav == 'pricing' %} aria-current="page"{% endif %}>Pricing</a>
+          <a class="site-nav__link{% if productsSection %} site-nav__link--active{% endif %}" href="/products/"{% if page.url == '/products/' %} aria-current="page"{% elif productsSection %} aria-current="true"{% endif %}>Products</a>
         </li>
         <li>
           <a class="site-nav__link{% if learnSection %} site-nav__link--active{% endif %}" href="/learn/"{% if page.url == '/learn/' %} aria-current="page"{% elif learnSection %} aria-current="true"{% endif %}>Learn</a>

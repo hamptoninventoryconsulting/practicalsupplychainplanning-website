@@ -121,6 +121,6 @@ python3 scripts/verify_indexing.py
 
 ## Next pages (planned)
 
-- `/product/` — Supply Planning application
-- `/pricing/` — Monthly license
+- `/products/` — Product list
+- `/products/practical-stock-planner/` — Practical Stock Planner, monthly licence
 - `/l/*` — Campaign landing pages for cold email tests
