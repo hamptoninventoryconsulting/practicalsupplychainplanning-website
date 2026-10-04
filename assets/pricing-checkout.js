@@ -1,6 +1,6 @@
 /**
  * Overlay checkout for /pricing/.
- * Uses the same Paddle config as /buy/ (src/_data/paddle.js).
+ * Uses the Paddle config in src/_data/paddle.js.
  * Quantity is fixed at 1. No discount is applied.
  */
 (function () {

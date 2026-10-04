@@ -13,9 +13,8 @@ in the sitemap or in site menus. `/pricing/`, `/terms/`, `/refunds/`,
 `/privacy/` and `/contact/` are public pages: they are in the sitemap and
 are not noindex.
 
-`/buy/` is the sandbox checkout page. It must be noindex, stay out of the
-sitemap and the site menu. Paddle.js may load on `/buy/` and `/pricing/`
-only. `/welcome/` must stay free of Paddle.js.
+`/buy/` is retired. It 301s to `/pricing/` and is not a page. Paddle.js
+loads on `/pricing/` only. `/welcome/` must stay free of Paddle.js.
 
 Usage:
   npm run build
@@ -621,8 +620,12 @@ def verify_welcome(errors: list[str]) -> None:
         fail("/welcome/ must not link to a download file", errors)
     if "Coming soon." not in text:
         fail("/welcome/ download must say it is coming soon", errors)
-    if "Getting your data ready" not in text:
-        fail("/welcome/ is missing the Getting your data ready section", errors)
+    if "The download will be available here shortly" not in text:
+        fail("/welcome/ must say the download will be available shortly", errors)
+    if "also email you the link" not in text:
+        fail("/welcome/ must say the download link will also be emailed", errors)
+    if "Placeholder" in text or "not published yet" in text or "not available to download yet" in text:
+        fail("/welcome/ still contains draft placeholder text", errors)
     if re.search(r"14[\s-]days", text, re.I):
         fail(
             "/welcome/ must not state the refund window; that belongs on /refunds/ "
@@ -649,13 +652,15 @@ def verify_welcome(errors: list[str]) -> None:
                     errors,
                 )
     guides = export_guides()
-    unpublished = [guide for guide in guides if not guide["href"]]
-    if text.count("Guide coming soon.") != len(unpublished):
-        fail(
-            "/welcome/ must say Guide coming soon once for each export guide "
-            "that has no URL yet",
-            errors,
-        )
+    published = [guide for guide in guides if guide["href"]]
+    if published:
+        if "Getting your data ready" not in text:
+            fail("/welcome/ is missing the Getting your data ready section", errors)
+    else:
+        if "Getting your data ready" in text or "Guide coming soon." in text:
+            fail("/welcome/ must hide export guides until they have a URL", errors)
+        if "step-by-step guide" in text:
+            fail("/welcome/ must not mention an unpublished step-by-step guide", errors)
     if re.search(r"""href=["'](?:|#)["']""", text):
         fail("/welcome/ must not include an empty or hash href", errors)
     for guide in guides:
@@ -670,9 +675,9 @@ def verify_welcome(errors: list[str]) -> None:
                     f"/welcome/ must link {guide['label']!r} to {guide['href']!r}",
                     errors,
                 )
-        elif linked:
+        elif linked or guide["label"] in text:
             fail(
-                f"/welcome/ must not link {guide['label']!r} until its href is set",
+                f"/welcome/ must not show {guide['label']!r} until its href is set",
                 errors,
             )
     if "[CHECK]" in text or "[PLACEHOLDER]" in text:
@@ -735,7 +740,7 @@ def paddle_placeholders_block_checkout() -> bool:
 def verify_sales_script_cache(errors: list[str]) -> None:
     """Sales-page scripts share site.cssVersion, same as the stylesheets."""
     version = css_version()
-    for relative in ("buy/index.html", "welcome/index.html"):
+    for relative in ("welcome/index.html",):
         path = SITE / relative
         if not path.is_file():
             continue
@@ -751,126 +756,40 @@ def verify_sales_script_cache(errors: list[str]) -> None:
 
 
 def verify_buy(errors: list[str]) -> None:
-    if not BUY_PATH.is_file():
-        fail("/buy/ was not built; expected _site/buy/index.html", errors)
-        return
+    """The old checkout is a 301 to /pricing/, not a second offer."""
+    if BUY_PATH.is_file():
+        fail("/buy/ must not be built; it 301s to /pricing/", errors)
+    if (ROOT / "src" / "buy.njk").exists():
+        fail("src/buy.njk must be removed; /buy/ redirects to /pricing/", errors)
+    if (ROOT / "assets" / "buy-checkout.js").exists():
+        fail("assets/buy-checkout.js must be removed with the old checkout page", errors)
+    verify_sales_script_cache(errors)
+
+    redirects = ""
+    if REDIRECTS_SOURCE.is_file():
+        redirects = REDIRECTS_SOURCE.read_text(encoding="utf-8")
+    for rule in ("/buy /pricing/ 301", "/buy/ /pricing/ 301", "/buy/index.html /pricing/ 301"):
+        if rule not in redirects:
+            fail(f"_redirects must 301 {rule}", errors)
+
+    middleware = ""
+    if MIDDLEWARE_PATH.is_file():
+        middleware = MIDDLEWARE_PATH.read_text(encoding="utf-8")
+    if 'url.pathname = "/pricing/"' not in middleware:
+        fail("functions/_middleware.js must redirect /buy/ to /pricing/", errors)
+
     if not PADDLE_DATA_PATH.is_file():
         fail("src/_data/paddle.js is missing", errors)
-        return
+    else:
+        source = PADDLE_DATA_PATH.read_text(encoding="utf-8")
+        if 'environment: "sandbox"' not in source and "environment: 'sandbox'" not in source:
+            fail("src/_data/paddle.js must set environment to sandbox", errors)
+        if "https://practicalsupplychainplanning.com/welcome/" not in source:
+            fail("src/_data/paddle.js must set successUrl to the absolute /welcome/ URL", errors)
 
-    text = BUY_PATH.read_text(encoding="utf-8")
-    source = PADDLE_DATA_PATH.read_text(encoding="utf-8")
-    if not NOINDEX_RE.search(text):
-        fail("/buy/ must include a noindex robots meta tag", errors)
-    if "site-nav" in text:
-        fail("/buy/ must not include the site menu", errors)
-    if "Practical Stock Planner, US$49/month" not in text:
-        fail("/buy/ is missing the checkout heading", errors)
-    if "tax included" in text.lower():
-        fail("/buy/ must not say tax is included; Paddle calculates tax at checkout", errors)
-    if "Tax, where applicable, is calculated at checkout" not in text:
-        fail("/buy/ must say tax, where applicable, is calculated at checkout", errors)
-    if "Each user is a separate licence at US$49/month" not in text:
-        fail("/buy/ must say each user is a separate licence at US$49/month", errors)
-    if "One user is one computer" not in text:
-        fail("/buy/ must say one user is one computer", errors)
-    if "1 user × US$49/month = US$49/month (plus any applicable tax)" not in text:
-        fail("/buy/ must show an always-visible one-user total, plus any applicable tax", errors)
-    if "Each user gets their own stand-alone copy" not in text:
-        fail("/buy/ must explain that each user's copy is stand-alone", errors)
-    if "aren't shared between users" not in text:
-        fail("/buy/ must say data and plans are not shared between users", errors)
-    if not re.search(r'id="standalone-note"[^>]*\bhidden\b', text):
-        fail("/buy/ must keep the stand-alone note hidden until more than one user is selected", errors)
-    if "Buying for a team?" not in text:
-        fail("/buy/ must include a Buying for a team? toggle", errors)
-    if "How many users?" not in text or 'for="user-count"' not in text:
-        fail("/buy/ must label the How many users? field", errors)
-    if not re.search(r'id="user-count-field"[^>]*\bhidden\b', text):
-        fail("/buy/ must keep How many users? hidden until Buying for a team? is opened", errors)
-    user_count = re.search(r"<input\b[^>]*\bid=\"user-count\"[^>]*>", text, re.I)
-    if not user_count:
-        fail("/buy/ must include the How many users? number field", errors)
-    else:
-        field = user_count.group(0)
-        if 'type="number"' not in field or 'min="1"' not in field or 'max="10"' not in field:
-            fail("/buy/ user count must be a number from 1 to 10", errors)
-    if text.lower().count("<h1") != 1:
-        fail("/buy/ must have exactly one h1", errors)
-    if PADDLE_JS_URL not in text:
-        fail("/buy/ must load Paddle.js v2 from cdn.paddle.com", errors)
-    checkout_src = f"/assets/buy-checkout.js?v={css_version()}"
-    if checkout_src not in text:
-        fail(
-            f"/buy/ must cache-bust the checkout script as {checkout_src}",
-            errors,
-        )
-    if re.search(r'src="/assets/buy-checkout\.js"', text):
-        fail("/buy/ must not load buy-checkout.js without a ?v= cache-bust", errors)
-    verify_sales_script_cache(errors)
-    if "https://practicalsupplychainplanning.com/welcome/" not in text:
-        fail("/buy/ must set the Paddle success URL to /welcome/", errors)
-    if "<noscript" not in text.lower() or "mailto:support@practicalsupplychainplanning.com" not in text:
-        fail("/buy/ needs a noscript fallback to the support email", errors)
-    if not re.search(r"<button\b[^>]*>\s*Checkout\s*</button>", text, re.I):
-        fail("/buy/ must include a Checkout button", errors)
-    if "Checkout couldn't load. Please refresh, or email" not in text:
-        fail("/buy/ must include the Paddle load-failure note", errors)
-    if 'id="checkout-load-note"' not in text or "hidden" not in text:
-        fail("/buy/ must keep the Paddle load-failure note hidden until script shows it", errors)
-    checkout_js = ROOT / "assets" / "buy-checkout.js"
-    if not checkout_js.is_file():
-        fail("assets/buy-checkout.js is missing", errors)
-    else:
-        script = checkout_js.read_text(encoding="utf-8")
-        for snippet in (
-            'Paddle.Environment.set("sandbox")',
-            "Paddle.Initialize",
-            "Paddle.Checkout.open",
-            "displayMode: \"overlay\"",
-            "successUrl: config.successUrl",
-            "customData",
-            'key.indexOf("utm_")',
-            "slice(0, 100)",
-            "showLoadFailed",
-            "discountId",
-            "getSelectedUsers",
-            "quoteForUsers",
-            "quantity: quantity",
-            "(plus any applicable tax)",
-            "3 users: US$99/month (save US$48)",
-            'getElementById("user-count")',
-            'getElementById("standalone-note")',
-            "users < 2",
-            "MAX_USERS = 10",
-            "MIN_USERS = 1",
-            'params.get("c")',
-        ):
-            if snippet not in script:
-                fail(f"assets/buy-checkout.js is missing {snippet}", errors)
-        if re.search(r"quantity:\s*1\b", script):
-            fail(
-                "assets/buy-checkout.js must pass the selected user count to Paddle, not quantity: 1",
-                errors,
-            )
-        if "quote.quantity" in script:
-            fail(
-                "quoteForUsers() is display-only; the Paddle quantity must come from getSelectedUsers()",
-                errors,
-            )
-        if re.search(r"""\.get\(\s*['\"](?:priceId|discountId|price|discount)['\"]\s*\)""", script):
-            fail("/buy/ must not read a price or discount from the URL", errors)
-        if "REPLACE_ME" not in script and "isPlaceholder" not in script:
-            fail("assets/buy-checkout.js must keep the button disabled when placeholders remain", errors)
-    if 'environment: "sandbox"' not in source and "environment: 'sandbox'" not in source:
-        fail("src/_data/paddle.js must set environment to sandbox", errors)
-    if "https://practicalsupplychainplanning.com/welcome/" not in source:
-        fail("src/_data/paddle.js must set successUrl to the absolute /welcome/ URL", errors)
-    if paddle_placeholders_block_checkout():
-        if "checkout not configured" not in text:
-            fail("/buy/ must show checkout not configured while placeholders remain", errors)
-        if not re.search(r"<button\b[^>]*\bdisabled\b[^>]*>\s*Checkout\s*</button>", text, re.I):
-            fail("/buy/ Checkout button must be disabled while placeholders remain", errors)
+    email_logic = ROOT / "functions" / "email" / "logic.mjs"
+    if email_logic.is_file() and "/buy/" in email_logic.read_text(encoding="utf-8"):
+        fail("results email must not link to /buy/", errors)
 
     sitemap = ""
     if SITEMAP_PATH.is_file():
@@ -889,14 +808,12 @@ def verify_buy(errors: list[str]) -> None:
     for path in sorted(SITE.rglob("*.html")):
         page = path.read_text(encoding="utf-8")
         relative = path.relative_to(SITE).as_posix()
-        if path.resolve() == BUY_PATH.resolve():
-            if 'href="/buy/"' in page or "href='/buy/'" in page:
-                fail("/buy/ must not link to itself from the menu", errors)
-            continue
         if path.resolve() == (SITE / "pricing" / "index.html").resolve():
+            if 'href="/buy/"' in page or 'href="/buy"' in page:
+                fail("/pricing/ must not link to /buy/", errors)
             continue
         if "cdn.paddle.com" in page or re.search(r"<script\b[^>]*paddle\.js", page, re.I):
-            fail(f"Paddle.js must load only on /buy/ and /pricing/, found in {relative}", errors)
+            fail(f"Paddle.js must load only on /pricing/, found in {relative}", errors)
         if 'href="/buy/"' in page or 'href="/buy"' in page:
             fail(f"/buy/ is linked from {relative}", errors)
 
@@ -1066,9 +983,15 @@ def verify_policy_pages(errors: list[str]) -> None:
             "United States (San Francisco)",
             "Tokyo, Japan",
             "Cloudflare D1",
+            "Questions:",
         ):
             if phrase not in privacy:
                 fail(f"/privacy/ is missing approved copy: {phrase}", errors)
+        if not re.search(
+            r"Questions:\s*<a class=\"support-email\" href=\"mailto:support@practicalsupplychainplanning.com\">support@practicalsupplychainplanning.com</a>",
+            privacy,
+        ):
+            fail("/privacy/ must keep the Questions: support@ closing line", errors)
 
     contact_path = SITE / "contact" / "index.html"
     if contact_path.is_file():
@@ -1099,7 +1022,7 @@ def verify_policy_pages(errors: list[str]) -> None:
             if href not in source:
                 fail(f"{relative} is missing {href}", errors)
 
-    for relative in ("index.html", "about/index.html", "welcome/index.html", "buy/index.html"):
+    for relative in ("index.html", "about/index.html", "welcome/index.html", "pricing/index.html"):
         path = SITE / relative
         if not path.is_file():
             continue
@@ -1129,7 +1052,6 @@ def verify_seller(errors: list[str]) -> None:
         "privacy/index.html",
         "contact/index.html",
         "about/index.html",
-        "buy/index.html",
         "welcome/index.html",
     ):
         page = (SITE / relative).read_text(encoding="utf-8")

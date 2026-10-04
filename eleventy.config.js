@@ -26,6 +26,13 @@ module.exports = function (eleventyConfig) {
   });
   eleventyConfig.addWatchTarget("assets");
 
+  eleventyConfig.addFilter("withHref", (guides) => {
+    if (!Array.isArray(guides)) {
+      return [];
+    }
+    return guides.filter((guide) => guide && String(guide.href || "").trim());
+  });
+
   eleventyConfig.addFilter("isoDate", (value) => String(value || "").slice(0, 10));
 
   eleventyConfig.addFilter("displayDate", (value) => {

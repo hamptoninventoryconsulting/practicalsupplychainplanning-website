@@ -41,12 +41,11 @@
       Download Practical Stock Planner for Windows
     </button>
     <p class="sales-note">
-      Windows SmartScreen may show &ldquo;Windows protected your PC&rdquo; and &ldquo;Unknown publisher&rdquo;, because Practical Stock Planner isn&rsquo;t code-signed yet. To continue, click &ldquo;More info&rdquo;, then &ldquo;Run anyway&rdquo;. The download comes only from practicalsupplychainplanning.com. Code signing is planned.
-    </p>
-    <p class="sales-placeholder">
       <strong>Coming soon.</strong>
-      Placeholder: the Windows app is not available to download yet, so this
-      button stays disabled and does not link anywhere.
+      The download will be available here shortly; we&rsquo;ll also email you the link.
+    </p>
+    <p class="sales-note">
+      Windows SmartScreen may show &ldquo;Windows protected your PC&rdquo; and &ldquo;Unknown publisher&rdquo;, because Practical Stock Planner isn&rsquo;t code-signed yet. To continue, click &ldquo;More info&rdquo;, then &ldquo;Run anyway&rdquo;. The download comes only from practicalsupplychainplanning.com. Code signing is planned.
     </p>
   </div>
 </section>
@@ -62,12 +61,7 @@
     <li>
       <strong>Fill in the templates.</strong>
       Download the Excel templates from the app, then export your products, stock,
-      orders and purchase orders from Shopify or Xero and paste them in. Follow
-      our step-by-step guide.
-      <span class="sales-placeholder">
-        <strong>Placeholder.</strong>
-        The step-by-step guide link is not published yet.
-      </span>
+      orders and purchase orders from Shopify or Xero and paste them in.
     </li>
     <li>
       <strong>Run your plan.</strong>
@@ -77,24 +71,19 @@
   </ol>
 </section>
 
+{%- set publishedGuides = exportGuides | withHref %}
+{%- if publishedGuides.length %}
 <section class="sales-panel" aria-labelledby="data-heading">
   <h2 id="data-heading">Getting your data ready</h2>
   <ul class="sales-guides">
-    {%- for guide in exportGuides %}
-    {%- set guideHref = guide.href | trim %}
+    {%- for guide in publishedGuides %}
     <li>
-      {%- if guideHref %}
-      <a href="{{ guideHref }}">{{ guide.label }}</a>
-      {%- else %}
-      <span class="sales-placeholder">
-        <strong>Guide coming soon.</strong>
-        {{ guide.label }}
-      </span>
-      {%- endif %}
+      <a href="{{ guide.href | trim }}">{{ guide.label }}</a>
     </li>
     {%- endfor %}
   </ul>
 </section>
+{%- endif %}
 
 <section class="sales-panel" aria-labelledby="help-heading">
   <h2 id="help-heading">Need a hand?</h2>
