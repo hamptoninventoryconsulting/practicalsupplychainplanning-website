@@ -731,7 +731,7 @@ function formatPoint(value, kind) {
 function stockPlannerUrl() {
   return (
     SITE +
-    "/buy/?utm_source=results-email&utm_medium=email&utm_campaign=" +
+    "/pricing/?utm_source=results-email&utm_medium=email&utm_campaign=" +
     WORDING_VERSION
   );
 }

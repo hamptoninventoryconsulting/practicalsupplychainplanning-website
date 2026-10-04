@@ -34,6 +34,30 @@ const cases = [
     "https://practicalsupplychainplanning-website.pages.dev/",
     null,
   ],
+  [
+    "https://practicalsupplychainplanning.com/buy/",
+    "https://practicalsupplychainplanning.com/pricing/",
+  ],
+  [
+    "https://practicalsupplychainplanning.com/buy",
+    "https://practicalsupplychainplanning.com/pricing/",
+  ],
+  [
+    "https://practicalsupplychainplanning.com/buy/index.html",
+    "https://practicalsupplychainplanning.com/pricing/",
+  ],
+  [
+    "https://practicalsupplychainplanning.com/buy/?utm_source=results-email&utm_medium=email&utm_campaign=sim-results-v1",
+    "https://practicalsupplychainplanning.com/pricing/?utm_source=results-email&utm_medium=email&utm_campaign=sim-results-v1",
+  ],
+  [
+    "https://www.practicalsupplychainplanning.com/buy/?utm_source=results-email",
+    "https://practicalsupplychainplanning.com/pricing/?utm_source=results-email",
+  ],
+  [
+    "http://www.practicalsupplychainplanning.com/buy",
+    "https://practicalsupplychainplanning.com/pricing/",
+  ],
 ];
 
 for (const [input, expected] of cases) {

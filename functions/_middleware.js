@@ -10,16 +10,27 @@
  */
 export const APEX_HOST = "practicalsupplychainplanning.com";
 
+function isRetiredBuyPath(pathname) {
+  return pathname === "/buy" || pathname === "/buy/" || pathname === "/buy/index.html";
+}
+
 export function redirectLocation(requestUrl) {
   const url = new URL(requestUrl);
+  let redirect = false;
 
   if (url.hostname === `www.${APEX_HOST}`) {
     url.hostname = APEX_HOST;
     url.protocol = "https:";
-    return url.href;
+    redirect = true;
   }
 
-  return null;
+  // The old multi-user checkout. The public offer is /pricing/.
+  if (isRetiredBuyPath(url.pathname)) {
+    url.pathname = "/pricing/";
+    redirect = true;
+  }
+
+  return redirect ? url.href : null;
 }
 
 export async function onRequest(context) {

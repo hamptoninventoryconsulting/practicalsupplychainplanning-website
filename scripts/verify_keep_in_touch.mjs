@@ -66,11 +66,12 @@ assert.match(footer, /keep-in-touch\.js\?v=\{\{ site\.cssVersion \}\}/);
 
 const sales = fs.readFileSync(path.join(ROOT, "src", "_includes", "layouts", "sales.njk"), "utf8");
 assert.doesNotMatch(sales, /keep-in-touch|Let's keep in touch/);
-["src/buy.njk", "src/welcome.njk"].forEach(function (file) {
-  const page = fs.readFileSync(path.join(ROOT, file), "utf8");
-  assert.match(page, /layouts\/sales\.njk/);
-  assert.doesNotMatch(page, /keep-in-touch/);
-});
+// Welcome uses the sales layout, so it stays off the footer form.
+// /buy/ is a redirect to /pricing/, which uses the normal footer.
+assert.ok(!fs.existsSync(path.join(ROOT, "src", "buy.njk")));
+const welcome = fs.readFileSync(path.join(ROOT, "src", "welcome.njk"), "utf8");
+assert.match(welcome, /layouts\/sales\.njk/);
+assert.doesNotMatch(welcome, /keep-in-touch/);
 
 const home = fs.readFileSync(path.join(ROOT, "src", "index.njk"), "utf8");
 assert.ok(
@@ -95,12 +96,12 @@ const builtHome = built("index.html");
 assert.match(builtHome, /id="keep-in-touch"/);
 assert.ok(builtHome.includes(KEEP_IN_TOUCH_WORDING));
 assert.ok(builtHome.includes(BETA_WORDING));
-assert.match(builtHome, /styles\.css\?v=33/);
-assert.match(builtHome, /keep-in-touch\.js\?v=33/);
+assert.match(builtHome, /styles\.css\?v=34/);
+assert.match(builtHome, /keep-in-touch\.js\?v=34/);
 assert.ok(built("privacy/index.html").includes(PRIVACY_SENTENCE));
-["buy/index.html", "welcome/index.html"].forEach(function (rel) {
-  assert.doesNotMatch(built(rel), /id="keep-in-touch"|Let's keep in touch/);
-});
+assert.ok(!fs.existsSync(path.join(ROOT, "_site", "buy", "index.html")));
+assert.doesNotMatch(built("welcome/index.html"), /id="keep-in-touch"|Let's keep in touch/);
+assert.match(built("pricing/index.html"), /id="keep-in-touch"/);
 
 function adapter(sqlite) {
   return {

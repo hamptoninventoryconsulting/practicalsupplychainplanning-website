@@ -1,0 +1,191 @@
+---json
+{
+  "layout": "layouts/page.njk",
+  "title": "Practical Stock Planner: time-phased stock planning for Windows — Practical Supply Chain Planning",
+  "description": "Plan stock period by period and see what to order and when. Windows desktop app for product businesses that buy in stock with lead times. 14-day free trial, then US$49 a month (A$75 incl. GST in Australia).",
+  "canonical": "https://practicalsupplychainplanning.com/pricing/",
+  "nav": "pricing",
+  "permalink": "/pricing/"
+}
+---
+{%- set checkoutConfigured = ("REPLACE_ME" not in paddle.clientToken) and (paddle.campaigns.default.priceId) and ("REPLACE_ME" not in paddle.campaigns.default.priceId) -%}
+<h1 class="page-title">Practical Stock Planner</h1>
+<p class="tagline">Time-phased stock planning for Windows</p>
+
+<section class="card">
+  <div class="content">
+    <p>Know what to order, and when, before you run out.</p>
+    <p>
+      Practical Stock Planner is a Windows desktop app for product businesses that buy in stock from suppliers with lead times. It projects your stock period by period from your stock on hand, open purchase orders and forecast. It shows, for each item, where you will run short, and it tells you what to order and when to order it.
+    </p>
+    <p>
+      It is practical, not theoretical. No black box. You can see the inputs, check the maths, and stay in control of every purchasing decision.
+    </p>
+
+    <h2>What it does</h2>
+    <ul>
+      <li><strong>Period by period projection.</strong> See projected stock for each item, period by period, based on your forecast, stock on hand and orders already placed. It plans over time, not from a single reorder point.</li>
+      <li><strong>Shortage warnings.</strong> Spot the periods where stock will drop below where you want it, before it happens.</li>
+      <li><strong>Order suggestions.</strong> Get suggested order quantities and order dates that allow for supplier lead times.</li>
+      <li><strong>Open purchase orders included.</strong> Stock you have already ordered is counted in the period it is due to arrive.</li>
+      <li><strong>Imports from Excel (.xlsx) or CSV.</strong> Fill in the app&rsquo;s templates from the exports your current systems already produce. There is no direct connection to those systems.</li>
+    </ul>
+
+    <h2>Who it&rsquo;s for</h2>
+    <p>
+      Product businesses that buy in stock from suppliers with lead times (online stores, wholesalers, distributors and brands) and have outgrown spreadsheet reorder lists or simple reorder points.
+    </p>
+
+    <h2>What it doesn&rsquo;t do</h2>
+    <p>We want you to know before you buy:</p>
+    <ul>
+      <li>It plans <strong>one stock location</strong>. It does not plan multiple warehouses or stores.</li>
+      <li>It is <strong>not manufacturing planning</strong>. There is no bill of materials (recipes or components) and no production scheduling.</li>
+      <li>It does not place orders with your suppliers or change anything in your other systems. It gives you a plan; you decide.</li>
+      <li>It runs on <strong>Windows 10 or 11, 64-bit</strong> only.</li>
+    </ul>
+
+    <h2>Your data stays on your PC</h2>
+    <p>
+      Your stock, sales, forecast and supplier data stay on your own PC. We never see them. The app only contacts our licence server to check your licence. See our <a href="/privacy/">Privacy Policy</a>.
+    </p>
+  </div>
+</section>
+
+<section class="card" id="price" aria-labelledby="price-heading">
+  <h2 class="card__title" id="price-heading">Price</h2>
+  <div class="content">
+    <p><strong>Start with a 14-day free trial.</strong></p>
+    <div class="content-table-scroll">
+      <table class="content-table">
+        <caption class="visually-hidden">Price after the 14-day free trial</caption>
+        <thead>
+          <tr>
+            <th scope="col">Where you buy</th>
+            <th scope="col">After the trial</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Outside Australia</th>
+            <td><strong>US$49 per month, including any applicable tax</strong></td>
+          </tr>
+          <tr>
+            <th scope="row">In Australia</th>
+            <td><strong>A$75 per month including GST</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Monthly subscription. Cancel any time. No lock-in contract.</p>
+    <p>
+      <strong>How the free trial works.</strong>
+      You enter your card at checkout, but you aren&rsquo;t charged anything for 14 days. Cancel before the trial ends and you pay nothing. If you keep going, your first monthly payment is taken when the trial ends, then on the same date each month. This is Paddle&rsquo;s standard free trial: a card is taken at checkout, and nothing is charged during the 14 days. One trial per customer.
+    </p>
+
+    <p class="trial-consent" id="trial-consent">
+      By starting your trial you agree to our <a href="/terms/">Terms</a> and <a href="/refunds/">Refund Policy</a>. Your order is processed by our online reseller Paddle.com, the Merchant of Record, which handles payment, tax and receipts.
+    </p>
+    <p class="trial-action">
+      <button
+        type="button"
+        class="trial-button"
+        id="trial-button"
+        disabled
+        aria-describedby="trial-consent"
+      >
+        Start your free trial
+      </button>
+    </p>
+    <p class="trial-note" id="trial-note"{% if checkoutConfigured %} hidden{% endif %}>
+      Checkout is not available on this page yet. Email
+      <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a>.
+    </p>
+    <p class="trial-note" id="trial-load-note" hidden>
+      Checkout couldn&rsquo;t load. Please refresh, or email
+      <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a>.
+    </p>
+    <noscript>
+      <p>
+        Checkout needs JavaScript. Email
+        <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a>
+        and we will help you start a trial.
+      </p>
+    </noscript>
+
+    <h2>What&rsquo;s included</h2>
+    <ul>
+      <li>A licence to use Practical Stock Planner on <strong>one Windows PC</strong>.</li>
+      <li>All updates released while your subscription is active.</li>
+      <li>Email support from Daniel, the person who built it, with a reply within 2 business days (Brisbane time).</li>
+      <li>Your licence key, emailed to you a few minutes after checkout.</li>
+    </ul>
+
+    <h2>How buying works</h2>
+    <ol>
+      <li>Click <strong>Start your free trial</strong>. A secure Paddle checkout opens on this page.</li>
+      <li>Enter your email address and payment details. Paddle shows what you&rsquo;ll pay, and when, before you confirm. Nothing is charged during the 14-day trial.</li>
+      <li>Paddle emails you a confirmation. You land on our welcome page with the next steps.</li>
+      <li>Within a few minutes we email you your <strong>licence key</strong> and a <strong>download link</strong>.</li>
+      <li>Install Practical Stock Planner, open it and enter your licence key.</li>
+    </ol>
+    <p>After the trial, your subscription renews each month on the same date until you cancel.</p>
+  </div>
+</section>
+
+<section class="card" aria-labelledby="questions-heading">
+  <h2 class="card__title" id="questions-heading">Questions</h2>
+  <div class="content">
+    <h3>Is there a free trial?</h3>
+    <p>
+      Yes, 14 days. You aren&rsquo;t charged until the trial ends, and you can cancel before then and pay nothing. After that, you can still ask for a refund within 14 days of any payment. See our <a href="/refunds/">Refund Policy</a>.
+    </p>
+
+    <h3>How do I cancel?</h3>
+    <p>
+      Use the link in your Paddle email, or go to <a href="https://www.paddle.net" rel="noopener noreferrer" target="_blank">paddle.net</a> and look up your order. If you cancel during the trial, you won&rsquo;t be charged. If you cancel later, you can keep using the app until the end of the month you&rsquo;ve paid for, and you won&rsquo;t be charged again.
+    </p>
+
+    <h3>Who am I buying from?</h3>
+    <p>
+      Our order process is conducted by our online reseller Paddle.com. Paddle.com is the Merchant of Record for all our orders. Paddle takes the payment, charges the right tax for your country (including GST in Australia), and sends your receipts. The software comes from Daniel Hampton, trading as Practical Supply Chain Planning (ABN 56 757 743 802), Queensland, Australia.
+    </p>
+
+    <h3>Will I get a tax invoice?</h3>
+    <p>
+      Yes, from Paddle. Paddle emails a receipt for every payment, and you can download invoices from the link in that email or at <a href="https://www.paddle.net" rel="noopener noreferrer" target="_blank">paddle.net</a>. As the seller, Paddle charges and pays the GST on Australian orders.
+    </p>
+
+    <h3>What happens if a payment fails?</h3>
+    <p>
+      Paddle will retry the payment and email you. The app keeps working for 7 days from the first failed payment and shows a &ldquo;payment required&rdquo; message. If the payment still hasn&rsquo;t gone through after those 7 days, the app stops until it is paid. If Paddle can&rsquo;t collect the payment after its retries, the subscription is cancelled.
+    </p>
+
+    <h3>Can I use it on more than one PC?</h3>
+    <p>
+      One licence works on one PC at a time. If you get a new PC, email us and we&rsquo;ll move your licence across. If you need more PCs, buy a second subscription.
+    </p>
+
+    <h3>Do I need an internet connection?</h3>
+    <p>
+      Only now and then. The app needs the internet to activate, then it checks your licence about once a week. It keeps working for up to 14 days without a connection.
+    </p>
+
+    <h3>Will Windows warn me when I install it?</h3>
+    <p>
+      Windows SmartScreen may show &ldquo;Windows protected your PC&rdquo; and &ldquo;Unknown publisher&rdquo;, because Practical Stock Planner isn&rsquo;t code-signed yet. To continue, click &ldquo;More info&rdquo;, then &ldquo;Run anyway&rdquo;. The download comes only from practicalsupplychainplanning.com. Code signing is planned.
+    </p>
+
+    <h3>Something else?</h3>
+    <p>
+      Email
+      <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a>,
+      call +61 2 8317 3359 (voicemail), or see the <a href="/contact/">Contact page</a>.
+    </p>
+  </div>
+</section>
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+<script type="application/json" id="paddle-config">
+{{ paddle | dump | safe }}
+</script>
+<script src="/assets/pricing-checkout.js?v={{ site.cssVersion }}"></script>
