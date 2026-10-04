@@ -1444,8 +1444,9 @@ async function suppress(db, email, reason, eventId, createdAt) {
     "INSERT OR IGNORE INTO suppression (email, reason, created_at, resend_event_id) VALUES (?, ?, ?, ?)",
     [email, reason, createdAt, eventId]
   );
-  // A beta tick stays only until the person unsubscribes. The row then follows the 24-month prune.
-  if (reason === "unsubscribe") {
+  // A beta tick stays until the person unsubscribes or a spam complaint is recorded.
+  // The row then follows the 24-month prune. A bounce does not clear the tick.
+  if (reason === "unsubscribe" || reason === "complaint") {
     await run(db, "UPDATE consent SET beta_box = 0 WHERE email = ?", [email]);
   }
 }
