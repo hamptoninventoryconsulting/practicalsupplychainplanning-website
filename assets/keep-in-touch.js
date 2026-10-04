@@ -1,5 +1,5 @@
 /**
- * Footer "Let's keep in touch" form.
+ * Home page "Let's keep in touch" form.
  * Posts to /api/keep-in-touch. The articles sentence is the consent.
  * The beta tick is optional and starts unticked.
  */
@@ -71,6 +71,7 @@
     }
     widgetId = window.turnstile.render(turnstileSlot, {
       sitekey: sitekey,
+      appearance: "interaction-only",
       size: "flexible",
       callback: function (token) {
         latestToken = token || "";

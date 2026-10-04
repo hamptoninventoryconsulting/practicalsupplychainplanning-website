@@ -119,6 +119,7 @@
       }
       widgetId = window.turnstile.render(turnstileSlot, {
         sitekey: sitekey,
+        appearance: "interaction-only",
         size: "flexible",
         callback: function (token) {
           latestToken = token || "";

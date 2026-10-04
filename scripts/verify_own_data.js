@@ -816,7 +816,7 @@ assert.match(flat, /In 8 out of 10 simulated years, the result falls inside it/)
 assert.match(flat, /Z comes from the service level you pick/);
 assert.match(flat, /square root of L spreads that weekly variation/);
 assert.match(page, /src="\/assets\/own-data-engine\.js\?v=4"/);
-assert.match(page, /src="\/assets\/sim-results-form\.js\?v=3"/);
+assert.match(page, /src="\/assets\/sim-results-form\.js\?v=4"/);
 assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=4"/);
 assert.ok(page.indexOf("own-data-engine.js") < page.indexOf("own-data-simulator.js"));
 assert.match(page, /id="own-results-email" hidden/);

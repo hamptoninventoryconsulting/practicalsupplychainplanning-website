@@ -17,11 +17,21 @@ const partial = fs.readFileSync(
 
 assert.doesNotMatch(source, /turnstile\.ready|\.ready\(/);
 assert.match(partial, /render=explicit&onload=pscpTurnstileLoaded/);
+assert.match(partial, /data-appearance="interaction-only"/);
+assert.match(source, /appearance:\s*"interaction-only"/);
+assert.match(
+  fs.readFileSync(path.join(ROOT, "assets", "keep-in-touch.js"), "utf8"),
+  /appearance:\s*"interaction-only"/
+);
+assert.match(
+  fs.readFileSync(path.join(ROOT, "src", "_includes", "partials", "keep-in-touch.njk"), "utf8"),
+  /data-appearance="interaction-only"/
+);
 assert.match(partial, /async><\/script>/);
 assert.doesNotMatch(partial, /api\.js[^>]*defer/);
 assert.match(
   fs.readFileSync(path.join(ROOT, "src", "learn", "safety-stock-simulator.njk"), "utf8"),
-  /sim-results-form\.js\?v=3/
+  /sim-results-form\.js\?v=4/
 );
 
 function Element(spec) {
@@ -212,6 +222,7 @@ onload.sandbox.window.pscpTurnstileQueue[0]();
 assert.strictEqual(onloadState.readyCalls, 0);
 assert.strictEqual(onloadState.renders.length, 1);
 assert.strictEqual(onloadState.renders[0].sitekey, "0x4AAAAAAFMWJU5owYhGcyrK");
+assert.strictEqual(onloadState.renders[0].appearance, "interaction-only");
 assert.strictEqual(typeof onloadState.renders[0].callback, "function");
 assert.strictEqual(typeof onloadState.renders[0]["expired-callback"], "function");
 assert.strictEqual(typeof onloadState.renders[0]["error-callback"], "function");
@@ -255,5 +266,36 @@ polled.built.results.checked = true;
 polled.built.form.listeners.submit({ preventDefault: function () {} });
 await wait(20);
 assert.strictEqual(JSON.parse(polled.posts[0].body).turnstileToken, "polled-token-9876");
+
+const failed = load({
+  pscpTurnstileQueue: [],
+  fetch: async function () {
+    return {
+      ok: false,
+      json: async function () {
+        return { ok: false, error: "The check failed. Refresh the page and try again." };
+      },
+    };
+  },
+});
+failed.api.show();
+const failedState = {
+  readyCalls: 0,
+  renders: [],
+  resets: [],
+  token: "token-rejected-1234",
+  reenter: false,
+  options: null,
+  widget: null,
+};
+failed.sandbox.window.turnstile = turnstileStub(failedState);
+failed.sandbox.window.pscpTurnstileQueue[0]();
+failedState.renders[0].callback(failedState.token);
+failed.built.email.value = "reader@example.com";
+failed.built.results.checked = true;
+failed.built.form.listeners.submit({ preventDefault: function () {} });
+await wait(20);
+assert.strictEqual(failed.built.status.textContent, "The check failed. Refresh the page and try again.");
+assert.strictEqual(failed.built.send.disabled, false);
 
 console.log("Turnstile form load checks OK.");
