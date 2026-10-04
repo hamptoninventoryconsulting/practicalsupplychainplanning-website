@@ -1,0 +1,99 @@
+---json
+{
+  "layout": "layouts/page.njk",
+  "title": "Stock & Supply Planning | Practical Supply Chain Planning",
+  "description": "Practical stock and supply planning for importers and growing businesses. Free learning tools, plain-English articles and Practical Stock Planner.",
+  "canonical": "https://practicalsupplychainplanning.com/",
+  "nav": "home",
+  "permalink": "/"
+}
+---
+<section class="home-hero">
+  <h1 class="page-title">Practical stock and supply planning</h1>
+  <p class="tagline">Straight-logic planning for importers and small to mid-sized businesses. Know what to order, when to order it, and why.</p>
+  <div class="home-actions">
+    {%- for tool in learnTools -%}
+    {%- if tool.title == "Safety Stock Simulator" %}
+    <a class="home-button" href="{{ tool.href }}">Try the Safety Stock Simulator</a>
+    {%- endif -%}
+    {%- endfor %}
+    <a class="home-text-link" href="/blog/">Read the blog</a>
+  </div>
+</section>
+
+<section class="card" aria-labelledby="home-learn-heading">
+  <h2 class="card__title" id="home-learn-heading">Learn by doing</h2>
+  <div class="content">
+    <p>Free tools that show how stock planning works, using clear numbers instead of jargon.</p>
+  </div>
+  <ul class="learn-list">
+    {%- for card in [
+      {
+        "title": "Safety Stock Simulator",
+        "summary": "See how demand swings and lead times change the stock you need to hold.",
+        "cta": "Open the simulator"
+      },
+      {
+        "title": "Own-data Safety Stock Simulator",
+        "summary": "Run the same calculation on up to 10 of your own items and get the results by email.",
+        "cta": "Try it with your data"
+      }
+    ] -%}
+    {%- for tool in learnTools -%}
+    {%- if tool.title == card.title %}
+    <li class="learn-list__item">
+      <a class="learn-card" href="{{ tool.href }}">
+        <h3 class="learn-card__title">{{ card.title }}</h3>
+        <p class="learn-card__summary">{{ card.summary }}</p>
+        <span class="home-card__cta">{{ card.cta }}</span>
+      </a>
+    </li>
+    {%- endif -%}
+    {%- endfor -%}
+    {%- endfor %}
+  </ul>
+  <p class="home-more"><a href="/learn/">See all learning tools</a></p>
+</section>
+
+<section class="card" aria-labelledby="home-articles-heading">
+  <h2 class="card__title" id="home-articles-heading">Latest articles</h2>
+  <div class="content">
+    <p>Plain-English articles on planning stock and supply, each built around one idea.</p>
+  </div>
+  <ul class="learn-list learn-list--stack">
+    {%- for post in collections.postsByDate -%}
+    {%- if loop.index0 < 3 %}
+    <li class="learn-list__item">
+      <a class="learn-card" href="/blog/{{ post.fileSlug }}/">
+        <h3 class="learn-card__title">{{ post.data.title }}</h3>
+        <p class="learn-card__summary">{{ post.data.summary or post.data.description }}</p>
+        <span class="home-card__cta">Read the article</span>
+      </a>
+    </li>
+    {%- endif -%}
+    {%- endfor %}
+  </ul>
+  <p class="home-more"><a href="/blog/">All articles</a></p>
+</section>
+
+<section class="card" aria-labelledby="home-planner-heading">
+  <h2 class="card__title" id="home-planner-heading">Practical Stock Planner</h2>
+  <div class="content">
+    <p>Planning software for businesses that have outgrown reorder points and spreadsheets. Practical Stock Planner is time-phased MRP. It projects your stock period by period from your inventory data, open purchase orders and forecast, then tells you what to order and when.</p>
+    <ul class="home-points">
+      <li>Plans period by period, not with a single reorder point</li>
+      <li>Works from your current stock, open POs and forecast</li>
+      <li>Imports from Excel (.xlsx) or CSV</li>
+      <li>Runs on Windows. 14-day free trial, sold worldwide.</li>
+    </ul>
+    <p>Coming soon.</p>
+  </div>
+</section>
+
+<section class="card" aria-labelledby="home-about-heading">
+  <h2 class="card__title" id="home-about-heading">Built by a working planner</h2>
+  <div class="content">
+    <p>I'm Daniel Hampton. I've spent my career planning stock and supply for manufacturing, wholesale, retail and distribution businesses. Practical Supply Chain Planning shares the straightforward methods that work, without the complexity of big ERP systems.</p>
+  </div>
+  <p class="home-more"><a href="/about/">More about me</a></p>
+</section>

@@ -4,19 +4,27 @@ import { redirectLocation } from "../functions/_middleware.js";
 const cases = [
   [
     "https://www.practicalsupplychainplanning.com/",
-    "https://practicalsupplychainplanning.com/about/",
+    "https://practicalsupplychainplanning.com/",
   ],
   [
     "http://www.practicalsupplychainplanning.com/blog/example/?q=1",
     "https://practicalsupplychainplanning.com/blog/example/?q=1",
   ],
   [
-    "https://practicalsupplychainplanning.com/",
+    "https://www.practicalsupplychainplanning.com/about/",
     "https://practicalsupplychainplanning.com/about/",
   ],
   [
+    "https://practicalsupplychainplanning.com/",
+    null,
+  ],
+  [
     "https://practicalsupplychainplanning.com/index.html",
+    null,
+  ],
+  [
     "https://practicalsupplychainplanning.com/about/",
+    null,
   ],
   [
     "https://practicalsupplychainplanning.com/blog/",
@@ -24,7 +32,7 @@ const cases = [
   ],
   [
     "https://practicalsupplychainplanning-website.pages.dev/",
-    "https://practicalsupplychainplanning-website.pages.dev/about/",
+    null,
   ],
 ];
 

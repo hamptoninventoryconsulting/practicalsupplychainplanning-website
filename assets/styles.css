@@ -1300,3 +1300,89 @@ main {
   margin: 0;
   padding: 0;
 }
+
+.home-hero .tagline {
+  margin-bottom: 1.25rem;
+}
+
+.home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 2rem;
+}
+
+.home-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--color-text);
+  border-radius: var(--card-radius);
+  background: var(--color-text);
+  color: #fff;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+}
+
+.home-button:hover,
+.home-button:focus-visible {
+  background: #111827;
+  color: #fff;
+}
+
+.home-text-link {
+  font-weight: 600;
+}
+
+.home-button:focus-visible,
+.home-text-link:focus-visible,
+.home-more a:focus-visible {
+  outline: 2px solid var(--color-brand-cyan);
+  outline-offset: 2px;
+}
+
+.card > .learn-list {
+  margin-top: 1.25rem;
+}
+
+.learn-list--stack {
+  grid-template-columns: 1fr;
+}
+
+.home-card__cta {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+}
+
+.home-more {
+  margin: 1.25rem 0 0;
+}
+
+.home-points {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+}
+
+.home-points li + li {
+  margin-top: 0.35rem;
+}
+
+@media (max-width: 640px) {
+  .home-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .home-button {
+    width: 100%;
+  }
+}
