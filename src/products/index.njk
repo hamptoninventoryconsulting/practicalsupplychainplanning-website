@@ -1,0 +1,28 @@
+---json
+{
+  "layout": "layouts/page.njk",
+  "title": "Products — Practical Supply Chain Planning",
+  "description": "Software for product businesses that buy in stock with lead times. Practical Stock Planner plans stock period by period.",
+  "canonical": "https://practicalsupplychainplanning.com/products/",
+  "permalink": "/products/"
+}
+---
+<h1 class="page-title">Products</h1>
+<p class="tagline">Software for product businesses that buy in stock with lead times.</p>
+
+<ul class="learn-list{% if products.length < 2 %} learn-list--stack{% endif %}">
+  {% for product in products %}
+  <li class="learn-list__item">
+    <a class="learn-card" href="{{ product.href }}">
+      <h2 class="learn-card__title">{{ product.title }}</h2>
+      <p class="learn-card__summary">{{ product.description }}</p>
+      {%- if product.price %}
+      <p class="learn-card__summary">{{ product.price }}</p>
+      {%- endif %}
+      {%- if product.trial %}
+      <p class="learn-card__summary">{{ product.trial }}</p>
+      {%- endif %}
+    </a>
+  </li>
+  {% endfor %}
+</ul>

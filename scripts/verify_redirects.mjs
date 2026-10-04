@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { redirectLocation } from "../functions/_middleware.js";
 
+const product = "https://practicalsupplychainplanning.com/products/practical-stock-planner/";
+
 const cases = [
   [
     "https://www.practicalsupplychainplanning.com/",
@@ -36,27 +38,59 @@ const cases = [
   ],
   [
     "https://practicalsupplychainplanning.com/buy/",
-    "https://practicalsupplychainplanning.com/pricing/",
+    product,
   ],
   [
     "https://practicalsupplychainplanning.com/buy",
-    "https://practicalsupplychainplanning.com/pricing/",
+    product,
   ],
   [
     "https://practicalsupplychainplanning.com/buy/index.html",
-    "https://practicalsupplychainplanning.com/pricing/",
+    product,
   ],
   [
     "https://practicalsupplychainplanning.com/buy/?utm_source=results-email&utm_medium=email&utm_campaign=sim-results-v1",
-    "https://practicalsupplychainplanning.com/pricing/?utm_source=results-email&utm_medium=email&utm_campaign=sim-results-v1",
+    product + "?utm_source=results-email&utm_medium=email&utm_campaign=sim-results-v1",
   ],
   [
     "https://www.practicalsupplychainplanning.com/buy/?utm_source=results-email",
-    "https://practicalsupplychainplanning.com/pricing/?utm_source=results-email",
+    product + "?utm_source=results-email",
   ],
   [
     "http://www.practicalsupplychainplanning.com/buy",
+    product,
+  ],
+  [
     "https://practicalsupplychainplanning.com/pricing/",
+    product,
+  ],
+  [
+    "https://practicalsupplychainplanning.com/pricing",
+    product,
+  ],
+  [
+    "https://practicalsupplychainplanning.com/pricing/index.html",
+    product,
+  ],
+  [
+    "https://practicalsupplychainplanning.com/pricing/?utm_source=results-email&utm_medium=email",
+    product + "?utm_source=results-email&utm_medium=email",
+  ],
+  [
+    "https://www.practicalsupplychainplanning.com/pricing/?utm_source=paddle",
+    product + "?utm_source=paddle",
+  ],
+  [
+    "http://www.practicalsupplychainplanning.com/pricing",
+    product,
+  ],
+  [
+    "https://practicalsupplychainplanning.com/products/",
+    null,
+  ],
+  [
+    "https://practicalsupplychainplanning.com/products/practical-stock-planner/",
+    null,
   ],
 ];
 

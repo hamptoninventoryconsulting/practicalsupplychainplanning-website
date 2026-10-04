@@ -1,8 +1,12 @@
 # Homepage is a real page at /. Do not redirect / or /index.html to /about/.
 # Host-level www → apex is not supported in this file (domain-level redirects
 # are unsupported here); that lives in functions/_middleware.js.
-# The same /buy/ rule is in the middleware, because Pages Functions can skip
-# this file. Keep the two in step.
-/buy /pricing/ 301
-/buy/ /pricing/ 301
-/buy/index.html /pricing/ 301
+# The same rules are in the middleware, because Pages Functions can skip
+# this file. Keep the two in step. /buy/ and /pricing/ both land on the
+# product page in one hop.
+/buy /products/practical-stock-planner/ 301
+/buy/ /products/practical-stock-planner/ 301
+/buy/index.html /products/practical-stock-planner/ 301
+/pricing /products/practical-stock-planner/ 301
+/pricing/ /products/practical-stock-planner/ 301
+/pricing/index.html /products/practical-stock-planner/ 301

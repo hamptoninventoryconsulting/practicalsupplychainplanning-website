@@ -9,12 +9,13 @@ The sitemap is owned by Eleventy (`src/sitemap.njk`). This script checks the
 built files; it does not write `sitemap.xml`.
 
 `/welcome/` is the post-purchase page. It must be noindex and must not appear
-in the sitemap or in site menus. `/pricing/`, `/terms/`, `/refunds/`,
-`/privacy/` and `/contact/` are public pages: they are in the sitemap and
-are not noindex.
+in the sitemap or in site menus. `/products/`,
+`/products/practical-stock-planner/`, `/terms/`, `/refunds/`, `/privacy/`
+and `/contact/` are public pages: they are in the sitemap and are not noindex.
 
-`/buy/` is retired. It 301s to `/pricing/` and is not a page. Paddle.js
-loads on `/pricing/` only. `/welcome/` must stay free of Paddle.js.
+`/buy/` and `/pricing/` are retired. Each 301s straight to
+`/products/practical-stock-planner/`. Paddle.js loads on that product page
+only. `/welcome/` must stay free of Paddle.js.
 
 Usage:
   npm run build
@@ -45,7 +46,8 @@ BUY_LOC = f"{SITE_ORIGIN}/buy/"
 PADDLE_DATA_PATH = ROOT / "src" / "_data" / "paddle.js"
 PADDLE_JS_URL = "https://cdn.paddle.com/paddle/v2/paddle.js"
 POLICY_PAGES = (
-    ("pricing/index.html", f"{SITE_ORIGIN}/pricing/"),
+    ("products/index.html", f"{SITE_ORIGIN}/products/"),
+    ("products/practical-stock-planner/index.html", f"{SITE_ORIGIN}/products/practical-stock-planner/"),
     ("terms/index.html", f"{SITE_ORIGIN}/terms/"),
     ("refunds/index.html", f"{SITE_ORIGIN}/refunds/"),
     ("privacy/index.html", f"{SITE_ORIGIN}/privacy/"),
@@ -83,7 +85,8 @@ CORE_PAGES = (
     "/learn/",
     "/learn/safety-stock-simulator/",
     "/learn/safety-stock-simulator/own-data/",
-    "/pricing/",
+    "/products/",
+    "/products/practical-stock-planner/",
     "/terms/",
     "/refunds/",
     "/privacy/",
@@ -100,7 +103,8 @@ CANONICAL_PAGES = (
         "learn/safety-stock-simulator/own-data/index.html",
         f"{SITE_ORIGIN}/learn/safety-stock-simulator/own-data/",
     ),
-    ("pricing/index.html", f"{SITE_ORIGIN}/pricing/"),
+    ("products/index.html", f"{SITE_ORIGIN}/products/"),
+    ("products/practical-stock-planner/index.html", f"{SITE_ORIGIN}/products/practical-stock-planner/"),
     ("terms/index.html", f"{SITE_ORIGIN}/terms/"),
     ("refunds/index.html", f"{SITE_ORIGIN}/refunds/"),
     ("privacy/index.html", f"{SITE_ORIGIN}/privacy/"),
@@ -350,8 +354,10 @@ def verify_homepage_routing(errors: list[str], posts: list[dict]) -> None:
             fail("index.html must link to /blog/", errors)
         if 'href="/about/"' not in text:
             fail("index.html must link to /about/", errors)
-        if 'href="/pricing/"' not in text:
-            fail("index.html must link to /pricing/", errors)
+        if 'href="/products/practical-stock-planner/"' not in text:
+            fail("index.html must link to the Practical Stock Planner page", errors)
+        if 'href="/pricing/"' in text or 'href="/pricing"' in text:
+            fail("index.html must not link to /pricing/", errors)
         if re.search(r"\bimporters\b", text, re.I) or re.search(r"small businesses", text, re.I):
             fail("index.html must not say importers or small businesses", errors)
         post_links = re.findall(r'href="(/blog/[^"]+/)"', text)
@@ -755,12 +761,20 @@ def verify_sales_script_cache(errors: list[str]) -> None:
                 )
 
 
+PRODUCT_PAGE = SITE / "products" / "practical-stock-planner" / "index.html"
+PRODUCT_PATH = "/products/practical-stock-planner/"
+
+
 def verify_buy(errors: list[str]) -> None:
-    """The old checkout is a 301 to /pricing/, not a second offer."""
+    """Old checkout URLs 301 straight to the product page."""
     if BUY_PATH.is_file():
-        fail("/buy/ must not be built; it 301s to /pricing/", errors)
+        fail("/buy/ must not be built; it 301s to the product page", errors)
+    if (SITE / "pricing" / "index.html").is_file():
+        fail("/pricing/ must not be built; it 301s to the product page", errors)
     if (ROOT / "src" / "buy.njk").exists():
-        fail("src/buy.njk must be removed; /buy/ redirects to /pricing/", errors)
+        fail("src/buy.njk must be removed; /buy/ redirects to the product page", errors)
+    if (ROOT / "src" / "pricing.njk").exists():
+        fail("src/pricing.njk must be removed; /pricing/ redirects to the product page", errors)
     if (ROOT / "assets" / "buy-checkout.js").exists():
         fail("assets/buy-checkout.js must be removed with the old checkout page", errors)
     verify_sales_script_cache(errors)
@@ -768,15 +782,24 @@ def verify_buy(errors: list[str]) -> None:
     redirects = ""
     if REDIRECTS_SOURCE.is_file():
         redirects = REDIRECTS_SOURCE.read_text(encoding="utf-8")
-    for rule in ("/buy /pricing/ 301", "/buy/ /pricing/ 301", "/buy/index.html /pricing/ 301"):
+    for rule in (
+        f"/buy {PRODUCT_PATH} 301",
+        f"/buy/ {PRODUCT_PATH} 301",
+        f"/buy/index.html {PRODUCT_PATH} 301",
+        f"/pricing {PRODUCT_PATH} 301",
+        f"/pricing/ {PRODUCT_PATH} 301",
+        f"/pricing/index.html {PRODUCT_PATH} 301",
+    ):
         if rule not in redirects:
             fail(f"_redirects must 301 {rule}", errors)
 
     middleware = ""
     if MIDDLEWARE_PATH.is_file():
         middleware = MIDDLEWARE_PATH.read_text(encoding="utf-8")
-    if 'url.pathname = "/pricing/"' not in middleware:
-        fail("functions/_middleware.js must redirect /buy/ to /pricing/", errors)
+    if f'const PRODUCT_PATH = "{PRODUCT_PATH}";' not in middleware:
+        fail("functions/_middleware.js must redirect old checkout URLs to the product page", errors)
+    if 'url.pathname = "/pricing/"' in middleware:
+        fail("functions/_middleware.js must not send /buy/ via /pricing/", errors)
 
     if not PADDLE_DATA_PATH.is_file():
         fail("src/_data/paddle.js is missing", errors)
@@ -788,34 +811,44 @@ def verify_buy(errors: list[str]) -> None:
             fail("src/_data/paddle.js must set successUrl to the absolute /welcome/ URL", errors)
 
     email_logic = ROOT / "functions" / "email" / "logic.mjs"
-    if email_logic.is_file() and "/buy/" in email_logic.read_text(encoding="utf-8"):
-        fail("results email must not link to /buy/", errors)
+    if email_logic.is_file():
+        email_text = email_logic.read_text(encoding="utf-8")
+        if "/buy/" in email_text or "/pricing/" in email_text:
+            fail("results email must link to the product page, not /buy/ or /pricing/", errors)
+        if "/products/practical-stock-planner/" not in email_text:
+            fail("results email must link to /products/practical-stock-planner/", errors)
 
     sitemap = ""
     if SITEMAP_PATH.is_file():
         sitemap = SITEMAP_PATH.read_text(encoding="utf-8")
     if BUY_LOC in sitemap or "/buy/" in sitemap:
         fail("/buy/ must not appear in sitemap.xml", errors)
+    if f"{SITE_ORIGIN}/pricing/" in sitemap or "/pricing/" in sitemap:
+        fail("/pricing/ must not appear in sitemap.xml", errors)
 
     for relative in (
         "src/_includes/partials/header.njk",
         "src/_includes/partials/footer.njk",
     ):
         menu = (ROOT / relative).read_text(encoding="utf-8")
-        if "/buy/" in menu:
-            fail(f"/buy/ is linked from the site menu in {relative}", errors)
+        if "/buy/" in menu or "/pricing/" in menu:
+            fail(f"/buy/ or /pricing/ is linked from the site menu in {relative}", errors)
 
     for path in sorted(SITE.rglob("*.html")):
         page = path.read_text(encoding="utf-8")
         relative = path.relative_to(SITE).as_posix()
-        if path.resolve() == (SITE / "pricing" / "index.html").resolve():
+        if path.resolve() == PRODUCT_PAGE.resolve():
             if 'href="/buy/"' in page or 'href="/buy"' in page:
-                fail("/pricing/ must not link to /buy/", errors)
+                fail("the product page must not link to /buy/", errors)
+            if 'href="/pricing/"' in page or 'href="/pricing"' in page:
+                fail("the product page must not link to /pricing/", errors)
             continue
         if "cdn.paddle.com" in page or re.search(r"<script\b[^>]*paddle\.js", page, re.I):
-            fail(f"Paddle.js must load only on /pricing/, found in {relative}", errors)
+            fail(f"Paddle.js must load only on the product page, found in {relative}", errors)
         if 'href="/buy/"' in page or 'href="/buy"' in page:
             fail(f"/buy/ is linked from {relative}", errors)
+        if 'href="/pricing/"' in page or 'href="/pricing"' in page:
+            fail(f"/pricing/ is linked from {relative}", errors)
 
 
 SELLER_PHRASE = "Practical Supply Chain Planning (Daniel Hampton, sole trader)"
@@ -831,7 +864,7 @@ def site_abn() -> str:
 
 
 POLICY_FOOTER_HREFS = (
-    'href="/pricing/"',
+    'href="/products/"',
     'href="/terms/"',
     'href="/refunds/"',
     'href="/privacy/"',
@@ -874,7 +907,7 @@ def verify_policy_pages(errors: list[str]) -> None:
         if page.lower().count("<h1") != 1:
             fail(f"{relative} must have exactly one h1", errors)
 
-    pricing_path = SITE / "pricing" / "index.html"
+    pricing_path = PRODUCT_PAGE
     if pricing_path.is_file():
         pricing = pricing_path.read_text(encoding="utf-8")
         consent_at = pricing.find("By starting your trial you agree")
@@ -884,12 +917,12 @@ def verify_policy_pages(errors: list[str]) -> None:
         elif re.search(r"<h[1-6]\b", pricing[consent_at:button_at], re.I):
             fail("nothing but the consent sentence should sit above the trial button", errors)
         if PADDLE_JS_URL not in pricing:
-            fail("/pricing/ must load Paddle.js v2 from cdn.paddle.com", errors)
+            fail("the product page must load Paddle.js v2 from cdn.paddle.com", errors)
         checkout_src = f"/assets/pricing-checkout.js?v={css_version()}"
         if checkout_src not in pricing:
-            fail(f"/pricing/ must cache-bust the checkout script as {checkout_src}", errors)
+            fail(f"the product page must cache-bust the checkout script as {checkout_src}", errors)
         if "https://practicalsupplychainplanning.com/welcome/" not in pricing:
-            fail("/pricing/ must set the Paddle success URL to /welcome/", errors)
+            fail("the product page must set the Paddle success URL to /welcome/", errors)
         for phrase in (
             "Practical Stock Planner",
             "US$49 per month, including any applicable tax",
@@ -901,21 +934,21 @@ def verify_policy_pages(errors: list[str]) -> None:
             "period by period",
         ):
             if phrase not in pricing:
-                fail(f"/pricing/ is missing approved copy: {phrase}", errors)
+                fail(f"the product page is missing approved copy: {phrase}", errors)
         if re.search(r"launch deal|launch offer", pricing, re.I):
-            fail("/pricing/ must not mention a launch deal", errors)
+            fail("the product page must not mention a launch deal", errors)
         if "Unblock" in pricing:
-            fail("/pricing/ must not mention the Unblock flag", errors)
+            fail("the product page must not mention the Unblock flag", errors)
         if "Will Windows warn me when I install it?" not in pricing:
-            fail("/pricing/ is missing the SmartScreen question", errors)
+            fail("the product page is missing the SmartScreen question", errors)
         for phrase in SMARTSCREEN_COPY:
             if phrase not in pricing:
-                fail(f"/pricing/ is missing the SmartScreen note: {phrase}", errors)
+                fail(f"the product page is missing the SmartScreen note: {phrase}", errors)
         if not paddle_placeholders_block_checkout():
             if not re.search(r'id="trial-note"[^>]*\bhidden\b', pricing):
-                fail("/pricing/ must hide the unconfigured note when Paddle config is set", errors)
+                fail("the product page must hide the unconfigured note when Paddle config is set", errors)
         elif "Checkout is not available on this page yet." not in pricing:
-            fail("/pricing/ must say checkout is not available while placeholders remain", errors)
+            fail("the product page must say checkout is not available while placeholders remain", errors)
 
     checkout_js = ROOT / "assets" / "pricing-checkout.js"
     if not checkout_js.is_file():
@@ -935,6 +968,22 @@ def verify_policy_pages(errors: list[str]) -> None:
         ):
             if snippet not in script:
                 fail(f"assets/pricing-checkout.js is missing {snippet}", errors)
+
+    products_home = SITE / "products" / "index.html"
+    if products_home.is_file():
+        catalog = products_home.read_text(encoding="utf-8")
+        for phrase in (
+            "Practical Stock Planner",
+            "Plan stock period by period and see what to order and when.",
+            "From US$49/month",
+            "14-day free trial",
+            'href="/products/practical-stock-planner/"',
+            'href="/products/" aria-current="page"',
+        ):
+            if phrase not in catalog:
+                fail(f"/products/ is missing {phrase}", errors)
+        if "cdn.paddle.com" in catalog:
+            fail("/products/ must not load Paddle.js", errors)
 
     terms_path = SITE / "terms" / "index.html"
     if terms_path.is_file():
@@ -1017,12 +1066,18 @@ def verify_policy_pages(errors: list[str]) -> None:
         source = (ROOT / relative).read_text(encoding="utf-8")
         needed = POLICY_FOOTER_HREFS
         if relative.endswith("header.njk"):
-            needed = ('href="/pricing/"', 'href="/contact/"')
+            needed = ('href="/products/"', 'href="/contact/"')
         for href in needed:
             if href not in source:
                 fail(f"{relative} is missing {href}", errors)
 
-    for relative in ("index.html", "about/index.html", "welcome/index.html", "pricing/index.html"):
+    for relative in (
+        "index.html",
+        "about/index.html",
+        "welcome/index.html",
+        "products/index.html",
+        "products/practical-stock-planner/index.html",
+    ):
         path = SITE / relative
         if not path.is_file():
             continue
@@ -1046,7 +1101,8 @@ def verify_seller(errors: list[str]) -> None:
         if abn == ABN_PLACEHOLDER and re.search(r"\bABN\b", page):
             fail(f"{relative} shows an ABN before one is set", errors)
     for relative in (
-        "pricing/index.html",
+        "products/index.html",
+        "products/practical-stock-planner/index.html",
         "terms/index.html",
         "refunds/index.html",
         "privacy/index.html",

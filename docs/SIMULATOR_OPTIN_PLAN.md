@@ -95,7 +95,7 @@ The message has a designed version and a plain-text version with the same words,
 4. **Commentary.** The rule lines below.
 5. **Chart.** One year only. Monte Carlo has no chart, matching the page (“Summary only, no chart”).
 6. **Reopen this scenario.** One link.
-7. **One soft line.** “Planning stock in a spreadsheet? Stock Planner plans by weeks of cover.” The words “Stock Planner” are the link. Destination: `https://practicalsupplychainplanning.com/pricing/` plus the same `utm_` labels as the reopen link. `/buy/` 301s to `/pricing/`.
+7. **One soft line.** “Planning stock in a spreadsheet? Stock Planner plans by weeks of cover.” The words “Stock Planner” are the link. Destination: `https://practicalsupplychainplanning.com/products/practical-stock-planner/` plus the same `utm_` labels as the reopen link. `/buy/` and `/pricing/` 301 straight there.
 8. **Disclaimer, exact meaning:** “These numbers come from a teaching simulation of the scenario you ran. They are not a forecast, a recommendation or advice for your business.”
 9. **Footer.** See below.
 

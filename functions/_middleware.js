@@ -10,8 +10,17 @@
  */
 export const APEX_HOST = "practicalsupplychainplanning.com";
 
-function isRetiredBuyPath(pathname) {
-  return pathname === "/buy" || pathname === "/buy/" || pathname === "/buy/index.html";
+const PRODUCT_PATH = "/products/practical-stock-planner/";
+
+function isRetiredCheckoutPath(pathname) {
+  return (
+    pathname === "/buy" ||
+    pathname === "/buy/" ||
+    pathname === "/buy/index.html" ||
+    pathname === "/pricing" ||
+    pathname === "/pricing/" ||
+    pathname === "/pricing/index.html"
+  );
 }
 
 export function redirectLocation(requestUrl) {
@@ -24,9 +33,9 @@ export function redirectLocation(requestUrl) {
     redirect = true;
   }
 
-  // The old multi-user checkout. The public offer is /pricing/.
-  if (isRetiredBuyPath(url.pathname)) {
-    url.pathname = "/pricing/";
+  // Old checkout URLs. The public offer is the Practical Stock Planner page.
+  if (isRetiredCheckoutPath(url.pathname)) {
+    url.pathname = PRODUCT_PATH;
     redirect = true;
   }
 
