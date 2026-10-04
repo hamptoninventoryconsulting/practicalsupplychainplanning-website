@@ -19,13 +19,16 @@ import {
   SCHEMA_SQL,
   WORDING_VERSION,
   handleKeepInTouch,
+  handleResendWebhook,
   handleResultsEmail,
   handleUnsubscribe,
   signUnsubscribeToken,
+  signWebhook,
 } from "../functions/email/logic.mjs";
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const NOW = Date.parse("2026-10-01T12:00:00.000Z");
+const WEBHOOK_SECRET = "whsec_" + Buffer.from("keep-in-touch-webhook-key").toString("base64");
 const TINY_PNG =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 const PRIVACY_SENTENCE =
@@ -693,6 +696,84 @@ assert.ok(keptRecent);
 assert.strictEqual(keptRecent.beta_box, 0);
 assert.strictEqual(
   unsub.sqlite.prepare("SELECT beta_box FROM consent WHERE email = ?").get("still-beta@example.com").beta_box,
+  1
+);
+
+async function postWebhook(db, type, data) {
+  const body = JSON.stringify({ type: type, data: data });
+  const timestamp = String(Math.floor(NOW / 1000));
+  const id = "evt_" + type + "_" + Math.random().toString(16).slice(2);
+  const signature = await signWebhook(WEBHOOK_SECRET, id, timestamp, body);
+  return handleResendWebhook(
+    new Request("https://practicalsupplychainplanning.com/api/resend-webhook", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "svix-id": id,
+        "svix-timestamp": timestamp,
+        "svix-signature": signature,
+      },
+      body: body,
+    }),
+    liveEnv(db, { RESEND_WEBHOOK_SECRET: WEBHOOK_SECRET }),
+    deps(okFetch())
+  );
+}
+
+function insertBetaRow(sqlite, id, email, token) {
+  sqlite
+    .prepare(
+      `INSERT INTO consent (
+        id, email, created_at, ip, form_id, page_url, wording_version, wording_text,
+        results_box, articles_box, beta_box, unsubscribe_token
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      id,
+      email,
+      "2026-09-01T00:00:00.000Z",
+      "203.0.113.1",
+      "keep-in-touch",
+      "/",
+      KEEP_IN_TOUCH_VERSION,
+      KEEP_IN_TOUCH_WORDING,
+      0,
+      1,
+      1,
+      token
+    );
+}
+
+const complaintDb = openDb();
+insertBetaRow(complaintDb.sqlite, "complaint-new", "spam@example.com", "e".repeat(64));
+insertBetaRow(complaintDb.sqlite, "complaint-old", "spam@example.com", "f".repeat(64));
+insertBetaRow(complaintDb.sqlite, "bounce-row", "bounced@example.com", "9".repeat(64));
+const complained = await postWebhook(complaintDb.db, "email.complained", {
+  to: ["Spam@Example.com"],
+});
+assert.strictEqual(complained.status, 200);
+assert.strictEqual(
+  complaintDb.sqlite.prepare("SELECT reason FROM suppression WHERE email = ?").get("spam@example.com").reason,
+  "complaint"
+);
+const complaintTicks = complaintDb.sqlite
+  .prepare("SELECT beta_box FROM consent WHERE email = ?")
+  .all("spam@example.com");
+assert.strictEqual(complaintTicks.length, 2);
+complaintTicks.forEach(function (row) {
+  assert.strictEqual(row.beta_box, 0);
+});
+const bounced = await postWebhook(complaintDb.db, "email.bounced", {
+  to: ["bounced@example.com"],
+  bounce: { type: "Permanent" },
+});
+assert.strictEqual(bounced.status, 200);
+assert.strictEqual(
+  complaintDb.sqlite.prepare("SELECT reason FROM suppression WHERE email = ?").get("bounced@example.com").reason,
+  "bounce"
+);
+assert.strictEqual(
+  complaintDb.sqlite.prepare("SELECT beta_box FROM consent WHERE email = ?").get("bounced@example.com").beta_box,
   1
 );
 
