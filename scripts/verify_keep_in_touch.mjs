@@ -20,6 +20,8 @@ import {
   WORDING_VERSION,
   handleKeepInTouch,
   handleResultsEmail,
+  handleUnsubscribe,
+  signUnsubscribeToken,
 } from "../functions/email/logic.mjs";
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
@@ -27,7 +29,7 @@ const NOW = Date.parse("2026-10-01T12:00:00.000Z");
 const TINY_PNG =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 const PRIVACY_SENTENCE =
-  "If you use Let's keep in touch, we add your email address to that same Articles list and keep a record of the request, including whether you ticked I'd be happy to beta test, and we keep a beta tick until you unsubscribe or ask us to delete it.";
+  "If you use Let's keep in touch, we add your email address to that same Articles list and keep a record of the request, including whether you ticked I'd be happy to beta test. We keep a beta tick until you unsubscribe or ask us to delete it. A keep-in-touch request without a beta tick is deleted after 24 months.";
 const BETA_EXPORT = `
 SELECT email, created_at
 FROM consent
@@ -90,8 +92,8 @@ const builtHome = built("index.html");
 assert.match(builtHome, /id="keep-in-touch"/);
 assert.ok(builtHome.includes(KEEP_IN_TOUCH_WORDING));
 assert.ok(builtHome.includes(BETA_WORDING));
-assert.match(builtHome, /styles\.css\?v=32/);
-assert.match(builtHome, /keep-in-touch\.js\?v=32/);
+assert.match(builtHome, /styles\.css\?v=33/);
+assert.match(builtHome, /keep-in-touch\.js\?v=33/);
 assert.ok(built("privacy/index.html").includes(PRIVACY_SENTENCE));
 ["buy/index.html", "welcome/index.html"].forEach(function (rel) {
   assert.doesNotMatch(built(rel), /id="keep-in-touch"|Let's keep in touch/);
@@ -588,6 +590,111 @@ const legacyNames = legacy.prepare("PRAGMA table_info(consent)").all().map(funct
 });
 assert.ok(legacyNames.includes("beta_box"));
 assert.strictEqual(legacy.prepare("SELECT beta_box FROM consent").get().beta_box, 1);
+
+async function confirmUnsubscribe(db, token) {
+  const signed = await signUnsubscribeToken(token, "test-unsubscribe-signing-key");
+  const link = "https://practicalsupplychainplanning.com/unsubscribe/?t=" + encodeURIComponent(signed);
+  const preview = await handleUnsubscribe(new Request(link), liveEnv(db), deps(okFetch()));
+  assert.match(await preview.text(), /Confirm you want to unsubscribe/);
+  const done = await handleUnsubscribe(
+    new Request(link, { method: "POST", body: "confirm=unsubscribe" }),
+    liveEnv(db),
+    deps(
+      scriptedFetch(async function (call) {
+        if (call.method === "DELETE") {
+          return jsonResponse(200, {});
+        }
+        return null;
+      })
+    )
+  );
+  assert.match(await done.text(), /You are unsubscribed/);
+}
+
+const unsub = openDb();
+const unsubJoin = await send(
+  unsub.db,
+  payload({ email: "beta-keep@example.com", betaConsent: true }),
+  { "CF-Connecting-IP": "203.0.113.60" }
+);
+assert.strictEqual(unsubJoin.status, 200, JSON.stringify(unsubJoin.json));
+const unsubInsert = unsub.sqlite.prepare(
+  `INSERT INTO consent (
+    id, email, created_at, ip, form_id, page_url, wording_version, wording_text,
+    results_box, articles_box, beta_box, unsubscribe_token
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+);
+unsubInsert.run(
+  "old-same",
+  "beta-keep@example.com",
+  "2024-01-01T00:00:00.000Z",
+  "203.0.113.1",
+  "keep-in-touch",
+  "/",
+  KEEP_IN_TOUCH_VERSION,
+  KEEP_IN_TOUCH_WORDING,
+  0,
+  1,
+  1,
+  "c".repeat(64)
+);
+unsubInsert.run(
+  "old-other",
+  "still-beta@example.com",
+  "2024-01-01T00:00:00.000Z",
+  "203.0.113.1",
+  "keep-in-touch",
+  "/",
+  KEEP_IN_TOUCH_VERSION,
+  KEEP_IN_TOUCH_WORDING,
+  0,
+  1,
+  1,
+  "d".repeat(64)
+);
+const liveToken = unsub.sqlite
+  .prepare("SELECT unsubscribe_token FROM consent WHERE id != 'old-same' AND email = ?")
+  .get("beta-keep@example.com").unsubscribe_token;
+const signedPreview = await signUnsubscribeToken(liveToken, "test-unsubscribe-signing-key");
+const previewLink =
+  "https://practicalsupplychainplanning.com/unsubscribe/?t=" + encodeURIComponent(signedPreview);
+const previewOnly = await handleUnsubscribe(new Request(previewLink), liveEnv(unsub.db), deps(okFetch()));
+assert.match(await previewOnly.text(), /Confirm you want to unsubscribe/);
+assert.strictEqual(
+  unsub.sqlite.prepare("SELECT MIN(beta_box) AS n FROM consent WHERE email = ?").get("beta-keep@example.com").n,
+  1
+);
+await confirmUnsubscribe(unsub.db, liveToken);
+const cleared = unsub.sqlite
+  .prepare("SELECT beta_box, created_at FROM consent WHERE email = ? ORDER BY created_at")
+  .all("beta-keep@example.com");
+assert.strictEqual(cleared.length, 2);
+cleared.forEach(function (row) {
+  assert.strictEqual(row.beta_box, 0);
+});
+assert.strictEqual(
+  unsub.sqlite.prepare("SELECT beta_box FROM consent WHERE email = ?").get("still-beta@example.com").beta_box,
+  1
+);
+const pruneTrigger = await send(
+  unsub.db,
+  payload({ email: "prune-trigger@example.com", betaConsent: false }),
+  { "CF-Connecting-IP": "203.0.113.61" }
+);
+assert.strictEqual(pruneTrigger.status, 200, JSON.stringify(pruneTrigger.json));
+assert.strictEqual(
+  unsub.sqlite.prepare("SELECT 1 FROM consent WHERE id = 'old-same'").get(),
+  undefined
+);
+const keptRecent = unsub.sqlite
+  .prepare("SELECT beta_box FROM consent WHERE email = ? AND created_at = ?")
+  .get("beta-keep@example.com", "2026-10-01T12:00:00.000Z");
+assert.ok(keptRecent);
+assert.strictEqual(keptRecent.beta_box, 0);
+assert.strictEqual(
+  unsub.sqlite.prepare("SELECT beta_box FROM consent WHERE email = ?").get("still-beta@example.com").beta_box,
+  1
+);
 
 function resultsPayload() {
   return {
