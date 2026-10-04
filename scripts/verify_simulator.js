@@ -564,7 +564,7 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
 ].sort());
 
 assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=4"/);
-assert.match(page, /src="\/assets\/sim-results-form\.js\?v=3"/);
+assert.match(page, /src="\/assets\/sim-results-form\.js\?v=4"/);
 assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=6"/);
 assert.match(page, /sessionStorage/);
 assert.match(page, /Teaching tool only/);

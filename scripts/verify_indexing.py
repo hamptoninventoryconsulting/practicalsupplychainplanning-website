@@ -979,6 +979,9 @@ def verify_policy_pages(errors: list[str]) -> None:
             "14-day free trial",
             'href="/products/practical-stock-planner/"',
             'href="/products/" aria-current="page"',
+            'alt="Practical Stock Planner logo"',
+            'class="product-card__logo"',
+            'src="/assets/brand/favicon.png"',
         ):
             if phrase not in catalog:
                 fail(f"/products/ is missing {phrase}", errors)

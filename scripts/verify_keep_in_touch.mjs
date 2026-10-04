@@ -1,5 +1,5 @@
 /**
- * Checks for the footer "Let's keep in touch" signup.
+ * Checks for the home-page "Let's keep in touch" signup.
  * Uses an in-memory database and a stand-in for Resend and Turnstile.
  * No live key and no network call.
  */
@@ -56,18 +56,21 @@ const privacy = fs.readFileSync(path.join(ROOT, "src", "privacy.njk"), "utf8");
 assert.ok(privacy.includes(PRIVACY_SENTENCE));
 
 const footer = fs.readFileSync(path.join(ROOT, "src", "_includes", "partials", "footer.njk"), "utf8");
-assert.match(footer, /Let's keep in touch/);
-assert.ok(footer.includes(KEEP_IN_TOUCH_WORDING));
-assert.ok(footer.includes(BETA_WORDING));
-assert.ok(footer.includes(KEEP_IN_TOUCH_SUCCESS));
-assert.match(footer, /name="beta" type="checkbox"/);
-assert.doesNotMatch(footer, /name="beta"[^>]*checked/);
-assert.match(footer, /keep-in-touch\.js\?v=\{\{ site\.cssVersion \}\}/);
+assert.doesNotMatch(footer, /keep-in-touch|Let's keep in touch/);
+const signup = fs.readFileSync(path.join(ROOT, "src", "_includes", "partials", "keep-in-touch.njk"), "utf8");
+assert.match(signup, /Let's keep in touch/);
+assert.ok(signup.includes(KEEP_IN_TOUCH_WORDING));
+assert.ok(signup.includes(BETA_WORDING));
+assert.ok(signup.includes(KEEP_IN_TOUCH_SUCCESS));
+assert.match(signup, /name="beta" type="checkbox"/);
+assert.doesNotMatch(signup, /name="beta"[^>]*checked/);
+assert.match(signup, /keep-in-touch\.js\?v=\{\{ site\.cssVersion \}\}/);
+assert.match(signup, /data-appearance="interaction-only"/);
 
 const sales = fs.readFileSync(path.join(ROOT, "src", "_includes", "layouts", "sales.njk"), "utf8");
 assert.doesNotMatch(sales, /keep-in-touch|Let's keep in touch/);
-// Welcome uses the sales layout, so it stays off the footer form.
-// /buy/ and /pricing/ redirect to the product page, which uses the normal footer.
+// The signup sits on the home page only. Welcome stays on the sales layout.
+// /buy/ and /pricing/ redirect to the product page.
 assert.ok(!fs.existsSync(path.join(ROOT, "src", "buy.njk")));
 const welcome = fs.readFileSync(path.join(ROOT, "src", "welcome.njk"), "utf8");
 assert.match(welcome, /layouts\/sales\.njk/);
@@ -85,6 +88,7 @@ assert.ok(
   )
 );
 assert.doesNotMatch(home, /importers/);
+assert.match(home, /partials\/keep-in-touch\.njk/);
 
 function built(rel) {
   const file = path.join(ROOT, "_site", rel);
@@ -96,13 +100,25 @@ const builtHome = built("index.html");
 assert.match(builtHome, /id="keep-in-touch"/);
 assert.ok(builtHome.includes(KEEP_IN_TOUCH_WORDING));
 assert.ok(builtHome.includes(BETA_WORDING));
-assert.match(builtHome, /styles\.css\?v=34/);
-assert.match(builtHome, /keep-in-touch\.js\?v=34/);
+assert.match(builtHome, /styles\.css\?v=35/);
+assert.match(builtHome, /keep-in-touch\.js\?v=35/);
+assert.ok(builtHome.indexOf('id="keep-in-touch"') < builtHome.indexOf('<footer class="site-footer"'));
 assert.ok(built("privacy/index.html").includes(PRIVACY_SENTENCE));
 assert.ok(!fs.existsSync(path.join(ROOT, "_site", "buy", "index.html")));
-assert.doesNotMatch(built("welcome/index.html"), /id="keep-in-touch"|Let's keep in touch/);
-assert.match(built("products/index.html"), /id="keep-in-touch"/);
-assert.match(built("products/practical-stock-planner/index.html"), /id="keep-in-touch"/);
+for (const rel of [
+  "welcome/index.html",
+  "products/index.html",
+  "products/practical-stock-planner/index.html",
+  "learn/index.html",
+  "blog/index.html",
+  "about/index.html",
+  "terms/index.html",
+  "refunds/index.html",
+  "privacy/index.html",
+  "contact/index.html",
+]) {
+  assert.doesNotMatch(built(rel), /id="keep-in-touch"|keep-in-touch\.js/);
+}
 
 function adapter(sqlite) {
   return {
