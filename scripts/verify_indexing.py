@@ -86,6 +86,7 @@ CORE_PAGES = (
 )
 
 CANONICAL_PAGES = (
+    ("index.html", f"{SITE_ORIGIN}/"),
     ("about/index.html", f"{SITE_ORIGIN}/about/"),
     ("blog/index.html", f"{SITE_ORIGIN}/blog/"),
     ("learn/index.html", f"{SITE_ORIGIN}/learn/"),
@@ -153,6 +154,8 @@ def content_posts() -> list[dict]:
             {
                 "slug": path.stem,
                 "path": f"/blog/{path.stem}/",
+                "title": (data.get("title") or "").strip(),
+                "summary": (data.get("summary") or data.get("description") or "").strip(),
                 "published_datetime": published,
                 "lastmod": parse_published_date(published),
                 "author": (data.get("author") or "").strip(),
@@ -260,27 +263,113 @@ def parse_sitemap(errors: list[str]) -> list[dict]:
     return urls
 
 
-def verify_homepage_routing(errors: list[str]) -> None:
+HOME_TO_ABOUT_RE = re.compile(
+    r"^/(?:index\.html)?\s+/about/\s+301\s*$",
+    re.M,
+)
+HOME_COPY = (
+    "Practical stock and supply planning",
+    "Straight-logic planning for importers and small to mid-sized businesses. Know what to order, when to order it, and why.",
+    "Try the Safety Stock Simulator",
+    "Read the blog",
+    "Learn by doing",
+    "Free tools that show how stock planning works, using clear numbers instead of jargon.",
+    "See how demand swings and lead times change the stock you need to hold.",
+    "Open the simulator",
+    "Run the same calculation on up to 10 of your own items and get the results by email.",
+    "Try it with your data",
+    "See all learning tools",
+    "Latest articles",
+    "Plain-English articles on planning stock and supply, each built around one idea.",
+    "Read the article",
+    "All articles",
+    "Planning software for businesses that have outgrown reorder points and spreadsheets. Practical Stock Planner is time-phased MRP. It projects your stock period by period from your inventory data, open purchase orders and forecast, then tells you what to order and when.",
+    "Plans period by period, not with a single reorder point",
+    "Works from your current stock, open POs and forecast",
+    "Imports from Excel (.xlsx) or CSV",
+    "Runs on Windows. 14-day free trial, sold worldwide.",
+    "Coming soon.",
+    "Built by a working planner",
+    "I'm Daniel Hampton. I've spent my career planning stock and supply for manufacturing, wholesale, retail and distribution businesses. Practical Supply Chain Planning shares the straightforward methods that work, without the complexity of big ERP systems.",
+    "More about me",
+)
+
+
+def verify_homepage_routing(errors: list[str], posts: list[dict]) -> None:
     index_html = SITE / "index.html"
     if not index_html.is_file():
         fail("index.html is missing from _site", errors)
     else:
         text = index_html.read_text(encoding="utf-8")
         if REFRESH_RE.search(text):
-            fail("index.html still uses a meta-refresh; use HTTP 301 to /about/", errors)
+            fail("index.html must not use a meta-refresh", errors)
         match = CANONICAL_RE.search(text)
-        if match and match.group(1) != f"{SITE_ORIGIN}/about/":
+        if not match or match.group(1) != f"{SITE_ORIGIN}/":
+            found = match.group(1) if match else None
             fail(
-                "index.html canonical must be the absolute /about/ URL on the apex host",
+                f"index.html canonical must be {SITE_ORIGIN}/, found {found!r}",
                 errors,
             )
+        if "<title>Stock &amp; Supply Planning | Practical Supply Chain Planning</title>" not in text:
+            fail("index.html title must be the approved home title", errors)
+        if (
+            '<meta name="description" content="Practical stock and supply planning for importers and growing businesses. Free learning tools, plain-English articles and Practical Stock Planner."'
+            not in text
+        ):
+            fail("index.html meta description must be the approved home description", errors)
+        h1_count = len(H1_RE.findall(text))
+        if h1_count != 1:
+            fail(f"index.html has {h1_count} h1 elements; expected exactly one", errors)
+        if "<h1 class=\"page-title\">Practical stock and supply planning</h1>" not in text:
+            fail("index.html h1 must be Practical stock and supply planning", errors)
+        if 'class="site-nav__link site-nav__link--active" href="/" aria-current="page"' not in text:
+            fail("index.html must mark the Home nav link as the current page", errors)
+        if 'href="/about/" aria-current="page"' in text:
+            fail("index.html must not mark About as the current page", errors)
+        for phrase in HOME_COPY:
+            if phrase not in text:
+                fail(f"index.html is missing approved copy: {phrase}", errors)
+        if 'href="/learn/safety-stock-simulator/"' not in text:
+            fail("index.html must link to the Safety Stock Simulator", errors)
+        if 'href="/learn/safety-stock-simulator/own-data/"' not in text:
+            fail("index.html must link to the own-data Safety Stock Simulator", errors)
+        if 'href="/learn/"' not in text:
+            fail("index.html must link to /learn/", errors)
+        if 'href="/blog/"' not in text:
+            fail("index.html must link to /blog/", errors)
+        if 'href="/about/"' not in text:
+            fail("index.html must link to /about/", errors)
+        post_links = re.findall(r'href="(/blog/[^"]+/)"', text)
+        expected_posts = [post["path"] for post in posts[:3]]
+        if post_links != expected_posts:
+            fail(
+                f"index.html latest articles are {post_links!r}, expected {expected_posts!r}",
+                errors,
+            )
+        for post in posts[:3]:
+            if post["title"] not in text:
+                fail(f"index.html is missing latest article title: {post['title']}", errors)
+            summary = post["summary"].replace("&", "&amp;")
+            if summary not in text:
+                fail(f"index.html is missing latest article summary: {post['summary']}", errors)
+        if re.search(r"<a\b[^>]*>\s*Coming soon\.", text):
+            fail("Coming soon. on the home page must be plain text, not a link", errors)
+        if re.search(r"<button\b", text, re.I):
+            fail("index.html must not include a buy or trial button", errors)
+        if 'href="/buy/"' in text or 'href="/buy"' in text:
+            fail("index.html must not link to /buy/", errors)
+        if re.search(
+            r"\b\d+\s+[A-Za-z][^,<]{0,40}\b(?:Street|St|Road|Rd|Avenue|Ave)\b",
+            text,
+        ):
+            fail("index.html must not show a street address", errors)
 
     if not REDIRECTS_SOURCE.is_file():
-        fail("_redirects is missing; Cloudflare Pages needs it for / → /about/ 301", errors)
+        fail("_redirects is missing; Cloudflare Pages copies it into the build", errors)
     else:
         text = REDIRECTS_SOURCE.read_text(encoding="utf-8")
-        if not re.search(r"^/\s+/about/\s+301\s*$", text, re.M):
-            fail("_redirects must contain `/ /about/ 301`", errors)
+        if HOME_TO_ABOUT_RE.search(text):
+            fail("_redirects must not redirect / or /index.html to /about/", errors)
         if not REDIRECTS_BUILT.is_file():
             fail("_redirects was not copied into _site", errors)
         elif REDIRECTS_BUILT.read_text(encoding="utf-8") != text:
@@ -295,16 +384,16 @@ def verify_homepage_routing(errors: list[str]) -> None:
 
     if not MIDDLEWARE_PATH.is_file():
         fail(
-            "functions/_middleware.js is missing; www → apex and / → /about/ "
-            "HTTP 301s are implemented there",
+            "functions/_middleware.js is missing; the www → apex HTTP 301 "
+            "is implemented there",
             errors,
         )
         return
     text = MIDDLEWARE_PATH.read_text(encoding="utf-8")
     if "www.${APEX_HOST}" not in text:
         fail("functions/_middleware.js must redirect the www hostname", errors)
-    if "/about/" not in text:
-        fail("functions/_middleware.js must redirect `/` to `/about/`", errors)
+    if re.search(r"""pathname\s*=\s*["']/about/["']""", text):
+        fail("functions/_middleware.js must not redirect the homepage to /about/", errors)
 
 
 def verify_canonicals(errors: list[str], posts: list[dict]) -> None:
@@ -352,8 +441,6 @@ def verify_stylesheet_version(errors: list[str], version: str) -> None:
         return
     for path in html_files:
         relative = path.relative_to(SITE).as_posix()
-        if relative == "index.html":
-            continue
         text = path.read_text(encoding="utf-8")
         found = CSS_RE.findall(text)
         if found != [version]:
@@ -843,7 +930,7 @@ def main() -> int:
         verify_sitemap(errors, posts)
         verify_welcome(errors)
         verify_buy(errors)
-        verify_homepage_routing(errors)
+        verify_homepage_routing(errors, posts)
         verify_canonicals(errors, posts)
         verify_stylesheet_version(errors, version)
         verify_listing_fix(errors, posts)

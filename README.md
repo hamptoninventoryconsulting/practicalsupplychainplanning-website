@@ -29,7 +29,7 @@ npm install
 npm run dev
 ```
 
-Eleventy serves the built site (default `http://localhost:8080/`). `/` is still redirected to `/about/` in production by `_redirects` and `functions/_middleware.js`. The dev server does not apply those redirects.
+Eleventy serves the built site (default `http://localhost:8080/`). `/` is the home page. `functions/_middleware.js` redirects www to the apex. The dev server does not apply that redirect.
 
 ## Build
 
@@ -65,7 +65,7 @@ Build settings after this Eleventy cutover (change them **at merge**, not before
 
 Until those dashboard settings change, a build of `main` that still has no build command will not run Eleventy. After the change, an older commit that expects the repo root as the output directory will publish an empty or wrong site. Flip the settings in the same step as merging this cutover.
 
-`_redirects` is copied into `_site` so `/` and `/index.html` still 301 to `/about/`. The www → apex redirect stays in `functions/_middleware.js`.
+`_redirects` is copied into `_site`. It does not send `/` to `/about/`. The www → apex redirect stays in `functions/_middleware.js`.
 
 Add `www.practicalsupplychainplanning.com` as a second custom domain on the same Pages project. Do not CNAME `www` to the apex by hand. A proxied `www` record that is not bound to Pages returns Cloudflare **522**. After the domain is Active, the middleware 301s `www` to `https://practicalsupplychainplanning.com`.
 
