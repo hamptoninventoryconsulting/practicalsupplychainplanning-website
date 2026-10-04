@@ -9,13 +9,13 @@ The sitemap is owned by Eleventy (`src/sitemap.njk`). This script checks the
 built files; it does not write `sitemap.xml`.
 
 `/welcome/` is the post-purchase page. It must be noindex and must not appear
-in the sitemap or in site menus. Placeholder legal pages linked from its
-footer (`/terms/`, `/refunds/`, `/privacy/`, `/contact/`) stay noindex and
-out of the sitemap until real copy is published.
+in the sitemap or in site menus. `/pricing/`, `/terms/`, `/refunds/`,
+`/privacy/` and `/contact/` are public pages: they are in the sitemap and
+are not noindex.
 
 `/buy/` is the sandbox checkout page. It must be noindex, stay out of the
-sitemap and the site menu, and it is the only page that may load Paddle.js.
-`/welcome/` must stay free of Paddle.js.
+sitemap and the site menu. Paddle.js may load on `/buy/` and `/pricing/`
+only. `/welcome/` must stay free of Paddle.js.
 
 Usage:
   npm run build
@@ -45,7 +45,8 @@ BUY_PATH = SITE / "buy" / "index.html"
 BUY_LOC = f"{SITE_ORIGIN}/buy/"
 PADDLE_DATA_PATH = ROOT / "src" / "_data" / "paddle.js"
 PADDLE_JS_URL = "https://cdn.paddle.com/paddle/v2/paddle.js"
-PLACEHOLDER_PAGES = (
+POLICY_PAGES = (
+    ("pricing/index.html", f"{SITE_ORIGIN}/pricing/"),
     ("terms/index.html", f"{SITE_ORIGIN}/terms/"),
     ("refunds/index.html", f"{SITE_ORIGIN}/refunds/"),
     ("privacy/index.html", f"{SITE_ORIGIN}/privacy/"),
@@ -83,6 +84,11 @@ CORE_PAGES = (
     "/learn/",
     "/learn/safety-stock-simulator/",
     "/learn/safety-stock-simulator/own-data/",
+    "/pricing/",
+    "/terms/",
+    "/refunds/",
+    "/privacy/",
+    "/contact/",
 )
 
 CANONICAL_PAGES = (
@@ -95,6 +101,11 @@ CANONICAL_PAGES = (
         "learn/safety-stock-simulator/own-data/index.html",
         f"{SITE_ORIGIN}/learn/safety-stock-simulator/own-data/",
     ),
+    ("pricing/index.html", f"{SITE_ORIGIN}/pricing/"),
+    ("terms/index.html", f"{SITE_ORIGIN}/terms/"),
+    ("refunds/index.html", f"{SITE_ORIGIN}/refunds/"),
+    ("privacy/index.html", f"{SITE_ORIGIN}/privacy/"),
+    ("contact/index.html", f"{SITE_ORIGIN}/contact/"),
 )
 
 LEGACY_PATHS = (
@@ -269,7 +280,8 @@ HOME_TO_ABOUT_RE = re.compile(
 )
 HOME_COPY = (
     "Practical stock and supply planning",
-    "Straight-logic planning for importers and small to mid-sized businesses. Know what to order, when to order it, and why.",
+    "Straight-logic planning for product businesses that buy in stock with lead times.",
+    "See pricing and start your free trial",
     "Try the Safety Stock Simulator",
     "Read the blog",
     "Learn by doing",
@@ -313,7 +325,7 @@ def verify_homepage_routing(errors: list[str], posts: list[dict]) -> None:
         if "<title>Stock &amp; Supply Planning | Practical Supply Chain Planning</title>" not in text:
             fail("index.html title must be the approved home title", errors)
         if (
-            '<meta name="description" content="Practical stock and supply planning for importers and growing businesses. Free learning tools, plain-English articles and Practical Stock Planner."'
+            '<meta name="description" content="Practical stock and supply planning for businesses that buy in stock. Free learning tools, plain-English articles and Practical Stock Planner."'
             not in text
         ):
             fail("index.html meta description must be the approved home description", errors)
@@ -339,6 +351,10 @@ def verify_homepage_routing(errors: list[str], posts: list[dict]) -> None:
             fail("index.html must link to /blog/", errors)
         if 'href="/about/"' not in text:
             fail("index.html must link to /about/", errors)
+        if 'href="/pricing/"' not in text:
+            fail("index.html must link to /pricing/", errors)
+        if re.search(r"\bimporters\b", text, re.I) or re.search(r"small businesses", text, re.I):
+            fail("index.html must not say importers or small businesses", errors)
         post_links = re.findall(r'href="(/blog/[^"]+/)"', text)
         expected_posts = [post["path"] for post in posts[:3]]
         if post_links != expected_posts:
@@ -565,7 +581,7 @@ def verify_welcome(errors: list[str]) -> None:
         fail("/welcome/ must include a noindex robots meta tag", errors)
     if "site-nav" in text:
         fail("/welcome/ must not include the site menu", errors)
-    if "cdn.paddle.com" in text or "paddle.js" in text.lower():
+    if "cdn.paddle.com" in text or re.search(r"<script\b[^>]*paddle\.js", text, re.I):
         fail("/welcome/ must not load Paddle.js", errors)
     if "_ptxn" in text or "localStorage" in text or "sessionStorage" in text:
         fail("/welcome/ must not display or store checkout query parameters", errors)
@@ -603,9 +619,7 @@ def verify_welcome(errors: list[str]) -> None:
         stylesheet,
     ):
         fail("assets/styles.css must set overflow-wrap: anywhere on .support-email", errors)
-    for relative in ("welcome/index.html",) + tuple(
-        path for path, _loc in PLACEHOLDER_PAGES
-    ):
+    for relative in ("welcome/index.html",) + tuple(path for path, _loc in POLICY_PAGES):
         page = (SITE / relative).read_text(encoding="utf-8")
         for match in re.finditer(
             r"<(\w+)\b([^>]*)>[^<]*support@practicalsupplychainplanning\.com[^<]*</\1>",
@@ -672,18 +686,12 @@ def verify_welcome(errors: list[str]) -> None:
                 errors,
             )
 
-    for relative, loc in PLACEHOLDER_PAGES:
-        path = SITE / relative
-        if not path.is_file():
-            fail(f"placeholder page is missing from _site: {relative}", errors)
-            continue
-        page = path.read_text(encoding="utf-8")
-        if not NOINDEX_RE.search(page):
-            fail(f"{relative} must include a noindex robots meta tag", errors)
-        if loc in sitemap:
-            fail(f"{loc} must not appear in sitemap.xml", errors)
-        if 'href="/welcome/"' in page:
-            fail(f"{relative} must not link to /welcome/", errors)
+    if "payment went through" in text.lower():
+        fail("/welcome/ must not say the payment went through", errors)
+    if "14-day free trial has started" not in text:
+        fail("/welcome/ must say the 14-day free trial has started", errors)
+    if "be charged until it ends" not in text:
+        fail("/welcome/ must say nothing is charged until the trial ends", errors)
 
 
 def paddle_placeholders_block_checkout() -> bool:
@@ -862,8 +870,10 @@ def verify_buy(errors: list[str]) -> None:
             if 'href="/buy/"' in page or "href='/buy/'" in page:
                 fail("/buy/ must not link to itself from the menu", errors)
             continue
-        if "cdn.paddle.com" in page or "paddle.js" in page.lower():
-            fail(f"Paddle.js must load only on /buy/, found in {relative}", errors)
+        if path.resolve() == (SITE / "pricing" / "index.html").resolve():
+            continue
+        if "cdn.paddle.com" in page or re.search(r"<script\b[^>]*paddle\.js", page, re.I):
+            fail(f"Paddle.js must load only on /buy/ and /pricing/, found in {relative}", errors)
         if 'href="/buy/"' in page or 'href="/buy"' in page:
             fail(f"/buy/ is linked from {relative}", errors)
 
@@ -880,6 +890,195 @@ def site_abn() -> str:
     return match.group("value")
 
 
+POLICY_FOOTER_HREFS = (
+    'href="/pricing/"',
+    'href="/terms/"',
+    'href="/refunds/"',
+    'href="/privacy/"',
+    'href="/contact/"',
+)
+PADDLE_RESELLER_SENTENCES = (
+    "Our order process is conducted by our online reseller Paddle.com.",
+    "Paddle.com is the Merchant of Record for all our orders.",
+    "Paddle provides all customer service inquiries and handles returns.",
+)
+
+
+def verify_policy_pages(errors: list[str]) -> None:
+    sitemap = ""
+    if SITEMAP_PATH.is_file():
+        sitemap = SITEMAP_PATH.read_text(encoding="utf-8")
+    for relative, loc in POLICY_PAGES:
+        path = SITE / relative
+        if not path.is_file():
+            fail(f"policy page is missing from _site: {relative}", errors)
+            continue
+        page = path.read_text(encoding="utf-8")
+        if NOINDEX_RE.search(page):
+            fail(f"{relative} must not be noindex", errors)
+        if loc not in sitemap:
+            fail(f"{loc} must appear in sitemap.xml", errors)
+        if 'href="/welcome/"' in page or 'href="/welcome"' in page:
+            fail(f"{relative} must not link to /welcome/", errors)
+        if "[DECISION" in page or "[CHECK" in page or "[PLACEHOLDER]" in page:
+            fail(f"{relative} still contains a draft marker", errors)
+        if re.search(r"\bimporters\b", page, re.I) or re.search(r"small businesses", page, re.I):
+            fail(f"{relative} must not say importers or small businesses", errors)
+        if re.search(r"week by week", page, re.I):
+            fail(f"{relative} must say period by period, not week by week", errors)
+        if re.search(
+            r"\b\d+\s+[A-Za-z][^,<]{0,40}\b(?:Street|St|Road|Rd|Avenue|Ave)\b",
+            page,
+        ):
+            fail(f"{relative} must not show a street address", errors)
+        if page.lower().count("<h1") != 1:
+            fail(f"{relative} must have exactly one h1", errors)
+
+    pricing_path = SITE / "pricing" / "index.html"
+    if pricing_path.is_file():
+        pricing = pricing_path.read_text(encoding="utf-8")
+        consent_at = pricing.find("By starting your trial you agree")
+        button_at = pricing.find('id="trial-button"')
+        if consent_at < 0 or button_at < 0 or consent_at > button_at:
+            fail("the trial consent sentence must sit above the trial button", errors)
+        elif re.search(r"<h[1-6]\b", pricing[consent_at:button_at], re.I):
+            fail("nothing but the consent sentence should sit above the trial button", errors)
+        if PADDLE_JS_URL not in pricing:
+            fail("/pricing/ must load Paddle.js v2 from cdn.paddle.com", errors)
+        checkout_src = f"/assets/pricing-checkout.js?v={css_version()}"
+        if checkout_src not in pricing:
+            fail(f"/pricing/ must cache-bust the checkout script as {checkout_src}", errors)
+        if "https://practicalsupplychainplanning.com/welcome/" not in pricing:
+            fail("/pricing/ must set the Paddle success URL to /welcome/", errors)
+        for phrase in (
+            "Practical Stock Planner",
+            "US$49 per month, including any applicable tax",
+            "A$75 per month including GST",
+            "Windows 10 or 11, 64-bit",
+            "7 days from the first failed payment",
+            "buy a second subscription",
+            "2 business days (Brisbane time)",
+            "period by period",
+        ):
+            if phrase not in pricing:
+                fail(f"/pricing/ is missing approved copy: {phrase}", errors)
+        if re.search(r"launch deal|launch offer", pricing, re.I):
+            fail("/pricing/ must not mention a launch deal", errors)
+        if not paddle_placeholders_block_checkout():
+            if not re.search(r'id="trial-note"[^>]*\bhidden\b', pricing):
+                fail("/pricing/ must hide the unconfigured note when Paddle config is set", errors)
+        elif "Checkout is not available on this page yet." not in pricing:
+            fail("/pricing/ must say checkout is not available while placeholders remain", errors)
+
+    checkout_js = ROOT / "assets" / "pricing-checkout.js"
+    if not checkout_js.is_file():
+        fail("assets/pricing-checkout.js is missing", errors)
+    else:
+        script = checkout_js.read_text(encoding="utf-8")
+        if "quantity: 1" not in script:
+            fail("pricing checkout must open Paddle with quantity 1", errors)
+        if "discountId" in script:
+            fail("pricing checkout must not apply a Paddle discount", errors)
+        for snippet in (
+            "Paddle.Initialize",
+            "Paddle.Checkout.open",
+            'displayMode: "overlay"',
+            "successUrl: config.successUrl",
+            "campaigns.default",
+        ):
+            if snippet not in script:
+                fail(f"assets/pricing-checkout.js is missing {snippet}", errors)
+
+    terms_path = SITE / "terms" / "index.html"
+    if terms_path.is_file():
+        terms = terms_path.read_text(encoding="utf-8")
+        for sentence in PADDLE_RESELLER_SENTENCES:
+            if sentence not in terms:
+                fail(f"/terms/ is missing Paddle's required sentence: {sentence}", errors)
+        for phrase in (
+            "7 days from the first failed payment",
+            "the cancel date wins",
+            "at least 30 days before your next payment",
+            "at least 30 days",
+            "2 business days (Brisbane time)",
+            "14-day free trial",
+            "Windows 10 or 11, 64-bit",
+            "Daniel Hampton",
+            "56 757 743 802",
+            "Queensland, Australia",
+        ):
+            if phrase not in terms:
+                fail(f"/terms/ is missing approved copy: {phrase}", errors)
+        if re.search(r"launch deal|launch offer", terms, re.I):
+            fail("/terms/ must not mention a launch deal", errors)
+
+    refunds_path = SITE / "refunds" / "index.html"
+    if refunds_path.is_file():
+        refunds = refunds_path.read_text(encoding="utf-8")
+        for sentence in PADDLE_RESELLER_SENTENCES:
+            if sentence not in refunds:
+                fail(f"/refunds/ is missing Paddle's required sentence: {sentence}", errors)
+        if "within 14 days of any payment" not in refunds:
+            fail("/refunds/ must promise 14 days from any payment", errors)
+
+    privacy_path = SITE / "privacy" / "index.html"
+    if privacy_path.is_file():
+        privacy = privacy_path.read_text(encoding="utf-8")
+        for phrase in (
+            "for 24 months",
+            "which page you used",
+            "Articles list",
+            "do-not-email list",
+            "We do not keep your SKU names",
+            "reply",
+            "for 7 years after",
+            "Support emails and voicemails: 2 years",
+            "United States (San Francisco)",
+            "Tokyo, Japan",
+            "Cloudflare D1",
+        ):
+            if phrase not in privacy:
+                fail(f"/privacy/ is missing approved copy: {phrase}", errors)
+
+    contact_path = SITE / "contact" / "index.html"
+    if contact_path.is_file():
+        contact = contact_path.read_text(encoding="utf-8")
+        for phrase in (
+            "Complaints",
+            "2 business days",
+            "Queensland, Australia",
+            "56 757 743 802",
+            "+61 2 8317 3359",
+            "(02) 8317 3359",
+        ):
+            if phrase not in contact:
+                fail(f"/contact/ is missing approved copy: {phrase}", errors)
+        if PADDLE_RESELLER_SENTENCES[0] not in contact or PADDLE_RESELLER_SENTENCES[1] not in contact:
+            fail("/contact/ is missing the Paddle reseller sentences", errors)
+
+    for relative in (
+        "src/_includes/partials/header.njk",
+        "src/_includes/partials/footer.njk",
+        "src/_includes/layouts/sales.njk",
+    ):
+        source = (ROOT / relative).read_text(encoding="utf-8")
+        needed = POLICY_FOOTER_HREFS
+        if relative.endswith("header.njk"):
+            needed = ('href="/pricing/"', 'href="/contact/"')
+        for href in needed:
+            if href not in source:
+                fail(f"{relative} is missing {href}", errors)
+
+    for relative in ("index.html", "about/index.html", "welcome/index.html", "buy/index.html"):
+        path = SITE / relative
+        if not path.is_file():
+            continue
+        page = path.read_text(encoding="utf-8")
+        for href in POLICY_FOOTER_HREFS:
+            if href not in page:
+                fail(f"{relative} footer is missing {href}", errors)
+
+
 def verify_seller(errors: list[str]) -> None:
     abn = site_abn()
     html_files = sorted(SITE.rglob("*.html"))
@@ -894,6 +1093,7 @@ def verify_seller(errors: list[str]) -> None:
         if abn == ABN_PLACEHOLDER and re.search(r"\bABN\b", page):
             fail(f"{relative} shows an ABN before one is set", errors)
     for relative in (
+        "pricing/index.html",
         "terms/index.html",
         "refunds/index.html",
         "privacy/index.html",
@@ -930,6 +1130,7 @@ def main() -> int:
         verify_sitemap(errors, posts)
         verify_welcome(errors)
         verify_buy(errors)
+        verify_policy_pages(errors)
         verify_homepage_routing(errors, posts)
         verify_canonicals(errors, posts)
         verify_stylesheet_version(errors, version)

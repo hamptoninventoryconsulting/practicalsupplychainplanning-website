@@ -14,6 +14,9 @@
           <a class="site-nav__link{% if nav == 'home' %} site-nav__link--active{% endif %}" href="/"{% if nav == 'home' %} aria-current="page"{% endif %}>Home</a>
         </li>
         <li>
+          <a class="site-nav__link{% if nav == 'pricing' %} site-nav__link--active{% endif %}" href="/pricing/"{% if nav == 'pricing' %} aria-current="page"{% endif %}>Pricing</a>
+        </li>
+        <li>
           <a class="site-nav__link{% if learnSection %} site-nav__link--active{% endif %}" href="/learn/"{% if page.url == '/learn/' %} aria-current="page"{% elif learnSection %} aria-current="true"{% endif %}>Learn</a>
         </li>
         <li>
@@ -21,6 +24,9 @@
         </li>
         <li>
           <a class="site-nav__link{% if nav == 'about' %} site-nav__link--active{% endif %}" href="/about/"{% if nav == 'about' %} aria-current="page"{% endif %}>About</a>
+        </li>
+        <li>
+          <a class="site-nav__link{% if nav == 'contact' %} site-nav__link--active{% endif %}" href="/contact/"{% if nav == 'contact' %} aria-current="page"{% endif %}>Contact</a>
         </li>
       </ul>
     </nav>
