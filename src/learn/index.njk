@@ -1,0 +1,23 @@
+---json
+{
+  "layout": "layouts/page.njk",
+  "title": "Learn — Practical Supply Chain Planning",
+  "description": "Free learning tools and guides on stock planning.",
+  "canonical": "https://practicalsupplychainplanning.com/learn/",
+  "nav": "learn",
+  "permalink": "/learn/"
+}
+---
+<h1 class="page-title">Learn</h1>
+<p class="tagline">Free learning tools and guides on stock planning.</p>
+
+<ul class="learn-list">
+  {% for tool in learnTools %}
+  <li class="learn-list__item">
+    <a class="learn-card" href="{{ tool.href }}">
+      <h2 class="learn-card__title">{{ tool.title }}</h2>
+      <p class="learn-card__summary">{{ tool.description }}</p>
+    </a>
+  </li>
+  {% endfor %}
+</ul>

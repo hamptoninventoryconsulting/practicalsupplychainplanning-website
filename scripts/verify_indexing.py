@@ -80,6 +80,7 @@ CORE_PAGES = (
     "/",
     "/about/",
     "/blog/",
+    "/learn/",
     "/learn/safety-stock-simulator/",
     "/learn/safety-stock-simulator/own-data/",
 )
@@ -87,6 +88,7 @@ CORE_PAGES = (
 CANONICAL_PAGES = (
     ("about/index.html", f"{SITE_ORIGIN}/about/"),
     ("blog/index.html", f"{SITE_ORIGIN}/blog/"),
+    ("learn/index.html", f"{SITE_ORIGIN}/learn/"),
     ("learn/safety-stock-simulator/index.html", f"{SITE_ORIGIN}/learn/safety-stock-simulator/"),
     (
         "learn/safety-stock-simulator/own-data/index.html",
