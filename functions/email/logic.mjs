@@ -332,9 +332,32 @@ export async function signWebhook(secret, id, timestamp, body) {
   return "v1," + mac;
 }
 
+const CHART_LINE = "Chart: ending stock and safety stock across 52 weeks.";
+
+// Own-data One year sends one chart per SKU, in SKU order. Those pictures sit
+// under that SKU. Any other count keeps the chart list, with its titles, at the end.
+function chartsPairedWithSkus(summary) {
+  return (
+    summary.kind === "own-data" &&
+    Array.isArray(summary.skus) &&
+    Array.isArray(summary.charts) &&
+    summary.charts.length > 0 &&
+    summary.charts.length === summary.skus.length
+  );
+}
+
+function chartImageTag(index) {
+  return (
+    "<img src=\"cid:chart" +
+    (index + 1) +
+    "\" alt=\"Chart of ending stock and safety stock across 52 weeks.\" width=\"640\">"
+  );
+}
+
 export async function buildMessage(submission, token, signingKey) {
   const summary = submission.summary;
   const unsub = await unsubscribeUrl(token, signingKey);
+  const pairedCharts = chartsPairedWithSkus(summary);
   const blocks = [];
   blocks.push("Mode: " + (summary.mode === "monte-carlo" ? "Monte Carlo (fifty years)" : "One year"));
   blocks.push("Seed: " + String(summary.seed));
@@ -361,6 +384,9 @@ export async function buildMessage(submission, token, signingKey) {
       metricLines(sku.metrics).forEach(function (line) {
         blocks.push("  " + line);
       });
+      if (pairedCharts) {
+        blocks.push(CHART_LINE);
+      }
     });
     if (summary.totals) {
       blocks.push(
@@ -373,9 +399,9 @@ export async function buildMessage(submission, token, signingKey) {
   summary.commentary.forEach(function (line) {
     blocks.push(line);
   });
-  if (summary.mode === "year" && summary.charts.length) {
+  if (!pairedCharts && summary.mode === "year" && summary.charts.length) {
     blocks.push("");
-    blocks.push("Chart: ending stock and safety stock across 52 weeks.");
+    blocks.push(CHART_LINE);
     summary.charts.forEach(function (chart) {
       if (chart.title) {
         blocks.push(chart.title);
@@ -436,6 +462,7 @@ export async function buildMessage(submission, token, signingKey) {
 
 function htmlMessage(submission, token, unsub) {
   const summary = submission.summary;
+  const pairedCharts = chartsPairedWithSkus(summary);
   const parts = [];
   parts.push("<!DOCTYPE html><html><body style=\"font-family:Georgia,serif;color:#1c1917;\">");
   parts.push("<p>Mode: " + escapeHtml(summary.mode === "monte-carlo" ? "Monte Carlo (fifty years)" : "One year") + "<br>Seed: " + escapeHtml(String(summary.seed)) + "</p>");
@@ -457,27 +484,28 @@ function htmlMessage(submission, token, unsub) {
   }
   if (summary.kind === "own-data") {
     parts.push("<p><strong>Per SKU</strong></p>");
-    summary.skus.forEach(function (sku) {
+    summary.skus.forEach(function (sku, index) {
       parts.push("<p>" + escapeHtml(sku.label) + "</p><ul>");
       metricLines(sku.metrics).forEach(function (line) {
         parts.push("<li>" + escapeHtml(line) + "</li>");
       });
       parts.push("</ul>");
+      if (pairedCharts) {
+        parts.push(chartImageTag(index));
+      }
     });
   }
   summary.commentary.forEach(function (line) {
     parts.push("<p>" + escapeHtml(line) + "</p>");
   });
-  summary.charts.forEach(function (chart, index) {
-    if (chart.title) {
-      parts.push("<p>" + escapeHtml(chart.title) + "</p>");
-    }
-    parts.push(
-      "<img src=\"cid:chart" +
-        (index + 1) +
-        "\" alt=\"Chart of ending stock and safety stock across 52 weeks.\" width=\"640\">"
-    );
-  });
+  if (!pairedCharts) {
+    summary.charts.forEach(function (chart, index) {
+      if (chart.title) {
+        parts.push("<p>" + escapeHtml(chart.title) + "</p>");
+      }
+      parts.push(chartImageTag(index));
+    });
+  }
   parts.push(
     "<p><a href=\"" +
       escapeHtml(summary.reopenUrl) +
