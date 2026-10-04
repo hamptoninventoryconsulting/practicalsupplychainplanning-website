@@ -370,8 +370,14 @@ def verify_homepage_routing(errors: list[str], posts: list[dict]) -> None:
                 fail(f"index.html is missing latest article summary: {post['summary']}", errors)
         if re.search(r"<a\b[^>]*>\s*Coming soon\.", text):
             fail("Coming soon. on the home page must be plain text, not a link", errors)
-        if re.search(r"<button\b", text, re.I):
-            fail("index.html must not include a buy or trial button", errors)
+        allowed_button = '<button class="sim-button" type="submit">Keep me posted</button>'
+        buttons = re.findall(r"<button\b[^>]*>[\s\S]*?</button>", text, re.I)
+        if buttons != [allowed_button]:
+            fail(
+                "index.html may only include the Let's keep in touch submit button, found "
+                + repr(buttons),
+                errors,
+            )
         if 'href="/buy/"' in text or 'href="/buy"' in text:
             fail("index.html must not link to /buy/", errors)
         if re.search(
