@@ -95,11 +95,11 @@ The message has a designed version and a plain-text version with the same words,
 4. **Commentary.** The rule lines below.
 5. **Chart.** One year only. Monte Carlo has no chart, matching the page (“Summary only, no chart”).
 6. **Reopen this scenario.** One link.
-7. **One soft line.** “Planning stock in a spreadsheet? Stock Planner plans by weeks of cover.” The words “Stock Planner” are the link. Destination: `https://practicalsupplychainplanning.com/products/practical-stock-planner/` plus the same `utm_` labels as the reopen link. `/buy/` and `/pricing/` 301 straight there.
+7. **One soft line.** “Planning stock in a spreadsheet? Practical Stock Planner plans by weeks of cover.” The words “Practical Stock Planner” are the link. Destination: `https://practicalsupplychainplanning.com/products/practical-stock-planner/` plus the same `utm_` labels as the reopen link. `/buy/` and `/pricing/` 301 straight there.
 8. **Disclaimer, exact meaning:** “These numbers come from a teaching simulation of the scenario you ran. They are not a forecast, a recommendation or advice for your business.”
 9. **Footer.** See below.
 
-The email never says “your business should” or “recommended”. Stock Planner is described only as planning by weeks of cover. The email does not say that Stock Planner calculates safety stock. It does not.
+The email never says “your business should” or “recommended”. Practical Stock Planner is described only as planning by weeks of cover. The email does not say that Practical Stock Planner calculates safety stock. It does not.
 
 A last check on the server rejects the send if the finished text contains the phrase “your business should” or the word “recommended”. The disclaimer keeps “a recommendation”, because that word is part of the required sentence.
 
@@ -533,7 +533,7 @@ On each, confirm:
 - The disclaimer and the footer are present, including the ABN and the support address
 - There is no postal address
 - The words “your business should” and “recommended” do not appear
-- The Stock Planner line does not say it calculates safety stock
+- The Practical Stock Planner line does not say it calculates safety stock
 - The plain-text version is readable
 
 ### Links
@@ -542,7 +542,7 @@ On each, confirm:
 - The own-data reopen link keeps the SKU names and numbers
 - Both links include `utm_source=results-email`, `utm_medium=email`, and `utm_campaign=sim-results-v1`
 - Neither link contains the email address
-- The Stock Planner link goes where you confirmed
+- The Practical Stock Planner link goes where you confirmed
 
 ### Form
 
@@ -589,7 +589,7 @@ After one successful send, Cloudflare Web Analytics shows a page view for `/lear
 
 The developer cannot do these. They need your login.
 
-1. Approve this plan, the privacy paragraph, and the Stock Planner URL.
+1. Approve this plan, the privacy paragraph, and the Practical Stock Planner URL.
 2. In Resend, add the domain `news.practicalsupplychainplanning.com`. Pick the region. Leave open and click tracking off. Do not enable receiving.
 3. Copy the Records tab. Add the records in Cloudflare by hand, or paste the tab to the developer to add. Leave the root MX, `send`, and `resend._domainkey` alone.
 4. Click Verify in Resend after the records are in.
