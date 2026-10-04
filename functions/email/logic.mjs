@@ -556,7 +556,7 @@ export async function buildMessage(submission, token, signingKey) {
     blocks.push("Anyone with this link can read the numbers in it.");
   }
   blocks.push("");
-  blocks.push("Planning stock in a spreadsheet? Stock Planner plans by weeks of cover.");
+  blocks.push("Planning stock in a spreadsheet? Practical Stock Planner plans by weeks of cover.");
   blocks.push(stockPlannerUrl());
   blocks.push("");
   blocks.push(
@@ -658,7 +658,7 @@ function htmlMessage(submission, token, unsub) {
   parts.push(
     "<p>Planning stock in a spreadsheet? <a href=\"" +
       escapeHtml(stockPlannerUrl()) +
-      "\">Stock Planner</a> plans by weeks of cover.</p>"
+      "\">Practical Stock Planner</a> plans by weeks of cover.</p>"
   );
   parts.push("<p>" + escapeHtml(DISCLAIMER) + "</p>");
   parts.push(

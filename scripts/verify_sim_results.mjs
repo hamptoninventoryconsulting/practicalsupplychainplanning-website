@@ -299,7 +299,8 @@ assert.match(emailBody.text, /Unsubscribe: https:\/\/practicalsupplychainplannin
 assert.match(emailBody.html, /<a href="https:\/\/practicalsupplychainplanning.com\/unsubscribe\/\?t=[a-f0-9]{64}\.[a-f0-9]{64}">Unsubscribe<\/a>/);
 assert.match(emailBody.text, new RegExp(DISCLAIMER.replace(/[.]/g, "\\.")));
 assert.match(emailBody.text, /Seed: 4242/);
-assert.match(emailBody.text, /Stock Planner plans by weeks of cover/);
+assert.match(emailBody.text, /Practical Stock Planner plans by weeks of cover/);
+assert.match(emailBody.html, />Practical Stock Planner<\/a> plans by weeks of cover/);
 const sellerLine = sellerLineText(site.abn);
 assert.ok(sellerLine.includes("ABN " + site.abn));
 assert.ok(emailBody.text.includes(sellerLine));
@@ -709,6 +710,8 @@ assert.strictEqual(times(oneMail.html, "SKU 1"), 1);
 assert.ok(oneMail.text.indexOf("SKU 1") < oneMail.text.indexOf("Chart: ending stock and safety stock across 52 weeks."));
 assert.match(oneMail.html, /<p>SKU 1<\/p><ul>[\s\S]*<\/ul><img src="cid:chart1"/);
 assert.strictEqual(oneMail.attachments.length, 1);
+assert.match(oneMail.text, /Practical Stock Planner plans by weeks of cover/);
+assert.match(oneMail.html, />Practical Stock Planner<\/a> plans by weeks of cover/);
 
 const twoSku = await send(
   openDb().db,
