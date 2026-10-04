@@ -1340,6 +1340,54 @@ main {
   padding: 0;
 }
 
+.keep-in-touch {
+  flex: 1 0 100%;
+  margin: 0 0 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.keep-in-touch__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.125rem;
+}
+
+.keep-in-touch__form {
+  max-width: 28rem;
+}
+
+.keep-in-touch__consent {
+  margin: 0.75rem 0 0;
+}
+
+.keep-in-touch .sim-meta {
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+}
+
+.keep-in-touch .sim-turnstile {
+  margin: 0.35rem 0 0;
+  min-height: 0;
+}
+
+.keep-in-touch__status {
+  margin: 0 0 0.75rem;
+}
+
+.keep-in-touch__status:empty {
+  display: none;
+}
+
+.keep-in-touch__sent {
+  margin: 0.75rem 0 0;
+  font-weight: 600;
+}
+
+.keep-in-touch__form[hidden],
+.keep-in-touch__sent[hidden] {
+  display: none !important;
+}
+
 .home-hero .tagline {
   margin-bottom: 1.25rem;
 }

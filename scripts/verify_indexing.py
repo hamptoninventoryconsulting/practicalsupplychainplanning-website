@@ -269,7 +269,7 @@ HOME_TO_ABOUT_RE = re.compile(
 )
 HOME_COPY = (
     "Practical stock and supply planning",
-    "Straight-logic planning for importers and small to mid-sized businesses. Know what to order, when to order it, and why.",
+    "Straight-logic planning for product businesses that buy in stock with lead times.",
     "Try the Safety Stock Simulator",
     "Read the blog",
     "Learn by doing",
@@ -313,7 +313,7 @@ def verify_homepage_routing(errors: list[str], posts: list[dict]) -> None:
         if "<title>Stock &amp; Supply Planning | Practical Supply Chain Planning</title>" not in text:
             fail("index.html title must be the approved home title", errors)
         if (
-            '<meta name="description" content="Practical stock and supply planning for importers and growing businesses. Free learning tools, plain-English articles and Practical Stock Planner."'
+            '<meta name="description" content="Practical stock and supply planning for businesses that buy in stock. Free learning tools, plain-English articles and Practical Stock Planner."'
             not in text
         ):
             fail("index.html meta description must be the approved home description", errors)
@@ -354,8 +354,14 @@ def verify_homepage_routing(errors: list[str], posts: list[dict]) -> None:
                 fail(f"index.html is missing latest article summary: {post['summary']}", errors)
         if re.search(r"<a\b[^>]*>\s*Coming soon\.", text):
             fail("Coming soon. on the home page must be plain text, not a link", errors)
-        if re.search(r"<button\b", text, re.I):
-            fail("index.html must not include a buy or trial button", errors)
+        allowed_button = '<button class="sim-button" type="submit">Keep me posted</button>'
+        buttons = re.findall(r"<button\b[^>]*>[\s\S]*?</button>", text, re.I)
+        if buttons != [allowed_button]:
+            fail(
+                "index.html may only include the Let's keep in touch submit button, found "
+                + repr(buttons),
+                errors,
+            )
         if 'href="/buy/"' in text or 'href="/buy"' in text:
             fail("index.html must not link to /buy/", errors)
         if re.search(

@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS consent (
   utm_content TEXT,
   results_box INTEGER NOT NULL,
   articles_box INTEGER NOT NULL,
+  -- 1 when the person ticked "I'd be happy to beta test". Those rows are kept
+  -- past the 24-month prune. Latest keep-in-touch row per address wins.
+  beta_box INTEGER NOT NULL DEFAULT 0,
   resend_message_id TEXT,
   unsubscribe_token TEXT NOT NULL UNIQUE
 );

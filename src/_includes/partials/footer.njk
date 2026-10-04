@@ -1,5 +1,55 @@
 <footer class="site-footer">
   <div class="site-footer__inner">
+    <section class="keep-in-touch" id="keep-in-touch" aria-labelledby="keep-in-touch-heading">
+      <h2 class="keep-in-touch__title" id="keep-in-touch-heading">Let's keep in touch</h2>
+      <form class="keep-in-touch__form" id="keep-in-touch-form" novalidate>
+        <p class="keep-in-touch__status" role="status"></p>
+        <label class="sim-field" for="keep-in-touch-email">
+          Email address
+          <input id="keep-in-touch-email" name="email" type="email" autocomplete="email" maxlength="254" />
+        </label>
+        <p class="keep-in-touch__consent">Send me new articles from Practical Supply Chain Planning. Unsubscribe any time.</p>
+        <label class="sim-check" for="keep-in-touch-beta">
+          <input id="keep-in-touch-beta" name="beta" type="checkbox" />
+          <span class="keep-in-touch__beta">I'd be happy to beta test.</span>
+        </label>
+        <p class="sim-meta">We'll use your email only as described above. <a href="/privacy/">Privacy</a></p>
+        <div class="sim-turnstile" data-sitekey="{{ site.turnstileSiteKey }}"></div>
+        <div class="sim-hp" aria-hidden="true">
+          <label for="keep-in-touch-company">Company</label>
+          <input id="keep-in-touch-company" name="company" type="text" tabindex="-1" autocomplete="off" />
+        </div>
+        <button class="sim-button" type="submit">Keep me posted</button>
+      </form>
+      <p class="keep-in-touch__sent" hidden>You're on the list.</p>
+    </section>
+    <script>
+      (function () {
+        window.pscpTurnstileQueue = window.pscpTurnstileQueue || [];
+        if (typeof window.pscpTurnstileLoaded !== "function") {
+          window.pscpTurnstileLoaded = function () {
+            var waiting = window.pscpTurnstileQueue;
+            window.pscpTurnstileQueue = {
+              push: function (fn) {
+                fn();
+              },
+            };
+            if (waiting && waiting.forEach) {
+              waiting.forEach(function (fn) {
+                fn();
+              });
+            }
+          };
+        }
+        if (!document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]')) {
+          var script = document.createElement("script");
+          script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=pscpTurnstileLoaded";
+          script.async = true;
+          document.head.appendChild(script);
+        }
+      })();
+    </script>
+    <script src="/assets/keep-in-touch.js?v={{ site.cssVersion }}"></script>
     <p class="site-footer__copy">
       &copy; {{ site.copyrightYear }} {% include "partials/seller.njk" %}
     </p>

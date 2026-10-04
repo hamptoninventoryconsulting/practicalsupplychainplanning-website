@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS consent (
   utm_content TEXT,
   results_box INTEGER NOT NULL,
   articles_box INTEGER NOT NULL,
+  beta_box INTEGER NOT NULL DEFAULT 0,
   resend_message_id TEXT,
   unsubscribe_token TEXT NOT NULL UNIQUE
 );
@@ -57,6 +58,14 @@ export const REQUIRED_WORDING =
 export const OPTIONAL_WORDING =
   "Also send me new articles from Practical Supply Chain Planning. Unsubscribe any time.";
 export const SUCCESS_MESSAGE = "Sent. Check your inbox (and spam folder).";
+export const KEEP_IN_TOUCH_VERSION = "keep-in-touch-v1";
+export const KEEP_IN_TOUCH_WORDING =
+  "Send me new articles from Practical Supply Chain Planning. Unsubscribe any time.";
+export const BETA_WORDING = "I'd be happy to beta test.";
+export const KEEP_IN_TOUCH_SUCCESS = "You're on the list.";
+export const KEEP_IN_TOUCH_ADD_FAILED = "We couldn't add you to the list. Try again in a minute.";
+export const KEEP_IN_TOUCH_UNSUBSCRIBED =
+  "This address is unsubscribed. Email support@practicalsupplychainplanning.com if you want to join again.";
 export const SUBJECT = "Your Safety Stock Simulator results: the scenario you ran";
 export const FROM_ADDRESS =
   "Daniel at Practical Supply Chain Planning <hello@news.practicalsupplychainplanning.com>";
@@ -96,6 +105,31 @@ export async function ensureSchema(db) {
   for (let i = 0; i < statements.length; i += 1) {
     await db.prepare(statements[i]).run();
   }
+  await ensureBetaColumn(db);
+}
+
+async function ensureBetaColumn(db) {
+  const info = await db.prepare("PRAGMA table_info(consent)").all();
+  const rows = info && Array.isArray(info.results) ? info.results : [];
+  const found = rows.some(function (row) {
+    return row && row.name === "beta_box";
+  });
+  if (found) {
+    return;
+  }
+  try {
+    await db
+      .prepare("ALTER TABLE consent ADD COLUMN beta_box INTEGER NOT NULL DEFAULT 0")
+      .run();
+  } catch (err) {
+    if (!isDuplicateColumn(err)) {
+      throw err;
+    }
+  }
+}
+
+function isDuplicateColumn(err) {
+  return /duplicate column/i.test(String(err && err.message ? err.message : err));
 }
 
 export async function handleResultsEmail(request, env, deps) {
@@ -203,6 +237,113 @@ export async function handleResultsEmail(request, env, deps) {
       return json(err.status, { ok: false, error: err.message });
     }
     return json(500, { ok: false, error: "We couldn't send that. Try again in a minute." });
+  }
+}
+
+export async function handleKeepInTouch(request, env, deps) {
+  const tools = deps || defaultDeps();
+  try {
+    if (request.method !== "POST") {
+      return json(405, { ok: false, error: UNAVAILABLE });
+    }
+    if (!originAllowed(request)) {
+      return json(403, { ok: false, error: "Check the form and try again." });
+    }
+    if (
+      !env ||
+      !env.EMAIL_DB ||
+      !env.TURNSTILE_SECRET_KEY ||
+      !env.RESEND_API_KEY ||
+      !env.RESEND_ARTICLES_AUDIENCE_ID ||
+      !env.UNSUBSCRIBE_SIGNING_KEY
+    ) {
+      return json(503, { ok: false, error: UNAVAILABLE });
+    }
+    const raw = await readBody(request, 20000);
+    const body = parseJson(raw);
+    if (honeypotFilled(body)) {
+      return json(200, { ok: true, message: KEEP_IN_TOUCH_SUCCESS });
+    }
+    const submission = validateKeepInTouch(body);
+    const ip = clientIp(request);
+    if (!ip) {
+      throw new HttpError(400, "Check the form and try again.");
+    }
+    await verifyTurnstile(tools.fetch, env.TURNSTILE_SECRET_KEY, submission.turnstileToken, ip);
+    const now = new Date(tools.now());
+    const createdAt = now.toISOString();
+    await ensureSchema(env.EMAIL_DB);
+    await prune(env.EMAIL_DB, now);
+    await run(
+      env.EMAIL_DB,
+      "INSERT INTO rate_hits (email, ip, created_at) VALUES (?, ?, ?)",
+      [submission.email, ip, createdAt]
+    );
+    const ipCount = await countSince(
+      env.EMAIL_DB,
+      "SELECT COUNT(*) AS n FROM rate_hits WHERE ip = ? AND created_at > ?",
+      [ip, new Date(now.getTime() - HOUR_MS).toISOString()]
+    );
+    const emailCount = await countSince(
+      env.EMAIL_DB,
+      "SELECT COUNT(*) AS n FROM rate_hits WHERE email = ? AND created_at > ?",
+      [submission.email, new Date(now.getTime() - DAY_MS).toISOString()]
+    );
+    if (ipCount > IP_LIMIT || emailCount > EMAIL_LIMIT) {
+      throw new HttpError(429, "That address or network has sent several of these already. Try again later.");
+    }
+    const blocked = await first(
+      env.EMAIL_DB,
+      "SELECT reason FROM suppression WHERE email = ?",
+      [submission.email]
+    );
+    if (blocked) {
+      throw new HttpError(403, KEEP_IN_TOUCH_UNSUBSCRIBED);
+    }
+    try {
+      await addSignupContact(tools.fetch, env, submission.email);
+    } catch (err) {
+      if (err instanceof UnsubscribedAtProvider) {
+        await suppress(env.EMAIL_DB, submission.email, "unsubscribe", "resend-contact", createdAt);
+        return json(403, { ok: false, error: KEEP_IN_TOUCH_UNSUBSCRIBED });
+      }
+      throw err;
+    }
+    const token = tools.randomToken();
+    await run(
+      env.EMAIL_DB,
+      `INSERT INTO consent (
+        id, email, created_at, ip, form_id, page_url, wording_version, wording_text,
+        utm_source, utm_medium, utm_campaign, utm_term, utm_content,
+        results_box, articles_box, beta_box, resend_message_id, unsubscribe_token
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        tools.randomToken(),
+        submission.email,
+        createdAt,
+        ip,
+        "keep-in-touch",
+        submission.pageUrl,
+        KEEP_IN_TOUCH_VERSION,
+        KEEP_IN_TOUCH_WORDING + "\n" + BETA_WORDING,
+        submission.utm.source,
+        submission.utm.medium,
+        submission.utm.campaign,
+        submission.utm.term,
+        submission.utm.content,
+        0,
+        1,
+        submission.beta ? 1 : 0,
+        null,
+        token,
+      ]
+    );
+    return json(200, { ok: true, message: KEEP_IN_TOUCH_SUCCESS });
+  } catch (err) {
+    if (err instanceof HttpError) {
+      return json(err.status, { ok: false, error: err.message });
+    }
+    return json(500, { ok: false, error: KEEP_IN_TOUCH_ADD_FAILED });
   }
 }
 
@@ -886,6 +1027,78 @@ function cleanUtm(value) {
   };
 }
 
+function validateKeepInTouch(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  onlyKeys(body, [
+    "email",
+    "betaConsent",
+    "company",
+    "turnstileToken",
+    "pageUrl",
+    "utm",
+    "wordingVersion",
+    "wordingText",
+    "formId",
+  ]);
+  const email = normalizeEmail(body.email);
+  if (!email) {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  if (body.formId !== "keep-in-touch") {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  if (body.wordingVersion !== KEEP_IN_TOUCH_VERSION) {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  const wording = body.wordingText;
+  onlyKeys(wording, ["articles", "beta"]);
+  if (wording.articles !== KEEP_IN_TOUCH_WORDING || wording.beta !== BETA_WORDING) {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  if (body.betaConsent != null && typeof body.betaConsent !== "boolean") {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  if (typeof body.turnstileToken !== "string" || body.turnstileToken.length < 8 || body.turnstileToken.length > 2048) {
+    throw new HttpError(400, "The check failed. Refresh the page and try again.");
+  }
+  return {
+    email: email,
+    beta: body.betaConsent === true,
+    turnstileToken: body.turnstileToken,
+    pageUrl: cleanSignupPageUrl(body.pageUrl),
+    utm: cleanUtm(body.utm),
+  };
+}
+
+function cleanSignupPageUrl(value) {
+  let url;
+  try {
+    url = new URL(String(value || ""));
+  } catch (err) {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  if (url.protocol !== "https:" || !hostAllowed(url.hostname)) {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  url.hash = "";
+  const drop = [];
+  url.searchParams.forEach(function (paramValue, key) {
+    if (key.toLowerCase() === "email" || String(paramValue).indexOf("@") !== -1) {
+      drop.push(key);
+    }
+  });
+  drop.forEach(function (key) {
+    url.searchParams.delete(key);
+  });
+  const page = url.pathname + url.search;
+  if (!page.startsWith("/") || page.length > 2000) {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  return page;
+}
+
 function honeypotFilled(body) {
   if (!body || typeof body !== "object") {
     return false;
@@ -1052,6 +1265,104 @@ function confirmPage(action) {
   });
 }
 
+function resendContactUrl(email) {
+  return "https://api.resend.com/contacts/" + encodeURIComponent(email).replace(/%40/g, "@");
+}
+
+function messageOf(data) {
+  if (!data || typeof data !== "object") {
+    return "";
+  }
+  return String(data.message || "") + " " + String(data.name || "");
+}
+
+function contactAlreadyExists(status, data) {
+  return (status === 409 || status === 422) && /already exists/i.test(messageOf(data));
+}
+
+function segmentAlreadyHasContact(status, data) {
+  return (status === 409 || status === 422) && /already/i.test(messageOf(data));
+}
+
+async function responseJson(response) {
+  const raw = response && response.text ? await response.text() : "";
+  if (!raw) {
+    return {};
+  }
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    return {};
+  }
+}
+
+async function addSignupContact(fetchImpl, env, email) {
+  let created;
+  try {
+    created = await fetchImpl("https://api.resend.com/contacts", {
+      method: "POST",
+      headers: {
+        authorization: "Bearer " + env.RESEND_API_KEY,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        email: email,
+        unsubscribed: false,
+        segments: [{ id: env.RESEND_ARTICLES_AUDIENCE_ID }],
+      }),
+    });
+  } catch (err) {
+    throw new HttpError(502, KEEP_IN_TOUCH_ADD_FAILED);
+  }
+  const createdBody = await responseJson(created);
+  if (created && created.ok) {
+    return;
+  }
+  if (!contactAlreadyExists(created && created.status, createdBody)) {
+    throw new HttpError(502, KEEP_IN_TOUCH_ADD_FAILED);
+  }
+  await attachExistingContact(fetchImpl, env, email);
+}
+
+async function attachExistingContact(fetchImpl, env, email) {
+  const url = resendContactUrl(email);
+  let got;
+  try {
+    got = await fetchImpl(url, {
+      method: "GET",
+      headers: {
+        authorization: "Bearer " + env.RESEND_API_KEY,
+      },
+    });
+  } catch (err) {
+    throw new HttpError(502, KEEP_IN_TOUCH_ADD_FAILED);
+  }
+  const contact = await responseJson(got);
+  if (!got || !got.ok) {
+    throw new HttpError(502, KEEP_IN_TOUCH_ADD_FAILED);
+  }
+  if (contact.unsubscribed === true) {
+    throw new UnsubscribedAtProvider();
+  }
+  let added;
+  try {
+    added = await fetchImpl(url + "/segments/" + encodeURIComponent(env.RESEND_ARTICLES_AUDIENCE_ID), {
+      method: "POST",
+      headers: {
+        authorization: "Bearer " + env.RESEND_API_KEY,
+        "content-type": "application/json",
+      },
+    });
+  } catch (err) {
+    throw new HttpError(502, KEEP_IN_TOUCH_ADD_FAILED);
+  }
+  const addedBody = await responseJson(added);
+  if ((added && added.ok) || segmentAlreadyHasContact(added && added.status, addedBody)) {
+    return;
+  }
+  throw new HttpError(502, KEEP_IN_TOUCH_ADD_FAILED);
+}
+
 async function addArticlesContact(fetchImpl, env, email) {
   try {
     const response = await fetchImpl("https://api.resend.com/contacts", {
@@ -1077,10 +1388,7 @@ async function removeArticlesContact(fetchImpl, env, email) {
     return;
   }
   const url =
-    "https://api.resend.com/contacts/" +
-    encodeURIComponent(email).replace(/%40/g, "@") +
-    "/segments/" +
-    encodeURIComponent(env.RESEND_ARTICLES_AUDIENCE_ID);
+    resendContactUrl(email) + "/segments/" + encodeURIComponent(env.RESEND_ARTICLES_AUDIENCE_ID);
   try {
     const response = await fetchImpl(url, {
       method: "DELETE",
@@ -1136,6 +1444,10 @@ async function suppress(db, email, reason, eventId, createdAt) {
     "INSERT OR IGNORE INTO suppression (email, reason, created_at, resend_event_id) VALUES (?, ?, ?, ?)",
     [email, reason, createdAt, eventId]
   );
+  // A beta tick stays only until the person unsubscribes. The row then follows the 24-month prune.
+  if (reason === "unsubscribe") {
+    await run(db, "UPDATE consent SET beta_box = 0 WHERE email = ?", [email]);
+  }
 }
 
 function recipientEmails(data) {
@@ -1163,7 +1475,11 @@ async function prune(db, now) {
   const consentCutoff = new Date(now.getTime());
   consentCutoff.setUTCMonth(consentCutoff.getUTCMonth() - 24);
   await run(db, "DELETE FROM rate_hits WHERE created_at <= ?", [rateCutoff]);
-  await run(db, "DELETE FROM consent WHERE created_at <= ?", [consentCutoff.toISOString()]);
+  await run(
+    db,
+    "DELETE FROM consent WHERE created_at <= ? AND beta_box = 0",
+    [consentCutoff.toISOString()]
+  );
 }
 
 async function countSince(db, sql, params) {
@@ -1387,3 +1703,5 @@ class HttpError extends Error {
     this.status = status;
   }
 }
+
+class UnsubscribedAtProvider extends Error {}
