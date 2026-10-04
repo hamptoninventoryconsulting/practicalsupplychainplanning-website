@@ -1,0 +1,57 @@
+---json
+{
+  "title": "Reorder Point vs Time-Phased Planning: Two Different Planning Questions",
+  "summary": "Reorder Point planning reacts when inventory reaches a level where a new order is needed. Time-phased planning looks ahead across future periods, matching expected demand with supply and capacity over time. Understanding the difference helps planners choose the right approach for the decision they need to make.",
+  "published_datetime": "2026-10-04 10:12:05.558290",
+  "featured_image": "IMG000010.webp",
+  "schema_image": "IMG000010.webp",
+  "author": "Daniel Hampton",
+  "reading_time": "7 minutes",
+  "keywords": "order quantity, reorder point, reorder point vs time-phased planning: two different planning questions, inventory planning",
+  "about": "Inventory Planning",
+  "in_language": "English",
+  "publisher": "Practical Supply Chain Planning"
+}
+---
+<p>You set a reorder point. The system flags the item. You raise the purchase order the same day, and you still run out, because the supplier needs eight weeks and you had four weeks of stock left.</p>
+<p>Or the other version: a handful of items all hit their min in the same fortnight, and suddenly you&#x27;ve got a pile of POs to place, cash going out in one hit and a warehouse that can&#x27;t fit it all when it lands.</p>
+<p>Neither is a discipline problem. It&#x27;s what happens when the only signal you have is &quot;stock is below the line today&quot;.</p>
+<h2>What a reorder point actually tells you</h2>
+<p>A reorder point is a stock level. When stock falls below it, you reorder. Inventory systems use the same idea. In Cin7 Core, a product shows up for reordering when stock falls below its &quot;Minimum Before Reorder&quot; level, and the suggested order is a fixed &quot;Reorder Quantity&quot;. In Unleashed, the Reorder Report flags products whose available stock plus stock on order has fallen below their minimum level, and suggests how much to buy.</p>
+<p>It&#x27;s simple, and that&#x27;s its appeal. But it quietly assumes three things:</p>
+<p>- **Demand is steady.** The number was set from an average, and it assumes the next few months look like that average. - **The lead time is fixed.** It assumes the supplier always takes the same time, and that orders already placed arrive when they should. - **Only today matters.** It looks at the stock position now. Even when it counts stock on order, it doesn&#x27;t look at *when* that stock arrives, or what&#x27;s about to go out, week by week.</p>
+<p>So a reorder point answers one question: has stock crossed a line? It can&#x27;t tell you *when* you&#x27;ll run short, or *when* you need to place the order to avoid it.</p>
+<h2>What time-phased planning does differently</h2>
+<p>Time-phased planning takes the same ingredients and lays them out across the weeks ahead:</p>
+<p>- the stock on hand today - the demand forecast for each week - the purchase orders already placed, in the week they&#x27;re due to arrive</p>
+<p>Each week&#x27;s closing stock becomes the next week&#x27;s opening stock. Laid out like that, you can see the week stock will go negative, and count back by the supplier&#x27;s lead time to the week you need to order.</p>
+<h2>One product, two ways</h2>
+<p>Here&#x27;s a single product: an imported garden hose reel. In my years planning stock, this is the kind of item that catches people every spring.</p>
+<p>The setup:</p>
+<p>- Stock on hand at the start of week 1 (early September): **520 units** - Supplier lead time: **6 weeks** from placing the order to stock arriving - One PO already placed: **300 units, due in week 4** - Over winter it sold about **50 a week**, so the reorder point was set at 6 weeks × 50 = **300 units** - The forecast shows the usual spring lift from week 5</p>
+<p>Here&#x27;s the week-by-week projection:</p>
+<p>| Week | Opening stock | Forecast demand | Incoming PO | Closing stock | |---:|---:|---:|---:|---:| | 1 | 520 | 50 | – | 470 | | 2 | 470 | 50 | – | 420 | | 3 | 420 | 60 | – | 360 | | 4 | 360 | 60 | 300 | 600 | | 5 | 600 | 90 | – | 510 | | 6 | 510 | 110 | – | 400 | | 7 | 400 | 130 | – | 270 | | 8 | 270 | 150 | – | 120 | | 9 | 120 | 150 | – | -30 | | 10 | -30 | 140 | – | -170 |</p>
+<p>(Closing stock = opening stock − forecast demand + incoming PO.)</p>
+<p>**The reorder point view.** Stock sits comfortably above 300 for the first seven weeks. The PO arriving in week 4 even pushes it up to 600. Nothing gets flagged until stock drops to 270 at the end of week 7. You place the order at the start of week 8, and with a six-week lead time it lands around week 14.</p>
+<p>But stock runs out in week 9. You&#x27;re short from week 9 until the order arrives, right through the busiest weeks of the season. (Counting the incoming PO as well as stock on hand doesn&#x27;t change this, because that PO has already arrived by the time stock gets low.)</p>
+<p>The reorder point did exactly what it was set up to do. It was just set up for winter demand and only looked at today.</p>
+<p>**The time-phased view.** In week 1 you can already see the negative number in week 9. Count back six weeks and the latest you can order and still have stock arrive in time is week 3. That&#x27;s cutting it fine, so a sensible move is to order in week 2 for arrival in week 8.</p>
+<p>Add a 500-unit order arriving in week 8 and the end of the table looks like this:</p>
+<p>| Week | Opening stock | Forecast demand | Incoming PO | Closing stock | |---:|---:|---:|---:|---:| | 8 | 270 | 150 | 500 | 620 | | 9 | 620 | 150 | – | 470 | | 10 | 470 | 140 | – | 330 |</p>
+<p>Same product, same stock, same supplier. You just saw the problem while there was still time to fix it.</p>
+<p>The same table also shows you a late PO. If that week 4 delivery slips to week 7, you can rerun the weeks and see the effect straight away. A time-phased plan can show that you have enough stock in total, but that it arrives too late. A reorder point won&#x27;t show that until the shelf is already low.</p>
+<h2>When a reorder point is still fine</h2>
+<p>I still use reorder points. For plenty of items they&#x27;re the right tool:</p>
+<p>- **Stable demand.** Items that sell about the same every week, all year. - **Short lead times.** If a local supplier can deliver in a few days, a late signal doesn&#x27;t cost you much. - **Low-value items.** Fasteners, packaging, consumables. Carrying a bit extra is cheaper than the time spent planning them closely.</p>
+<p>For these, a sensible min/max in your inventory system does the job.</p>
+<h2>When you need to see ahead</h2>
+<p>Time-phasing earns its keep when the reorder point&#x27;s assumptions stop holding:</p>
+<p>- **Long lead times and imports.** The longer the gap between ordering and receiving, the earlier you need to see a shortfall. Shipping delays make that worse. - **Seasonality.** A reorder point set on quiet-season sales will be too low for the peak, as the hose reel shows. One set on peak sales leaves you overstocked in the quiet months. - **Promotions and planned events.** If you know a catalogue or a big customer order is coming in week 6, the forecast can include it. A reorder point can&#x27;t. - **Lumpy demand.** Items that sell in big, irregular orders don&#x27;t wear down steadily towards a line. They jump past it.</p>
+<p>If your important items fall into these groups, you need the weeks laid out.</p>
+<h2>Questions to ask about each item</h2>
+<p>- Does demand stay steady, or does it change by season, promotion or big customer orders? - How long is the lead time from placing the order to stock being ready to sell? - Are there known events coming, such as a catalogue, a promotion or a large order, that need stock in a specific week? - Is a simple &quot;below the line, reorder&quot; signal enough, or does the item need a dated plan of what arrives when? - Does the order need to line up with anything else, such as supplier capacity, a container booking or cash flow?</p>
+<p>If the answers point to steady demand, short lead times and no known events, a reorder point is enough. If they don&#x27;t, plan that item week by week.</p>
+<h2>Key takeaways</h2>
+<p>- A reorder point tells you when stock has crossed a line. Time-phased planning tells you which week you will run short and which week you need to order. - A reorder point set on quiet-season sales fails in the peak. In the hose reel example it triggered in week 7, while stock ran out in week 9 and the new order landed in week 14. - Laying out opening stock, forecast, incoming POs and closing stock week by week showed the shortfall in week 1, in time to order in week 2. - Reorder points suit steady, low-value, short-lead items. - Imported, seasonal, promoted and lumpy items need a week-by-week plan.</p>
+<p>I built Practical Stock Planner because I wanted this time-phased view for businesses that have outgrown spreadsheets but don&#x27;t run an ERP. It projects stock week by week from your inventory data, open POs and forecast. If that sounds useful, you can find it at [practicalsupplychainplanning.com](https://practicalsupplychainplanning.com).</p>
+<p>*Cin7 and Unleashed are trademarks of their respective owners.*</p>
