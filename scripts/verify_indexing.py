@@ -301,7 +301,7 @@ HOME_COPY = (
     "Planning software for businesses that have outgrown reorder points and spreadsheets. Practical Stock Planner is time-phased MRP. It projects your stock period by period from your inventory data, open purchase orders and forecast, then tells you what to order and when.",
     "Plans period by period, not with a single reorder point",
     "Works from your current stock, open POs and forecast",
-    "Imports from Excel (.xlsx) or CSV",
+    "Imports from CSV files (save from Excel or Google Sheets)",
     "Runs on Windows. 14-day free trial, sold worldwide.",
     "Coming soon.",
     "Built by a working planner",
