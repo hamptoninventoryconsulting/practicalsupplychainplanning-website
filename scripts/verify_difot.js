@@ -315,7 +315,7 @@ const unquotedMiddle = run([
 assert.strictEqual(unquotedMiddle.ok, true, JSON.stringify(unquotedMiddle.errors));
 assert.strictEqual(unquotedMiddle.lines.length, 1);
 assert.strictEqual(lineOf(unquotedMiddle, "B").ordered, 10);
-assert.ok(warns(unquotedMiddle, /Row 2 has more columns than the header/));
+assert.ok(warns(unquotedMiddle, /Row 2 was left out because it has more columns than the header/));
 assert.ok(warns(unquotedMiddle, /"1,000"/));
 assert.ok(!unquotedMiddle.lines.some(function (line) { return /Short 999/.test(line.reason); }));
 const unquotedReceived = run([
@@ -334,7 +334,7 @@ assert.strictEqual(acmeSplit.ok, true, JSON.stringify(acmeSplit.errors) + JSON.s
 assert.strictEqual(acmeSplit.lines.length, 1);
 assert.strictEqual(acmeSplit.lines[0].supplier, "Acme, Ltd");
 assert.strictEqual(acmeSplit.lines[0].sku, "B");
-assert.ok(warns(acmeSplit, /Row 2 has more columns than the header/));
+assert.ok(warns(acmeSplit, /Row 2 was left out because it has more columns than the header/));
 assert.ok(warns(acmeSplit, /"Acme, Ltd"/));
 const shortOptional = run(["1,Acme,A,10,2026-03-10,2026-03-10,10"]);
 assert.strictEqual(shortOptional.ok, true, JSON.stringify(shortOptional.errors) + JSON.stringify(shortOptional.warnings));
@@ -348,15 +348,26 @@ assert.strictEqual(trailingComma.ok, true, JSON.stringify(trailingComma.warnings
 assert.strictEqual(trailingComma.lines[0].received, 10);
 assert.strictEqual(warns(trailingComma, /more columns/), false);
 const shortRequired = run([
-  "1,Acme,A,10,2026-03-10",
+  "1,Acme,A,10",
   "2,Acme,B,10,2026-03-10,2026-03-10,10,,,",
 ]);
 assert.strictEqual(shortRequired.ok, true, JSON.stringify(shortRequired.errors));
 assert.strictEqual(shortRequired.lines.length, 1);
 assert.strictEqual(lineOf(shortRequired, "B").sku, "B");
 assert.ok(
-  shortRequired.warnings.indexOf("Row 2 has fewer columns than the header; Receipt Date is missing.") !== -1
+  shortRequired.warnings.indexOf(
+    "Row 2 was left out because it has fewer columns than the header. Required Date is missing."
+  ) !== -1
 );
+const shortUnreceived = run(["1,Acme,LATE,10,2026-04-10"]);
+assert.strictEqual(shortUnreceived.ok, true, JSON.stringify(shortUnreceived.errors) + JSON.stringify(shortUnreceived.warnings));
+assert.strictEqual(shortUnreceived.overall.lines, 1);
+assert.strictEqual(shortUnreceived.lines[0].counted, true);
+assert.strictEqual(shortUnreceived.lines[0].reason, "Not received");
+assert.strictEqual(shortUnreceived.lines[0].onTime, false);
+assert.strictEqual(shortUnreceived.lines[0].inFull, false);
+assert.strictEqual(shortUnreceived.lines[0].difot, false);
+assert.strictEqual(warns(shortUnreceived, /fewer columns/), false);
 const supplierShort = run(["1,C,A,10,2026-03-10,2026-03-10,10,,,"], {
   supplierText: "Supplier,Freight arranged by,Expected transit days\nC,Supplier\n",
   supplierFileName: "suppliers.csv",
@@ -371,7 +382,7 @@ const mostlyUnquoted = run([
   "3,Acme,C,10,2026-03-10,2026-03-10,10,,,",
 ]);
 assert.strictEqual(mostlyUnquoted.ok, false);
-assert.match(mostlyUnquoted.errors[0], /Row 2 has more columns than the header/);
+assert.match(mostlyUnquoted.errors[0], /Rows 2, 3 were left out because they have more columns than the header/);
 assert.strictEqual(mostlyUnquoted.summaryCsv, "");
 
 const semicolons = run("PO Number;Supplier;SKU\n1;Acme;A\n");

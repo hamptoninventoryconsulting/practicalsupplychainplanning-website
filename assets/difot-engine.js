@@ -35,8 +35,8 @@
     ["sku", "SKU", true],
     ["ordered_qty", "Ordered Qty", true],
     ["required_date", "Required Date", true],
-    ["receipt_date", "Receipt Date", true],
-    ["received_qty", "Received Qty", true],
+    ["receipt_date", "Receipt Date", true, false],
+    ["received_qty", "Received Qty", true, false],
     ["damaged_qty", "Damaged Qty", false],
     ["damaged_reason", "Damaged Reason", false],
     ["arrived_date", "Arrived Date", false],
@@ -584,7 +584,8 @@
   function requiredMap(fields) {
     var map = Object.create(null);
     fields.forEach(function (field) {
-      if (field[2]) {
+      var requiredOnRow = field.length > 3 ? field[3] : field[2];
+      if (requiredOnRow) {
         map[field[0]] = field[1];
       }
     });
@@ -617,18 +618,6 @@
     return { kind: "ok", cells: cells };
   }
 
-  function extraColumnMessage(rowNumber) {
-    return (
-      "Row " +
-      rowNumber +
-      ' has more columns than the header. Put any value with a comma in quotes, such as "1,000" or "Acme, Ltd".'
-    );
-  }
-
-  function shortColumnMessage(rowNumber, column) {
-    return "Row " + rowNumber + " has fewer columns than the header; " + column + " is missing.";
-  }
-
   function shapeRows(dataRows, headerCount, normalizedHeaders, requiredLookup, rawHeaders) {
     var extras = [];
     var shorts = [];
@@ -649,18 +638,45 @@
     return { extras: extras, shorts: shorts, skip: skip };
   }
 
+  function rowsLeftOut(rowNumbers, reason) {
+    if (!rowNumbers.length) {
+      return "";
+    }
+    var bucket = skipBucket();
+    rowNumbers.forEach(function (rowNumber) {
+      noteSkip(bucket, rowNumber);
+    });
+    var pronoun = bucket.count === 1 ? "it has" : "they have";
+    return skipWarning(bucket, pronoun + " " + reason);
+  }
+
   function columnWarnings(prefix, extras, shorts) {
-    var messages = capMessages(
-      extras.map(function (rowNumber) {
-        return prefix + extraColumnMessage(rowNumber);
-      })
-    ).concat(
-      capMessages(
-        shorts.map(function (item) {
-          return prefix + shortColumnMessage(item.row, item.column);
-        })
-      )
+    var messages = [];
+    var extraMessage = rowsLeftOut(
+      extras,
+      'more columns than the header. Put any value with a comma in quotes, such as "1,000" or "Acme, Ltd"'
     );
+    if (extraMessage) {
+      messages.push(prefix + extraMessage);
+    }
+    var byColumn = Object.create(null);
+    var columns = [];
+    shorts.forEach(function (item) {
+      if (!byColumn[item.column]) {
+        byColumn[item.column] = [];
+        columns.push(item.column);
+      }
+      byColumn[item.column].push(item.row);
+    });
+    columns.forEach(function (column) {
+      var shortMessage = rowsLeftOut(
+        byColumn[column],
+        "fewer columns than the header. " + column + " is missing"
+      );
+      if (shortMessage) {
+        messages.push(prefix + shortMessage);
+      }
+    });
     return messages;
   }
 
@@ -975,13 +991,7 @@
         supplierLoaded.table[0]
       );
       if (supplierShape.extras.length * 2 > supplierLoaded.dataRows.length) {
-        return emptyResult(
-          capMessages(
-            supplierShape.extras.map(function (rowNumber) {
-              return "Supplier list: " + extraColumnMessage(rowNumber);
-            })
-          )
-        );
+        return emptyResult(columnWarnings("Supplier list: ", supplierShape.extras, []));
       }
       columnWarnings("Supplier list: ", supplierShape.extras, supplierShape.shorts).forEach(function (message) {
         supplierWarnings.push(message);
@@ -1107,7 +1117,7 @@
       poLoaded.table[0]
     );
     if (poShape.extras.length * 2 > poLoaded.dataRows.length) {
-      return emptyResult(capMessages(poShape.extras.map(extraColumnMessage)));
+      return emptyResult(columnWarnings("", poShape.extras, []));
     }
 
     var skipped = {
