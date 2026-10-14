@@ -31,7 +31,7 @@ assert.match(partial, /async><\/script>/);
 assert.doesNotMatch(partial, /api\.js[^>]*defer/);
 assert.match(
   fs.readFileSync(path.join(ROOT, "src", "learn", "safety-stock-simulator.njk"), "utf8"),
-  /sim-results-form\.js\?v=4/
+  /sim-results-form\.js\?v=5/
 );
 
 function Element(spec) {
@@ -135,7 +135,7 @@ function page() {
   return { root: root, form: form, email: email, results: results, status: status, send: send };
 }
 
-function load(extra) {
+function load(extra, attach) {
   const built = page();
   const posts = [];
   const sandbox = {
@@ -171,13 +171,18 @@ function load(extra) {
   };
   Object.assign(sandbox.window, extra || {});
   vm.runInNewContext(source, sandbox, { filename: "sim-results-form.js" });
-  const api = sandbox.window.SimResultsForm.attach({
-    id: "sim-results-email",
-    formId: "safety-stock-simulator",
-    buildSummary: function () {
-      return { reopenUrl: "https://practicalsupplychainplanning.com/learn/safety-stock-simulator/?run=1" };
-    },
-  });
+  const api = sandbox.window.SimResultsForm.attach(
+    Object.assign(
+      {
+        id: "sim-results-email",
+        formId: "safety-stock-simulator",
+        buildSummary: function () {
+          return { reopenUrl: "https://practicalsupplychainplanning.com/learn/safety-stock-simulator/?run=1" };
+        },
+      },
+      attach || {}
+    )
+  );
   return { sandbox: sandbox, built: built, api: api, posts: posts };
 }
 
@@ -297,5 +302,45 @@ failed.built.form.listeners.submit({ preventDefault: function () {} });
 await wait(20);
 assert.strictEqual(failed.built.status.textContent, "The check failed. Refresh the page and try again.");
 assert.strictEqual(failed.built.send.disabled, false);
+
+let starterUnlocked = false;
+const starterForm = load(
+  { pscpTurnstileQueue: [] },
+  {
+    formId: "starter-forecast",
+    buildSummary: function () {
+      return { kind: "starter-forecast" };
+    },
+    onSent: function () {
+      starterUnlocked = true;
+    },
+  }
+);
+starterForm.api.show();
+const starterState = {
+  readyCalls: 0,
+  renders: [],
+  resets: [],
+  token: "",
+  reenter: false,
+  options: null,
+  widget: null,
+};
+starterForm.sandbox.window.turnstile = turnstileStub(starterState);
+starterForm.sandbox.window.pscpTurnstileQueue[0]();
+const articlesBox = starterForm.built.form.querySelector('[name="articles"]');
+assert.strictEqual(articlesBox.checked, false);
+starterForm.built.email.value = "forecast@example.com";
+starterForm.built.results.checked = true;
+starterState.token = "starter-token-1234";
+starterState.renders[0].callback(starterState.token);
+starterForm.built.form.listeners.submit({ preventDefault: function () {} });
+await wait(20);
+assert.strictEqual(starterForm.posts.length, 1);
+const starterBody = JSON.parse(starterForm.posts[0].body);
+assert.strictEqual(starterBody.formId, "starter-forecast");
+assert.deepStrictEqual(starterBody.summary, { kind: "starter-forecast" });
+assert.strictEqual(starterBody.articlesConsent, false);
+assert.strictEqual(starterUnlocked, true);
 
 console.log("Turnstile form load checks OK.");

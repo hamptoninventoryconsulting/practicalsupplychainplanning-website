@@ -250,7 +250,7 @@
           return options.buildSummary();
         })
         .then(function (summary) {
-          if (!summary || !summary.reopenUrl) {
+          if (!summary || (summary.kind !== "starter-forecast" && !summary.reopenUrl)) {
             throw new Error("summary");
           }
           return fetch("/api/results-email", {
@@ -291,6 +291,9 @@
             frame.setAttribute("title", "Sent");
             frame.src = "/learn/safety-stock-simulator/sent/";
             root.appendChild(frame);
+            if (typeof options.onSent === "function") {
+              options.onSent();
+            }
             return;
           }
           resetWidget();

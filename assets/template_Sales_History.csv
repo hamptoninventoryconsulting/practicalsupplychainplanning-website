@@ -1,0 +1,4 @@
+order_id,order_datetime,sku,qty,fulfillment_location
+1001,2026-09-07,SKU-001,10,Main
+1002,2026-09-14,SKU-001,8,Shop
+1003,2026-09-21,SKU-002,4,Main
