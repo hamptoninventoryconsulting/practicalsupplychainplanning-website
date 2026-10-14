@@ -7,7 +7,7 @@
   "nav": "learn",
   "permalink": "/learn/difot-calculator/",
   "scripts": [
-    "/assets/difot-engine.js?v=5",
+    "/assets/difot-engine.js?v=6",
     "/assets/sim-results-form.js?v=7",
     "/assets/difot-calculator.js?v=1"
   ]
@@ -36,13 +36,15 @@
             </p>
             <p>A line is scored like this:</p>
             <ul>
-              <li>On time compares the receipt date with the required date. A line that is too early is a miss, labelled Early.</li>
+              <li>On time, when the supplier delivers to you, compares Arrived at Your Site Date with the required date. A line that is too early is a miss, labelled Early.</li>
+              <li>On time, when you arrange the freight, compares Handed to Freight Date with the required date. That is the date the supplier handed the goods to the freight company, which is the part the supplier controls.</li>
               <li>In full compares the accepted quantity with the ordered quantity. Accepted quantity is the received quantity minus any damaged or rejected quantity.</li>
               <li>DIFOT is the lines that are both on time and in full. It is at most the lower of those two figures. It is not one multiplied by the other.</li>
               <li>Lines are counted, not whole orders and not quantity.</li>
               <li>An unreceived line that is overdue on the as-at date counts as a miss. A line that is not due yet is left out.</li>
-              <li>If the same PO number and SKU appears more than once, the rows are combined. Quantities are added and the latest receipt date is used. The ordered quantity is the largest one in the group.</li>
-              <li>When you arrange the freight, the receipt date is the ship date. Freight is measured separately, from that date to the arrived date, and it does not change the supplier's DIFOT.</li>
+              <li>If the same PO number and SKU appears more than once, the rows are combined. Quantities are added. The latest Arrived at Your Site Date and the latest Handed to Freight Date are kept. The ordered quantity is the largest one in the group.</li>
+              <li>Freight you arrange is measured from Handed to Freight Date to Arrived at Your Site Date, and compared with the expected transit days. It does not change the supplier's DIFOT. If the goods have been handed over but have not arrived yet, the line still counts for DIFOT and is left out of the freight figures.</li>
+              <li>If you arrange the freight and a received line has no Handed to Freight Date, that line is left out and named. If the supplier delivers to you, a Handed to Freight Date on the line is not used.</li>
             </ul>
           </div>
         </section>
@@ -93,7 +95,7 @@
             Leave the measure dates blank to use the earliest and latest required
             dates in the file. Year-month-day dates are always read as written.
             The shortfall is applied to each line. Raise days early allowed to
-            make an early receipt count as on time.
+            make an early delivery count as on time.
           </p>
           <p id="df-date-line" class="sim-meta" hidden></p>
         </section>
@@ -109,19 +111,21 @@
             </p>
             <p>
               The purchase order file needs PO Number, Supplier, SKU, Ordered
-              Qty, Required Date, Receipt Date, and Received Qty. Damaged Qty,
-              Damaged Reason, and Arrived Date are optional.
+              Qty, Required Date, Arrived at Your Site Date, and Received Qty.
+              Damaged Qty, Damaged Reason, and Handed to Freight Date are optional.
+              Fill in Handed to Freight Date on every received line where you arrange the freight.
             </p>
             <p>
               The supplier list is optional. Without it, every supplier is
               treated as Supplier delivers and freight is not shown. The list
-              needs Supplier and Freight arranged by. Use Supplier or Me.
-              Expected transit days is a whole number from 0 to 365, and it is
-              used only when you arrange the freight.
+              needs Supplier and Freight arranged by. Use Supplier delivers or
+              I arrange freight. Supplier and Me are also accepted. Expected
+              transit days is a whole number from 0 to 365, and it is used only
+              when you arrange the freight.
             </p>
             <p>
-              Missing dates? Add them from your forwarder's bill of lading or tracking before you upload.
-              If a supplier bill date is all you have, you can use it as the receipt date.
+              Missing dates? Add Arrived at Your Site Date from the day the goods arrived. If you arrange the freight add Handed to Freight Date from the freight company's paperwork or tracking before you upload.
+              If the only date you have for a supplier who delivers to you is the supplier's invoice date, you can use that as Arrived at Your Site Date.
             </p>
             <p>
               Limits: purchase order file CSV only, 10 MB, 200,000 rows.

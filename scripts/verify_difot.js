@@ -12,7 +12,7 @@ const SITE = path.join(ROOT, "_site");
 const engine = require(path.join(ROOT, "assets", "difot-engine.js"));
 
 const HEADER =
-  "PO Number,Supplier,SKU,Ordered Qty,Required Date,Receipt Date,Received Qty,Damaged Qty,Damaged Reason,Arrived Date";
+  "PO Number,Supplier,SKU,Ordered Qty,Required Date,Arrived at Your Site Date,Received Qty,Damaged Qty,Damaged Reason,Handed to Freight Date";
 
 function poCsv(rows) {
   return [HEADER].concat(rows).join("\n");
@@ -130,7 +130,7 @@ assert.strictEqual(repeated.lines.length, 1);
 assert.strictEqual(repeated.lines[0].ordered, 100);
 assert.strictEqual(repeated.lines[0].received, 100);
 assert.strictEqual(repeated.lines[0].rowsCombined, 3);
-assert.strictEqual(engine.formatISO(repeated.lines[0].receipt), "2026-03-12");
+assert.strictEqual(engine.formatISO(repeated.lines[0].onTimeDate), "2026-03-12");
 assert.strictEqual(repeated.lines[0].onTime, false);
 assert.ok(warns(repeated, /PO 1001, SKU 00123 appears 3 times/));
 assert.ok(warns(repeated, /Rows were combined/));
@@ -184,9 +184,9 @@ const suppliers = [
 ].join("\n");
 const freight = run(
   [
-    "1,Shenzhen Widgets,ON,10,2026-03-10,2026-03-10,10,,,2026-04-10",
-    "2,Shenzhen Widgets,LATEF,10,2026-03-10,2026-03-10,10,,,2026-06-01",
-    "3,Shenzhen Widgets,NONE,10,2026-03-10,2026-03-10,10,,,",
+    "1,Shenzhen Widgets,ON,10,2026-03-10,2026-04-10,10,,,2026-03-10",
+    "2,Shenzhen Widgets,LATEF,10,2026-03-10,2026-06-01,10,,,2026-03-10",
+    "3,Shenzhen Widgets,NONE,10,2026-03-10,,10,,,2026-03-10",
   ],
   { supplierText: suppliers, supplierFileName: "suppliers.csv" }
 );
@@ -203,8 +203,92 @@ assert.match(freight.freight[0].note, /1 line not measurable/);
 assert.match(freight.notes.join(" "), /does not change a supplier's DIFOT/);
 assert.match(freight.summaryCsv, /Freight,Shenzhen Widgets/);
 assert.match(freight.notes.join(" "), /1 supplier in the supplier list is not in the PO file/);
+assert.strictEqual(lineOf(freight, "NONE").difot, true);
+assert.strictEqual(lineOf(freight, "NONE").freightOnTime, "");
+assert.strictEqual(lineOf(freight, "ON").transit, 31);
 
-const noTransit = run(["1,Shenzhen Widgets,A,10,2026-03-10,2026-03-10,10,,,2026-04-01"], {
+const ignoredHanded = run(["1,Acme,A,10,2026-03-10,2026-03-10,10,,,2026-03-01"]);
+assert.strictEqual(ignoredHanded.ok, true, JSON.stringify(ignoredHanded.errors));
+assert.strictEqual(ignoredHanded.lines[0].difot, true);
+assert.strictEqual(engine.formatISO(ignoredHanded.lines[0].onTimeDate), "2026-03-10");
+assert.strictEqual(engine.formatISO(ignoredHanded.lines[0].handed), "2026-03-01");
+assert.match(ignoredHanded.notes.join(" "), /Handed to Freight Date was filled in for Acme/);
+assert.match(ignoredHanded.notes.join(" "), /was not used/);
+assert.match(ignoredHanded.notes.join(" "), /Arrived at Your Site Date/);
+assert.strictEqual(ignoredHanded.freight.length, 0);
+assert.strictEqual(warns(ignoredHanded, /left out/), false);
+
+const blankHanded = run(
+  [
+    "1,Shenzhen Widgets,KEEP,10,2026-03-10,2026-04-01,10,,,2026-03-10",
+    "2,Shenzhen Widgets,SKIP,10,2026-03-10,2026-03-12,10,,,",
+    "3,Shenzhen Widgets,WAIT,10,2026-03-20,,,,,",
+  ],
+  {
+    supplierText: "Supplier,Freight arranged by,Expected transit days\nShenzhen Widgets,I arrange freight,21\n",
+    supplierFileName: "suppliers.csv",
+    asAt: "2026-03-10",
+  }
+);
+assert.strictEqual(blankHanded.ok, true, JSON.stringify(blankHanded.errors) + JSON.stringify(blankHanded.warnings));
+assert.strictEqual(blankHanded.lines.length, 2);
+assert.strictEqual(lineOf(blankHanded, "KEEP").difot, true);
+assert.strictEqual(engine.formatISO(lineOf(blankHanded, "KEEP").arrivedSite), "2026-04-01");
+assert.strictEqual(lineOf(blankHanded, "KEEP").transit, null);
+assert.ok(warns(blankHanded, /after the as-at date and was not used for the freight figures/));
+assert.strictEqual(lineOf(blankHanded, "SKIP"), undefined);
+assert.strictEqual(lineOf(blankHanded, "WAIT").countedText, "N: not due yet");
+assert.ok(warns(blankHanded, /PO 2, SKU SKIP was left out because Handed to Freight Date is blank/));
+assert.ok(warns(blankHanded, /handed to the freight company/));
+
+const inTransit = run(["1,Shenzhen Widgets,ROAD,10,2026-03-10,,10,,,2026-03-10"], {
+  supplierText: "Supplier,Freight arranged by,Expected transit days\nShenzhen Widgets,I arrange freight,21\n",
+  supplierFileName: "suppliers.csv",
+});
+assert.strictEqual(inTransit.ok, true, JSON.stringify(inTransit.errors));
+assert.strictEqual(inTransit.lines[0].difot, true);
+assert.strictEqual(inTransit.lines[0].onTime, true);
+assert.strictEqual(inTransit.lines[0].freightOnTime, "");
+assert.strictEqual(inTransit.lines[0].transit, null);
+assert.strictEqual(inTransit.freight[0].measurable, 0);
+assert.strictEqual(inTransit.freight[0].note, "not measurable");
+assert.strictEqual(inTransit.overall.difotPct, "100.0");
+
+const splitDates = run(
+  [
+    "9,Shenzhen Widgets,SPLIT,100,2026-03-10,2026-03-20,60,,,2026-03-09",
+    "9,Shenzhen Widgets,SPLIT,100,2026-03-10,2026-03-25,40,,,2026-03-11",
+  ],
+  {
+    supplierText: "Supplier,Freight arranged by,Expected transit days\nShenzhen Widgets,I arrange freight,20\n",
+    supplierFileName: "suppliers.csv",
+  }
+);
+assert.strictEqual(splitDates.ok, true, JSON.stringify(splitDates.errors));
+assert.strictEqual(splitDates.lines.length, 1);
+assert.strictEqual(splitDates.lines[0].received, 100);
+assert.strictEqual(splitDates.lines[0].rowsCombined, 2);
+assert.strictEqual(engine.formatISO(splitDates.lines[0].handed), "2026-03-11");
+assert.strictEqual(engine.formatISO(splitDates.lines[0].arrivedSite), "2026-03-25");
+assert.strictEqual(engine.formatISO(splitDates.lines[0].onTimeDate), "2026-03-11");
+assert.strictEqual(splitDates.lines[0].daysLate, 1);
+assert.strictEqual(splitDates.lines[0].onTime, false);
+assert.strictEqual(splitDates.lines[0].transit, 14);
+assert.strictEqual(splitDates.lines[0].freightOnTime, "Y");
+
+const splitSite = run([
+  "9,Acme,SPLIT,100,2026-03-10,2026-03-08,60,,,2026-03-01",
+  "9,Acme,SPLIT,100,2026-03-10,2026-03-10,40,,,2026-02-01",
+]);
+assert.strictEqual(splitSite.ok, true, JSON.stringify(splitSite.errors));
+assert.strictEqual(engine.formatISO(splitSite.lines[0].arrivedSite), "2026-03-10");
+assert.strictEqual(engine.formatISO(splitSite.lines[0].onTimeDate), "2026-03-10");
+assert.strictEqual(engine.formatISO(splitSite.lines[0].handed), "2026-03-01");
+assert.strictEqual(splitSite.lines[0].onTime, true);
+assert.strictEqual(splitSite.lines[0].difot, true);
+assert.match(splitSite.notes.join(" "), /was not used/);
+
+const noTransit = run(["1,Shenzhen Widgets,A,10,2026-03-10,2026-04-01,10,,,2026-03-10"], {
   supplierText: "Supplier,Freight arranged by,Expected transit days\nShenzhen Widgets,Me,\n",
   supplierFileName: "suppliers.csv",
 });
@@ -391,7 +475,9 @@ assert.deepStrictEqual(semicolons.errors, [
 ]);
 const xlsx = run(["1,Acme,A,1,2026-03-10,2026-03-10,1,,,"], { poFileName: "lines.xlsx" });
 assert.deepStrictEqual(xlsx.errors, ["Save it as CSV UTF-8 and try again."]);
-const missingHeader = run("PO Number,Supplier,SKU,Required Date,Receipt Date,Received Qty\n1,Acme,A,2026-03-10,2026-03-10,1\n");
+const missingHeader = run(
+  "PO Number,Supplier,SKU,Required Date,Arrived at Your Site Date,Received Qty\n1,Acme,A,2026-03-10,2026-03-10,1\n"
+);
 assert.match(missingHeader.errors[0], /Ordered Qty/);
 assert.match(missingHeader.errors[0], /Download the template/);
 
@@ -403,7 +489,7 @@ assert.strictEqual(quoted.lines[0].supplier, "Acme, Inc");
 assert.match(quoted.linesCsv, /"Acme, Inc"/);
 
 const renamed = run(
-  "po-number,SUPPLIER,sku,ordered-qty,REQUIRED-DATE,receipt_date,received qty\n1,Acme,A,10,2026-03-10,2026-03-10,10\n"
+  "po-number,SUPPLIER,sku,ordered-qty,REQUIRED-DATE,arrived_at_your_site_date,received qty\n1,Acme,A,10,2026-03-10,2026-03-10,10\n"
 );
 assert.strictEqual(renamed.ok, true, JSON.stringify(renamed.errors));
 
@@ -438,7 +524,7 @@ assert.strictEqual(worked.linesFileName, "DIFOT_lines_2026-10-14.csv");
 assert.doesNotMatch(worked.summaryCsv, /\d,\d{3}/);
 
 const help = fs.readFileSync(path.join(ROOT, "assets", "template_DIFOT_PO_Lines.csv"), "utf8");
-assert.match(help, /Missing dates\? Add them from your forwarder's bill of lading or tracking before you upload\./);
+assert.ok(help.includes(engine.HELP_LINE));
 const templateRun = run(help, {
   poFileName: "template_DIFOT_PO_Lines.csv",
   supplierText: fs.readFileSync(path.join(ROOT, "assets", "template_DIFOT_Suppliers.csv"), "utf8"),
@@ -447,8 +533,41 @@ const templateRun = run(help, {
 assert.strictEqual(templateRun.ok, true, JSON.stringify(templateRun.errors) + JSON.stringify(templateRun.warnings));
 assert.strictEqual(templateRun.overall.lines, 4);
 assert.strictEqual(warns(templateRun, /left out/), false);
+assert.strictEqual(lineOf(templateRun, "WDG-010").difot, false);
+assert.strictEqual(lineOf(templateRun, "WDG-010").onTime, true);
+assert.strictEqual(lineOf(templateRun, "WDG-010").freightOnTime, "");
+assert.strictEqual(lineOf(templateRun, "WDG-020").freightOnTime, "Y");
+assert.strictEqual(lineOf(templateRun, "BOX-100").difot, true);
 
-const big = ["PO Number,Supplier,SKU,Ordered Qty,Required Date,Receipt Date,Received Qty"];
+const samplePo = fs.readFileSync(path.join(ROOT, "samples", "difot_sample_po_lines.csv"), "utf8");
+const sampleSuppliers = fs.readFileSync(path.join(ROOT, "samples", "difot_sample_suppliers.csv"), "utf8");
+const sample = run(samplePo, {
+  poFileName: "difot_sample_po_lines.csv",
+  supplierText: sampleSuppliers,
+  supplierFileName: "difot_sample_suppliers.csv",
+  asAt: "2026-10-14",
+});
+assert.strictEqual(sample.ok, true, JSON.stringify(sample.errors) + JSON.stringify(sample.warnings));
+assert.strictEqual(sample.overall.lines, 400);
+assert.strictEqual(sample.overall.difotPct, "80.5");
+assert.strictEqual(sample.overall.difotLines, 322);
+function samplePct(name) {
+  return sample.suppliers.filter(function (row) {
+    return row.supplier === name;
+  })[0];
+}
+assert.strictEqual(samplePct("Brisbane Packaging Co").difotPct, "100.0");
+assert.strictEqual(samplePct("Brisbane Packaging Co").lines, 80);
+assert.strictEqual(samplePct("Coastal Fasteners").difotPct, "97.5");
+assert.strictEqual(samplePct("Southern Cross Hardware").difotPct, "80.0");
+assert.strictEqual(samplePct("Harbour Electrical Supplies").difotPct, "77.5");
+assert.strictEqual(samplePct("Outback Tools & Parts").difotPct, "47.5");
+assert.strictEqual(samplePct("Southern Cross Hardware").freight, "I arrange freight");
+assert.strictEqual(samplePct("Outback Tools & Parts").freight, "I arrange freight");
+assert.strictEqual(samplePct("Brisbane Packaging Co").freight, "Supplier delivers");
+assert.strictEqual(warns(sample, /Handed to Freight Date is blank/), false);
+
+const big = ["PO Number,Supplier,SKU,Ordered Qty,Required Date,Arrived at Your Site Date,Received Qty"];
 for (let i = 0; i < 200000; i += 1) {
   big.push("PO" + i + ",Acme,SKU" + (i % 1000) + ",10,2026-03-10,2026-03-10,10");
 }
@@ -489,9 +608,13 @@ assert.match(page, /Day\/Month\/Year/);
 assert.match(page, /your accounting or purchasing system/);
 assert.match(page, /A quantity such as "1,000" in quotes is read as 1000/);
 assert.match(page, /A full stop is only for decimals/);
-assert.match(page, /Missing dates\? Add them from your forwarder's bill of lading or tracking before you upload\./);
-assert.match(page, /supplier bill date/);
+assert.ok(page.includes(engine.HELP_LINE));
+assert.match(page, /supplier's invoice date/);
+assert.match(page, /Arrived at Your Site Date/);
+assert.match(page, /Handed to Freight Date/);
 assert.match(page, /does not change the supplier's DIFOT/);
+assert.match(page, /handed over but have not arrived yet/);
+assert.doesNotMatch(page, /Receipt Date|ship date/i);
 assert.match(page, /id="df-downloads" hidden/);
 assert.match(page, /id="df-results" hidden/);
 assert.match(page, /Email me to unlock the download/);
