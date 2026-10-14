@@ -272,6 +272,64 @@ const badQty = run(["1," + WINDOW[11] + ",A,ten,Main", line(WINDOW[11], "B", 4)]
 assert.strictEqual(badQty.ok, true);
 assert.ok(badQty.warnings.some(function (warning) { return warning.indexOf("not a number") !== -1; }));
 
+const thousands = run([
+  "1," + WINDOW[11] + ',A,"1,200",Main',
+  "1," + WINDOW[11] + ',B,"2,500.50",Main',
+]);
+assert.strictEqual(thousands.ok, true, JSON.stringify(thousands.warnings));
+assertQty(skuOf(thousands, "A"), "1200.00");
+assertQty(skuOf(thousands, "B"), "2500.50");
+const badThousands = run(["1," + WINDOW[11] + ',A,"1,00",Main', line(WINDOW[11], "B", 4)]);
+assert.strictEqual(badThousands.ok, true);
+assert.ok(badThousands.warnings.some(function (warning) {
+  return warning.indexOf("not a number") !== -1 && warning.indexOf("thousands separator") !== -1;
+}));
+assert.strictEqual(badThousands.skus.length, 1);
+const unquotedQty = run(["1," + WINDOW[11] + ",A,1,000,Main", line(WINDOW[11], "B", 4)]);
+assert.strictEqual(unquotedQty.ok, true, JSON.stringify(unquotedQty.errors));
+assert.strictEqual(unquotedQty.skus.length, 1);
+assert.strictEqual(skuOf(unquotedQty, "B").sku, "B");
+assert.ok(unquotedQty.skus.every(function (row) { return row.sku !== "A"; }));
+assert.ok(unquotedQty.warnings.some(function (warning) {
+  return warning.indexOf("Row 2 was left out because it has more columns than the header.") !== -1 && warning.indexOf('"1,000"') !== -1;
+}));
+const acmeSplit = run(["1," + WINDOW[11] + ",Acme, Ltd,4,Main", line(WINDOW[11], "B", 4)]);
+assert.strictEqual(acmeSplit.ok, true, JSON.stringify(acmeSplit.errors));
+assert.strictEqual(acmeSplit.skus.length, 1);
+assert.ok(acmeSplit.warnings.some(function (warning) {
+  return warning.indexOf("Row 2 was left out because it has more columns than the header.") !== -1 && warning.indexOf('"Acme, Ltd"') !== -1;
+}));
+const shortOptional = run([], {
+  text: "order_id,order_datetime,sku,qty,fulfillment_location,note\n1," + WINDOW[11] + ",A,4,Main\n",
+});
+assert.strictEqual(shortOptional.ok, true, JSON.stringify(shortOptional.errors) + JSON.stringify(shortOptional.warnings));
+assertQty(skuOf(shortOptional, "A"), "4.00");
+assert.ok(!shortOptional.warnings.some(function (warning) {
+  return warning.indexOf("columns than the header") !== -1;
+}));
+const trailingComma = run(["1," + WINDOW[11] + ",A,4,Main,"]);
+assert.strictEqual(trailingComma.ok, true, JSON.stringify(trailingComma.warnings));
+assertQty(skuOf(trailingComma, "A"), "4.00");
+assert.ok(!trailingComma.warnings.some(function (warning) {
+  return warning.indexOf("more columns") !== -1;
+}));
+const shortRequired = run(["1," + WINDOW[11] + ",A", line(WINDOW[11], "B", 4)]);
+assert.strictEqual(shortRequired.ok, true, JSON.stringify(shortRequired.errors));
+assert.strictEqual(shortRequired.skus.length, 1);
+assert.ok(
+  shortRequired.warnings.indexOf(
+    "Row 2 was left out because it has fewer columns than the header. qty is missing."
+  ) !== -1
+);
+const mostlyUnquoted = run([
+  "1," + WINDOW[11] + ",A,1,000,Main",
+  "1," + WINDOW[11] + ",B,2,000,Main",
+  line(WINDOW[11], "C", 4),
+]);
+assert.strictEqual(mostlyUnquoted.ok, false);
+assert.match(mostlyUnquoted.errors[0], /Rows 2, 3 were left out because they have more columns than the header/);
+assert.strictEqual(mostlyUnquoted.forecastCsv, "");
+
 const future = run([line("2026-03-30", "A", 99), line(WINDOW[0], "A", 10)], { today: "2026-03-01" });
 assert.strictEqual(future.ok, true);
 assert.ok(future.warnings.some(function (warning) { return warning.indexOf("after today") !== -1; }));
@@ -352,11 +410,23 @@ assert.strictEqual(stopAndAmbiguous.ok, false);
 assert.strictEqual(warnsOtherWay(stopAndAmbiguous), false);
 assert.match(stopAndAmbiguous.dateLine, /first date 03\/04\/2026 read as 3 April 2026/);
 
+const manyStops = [];
+for (let i = 0; i < 12; i += 1) {
+  manyStops.push(line("10/13/2026", "S" + i, 1));
+}
+const listedStops = run(manyStops);
+assert.strictEqual(listedStops.ok, false);
+assert.strictEqual(listedStops.errors.length, 11);
+assert.match(listedStops.errors[0], /Row 2: 10\/13\/2026 does not fit Day\/Month\/Year/);
+assert.strictEqual(listedStops.errors[10], "and 2 more");
+
 const semicolons = run([], {
   text: "order_id;order_datetime;sku;qty;fulfillment_location\n1;2026-03-30;A;4;Main\n",
 });
 assert.strictEqual(semicolons.ok, false);
-assert.deepStrictEqual(semicolons.errors, ["This file uses semicolons; save as comma-separated CSV"]);
+assert.deepStrictEqual(semicolons.errors, [
+  "This file uses semicolons. Save it as a comma-separated CSV and try again.",
+]);
 assert.doesNotMatch(semicolons.errors.join(" "), /couldn.t find|not found/i);
 
 const notCsv = run([line(WINDOW[11], "A", 1)], { fileName: "history.xlsx" });
@@ -446,7 +516,9 @@ assert.match(page, /id="sf-downloads" hidden/);
 assert.match(page, /id="sf-results" hidden/);
 assert.match(page, /name="articles"/);
 assert.doesNotMatch(page, /name="articles"[^>]*checked/);
-assert.match(page, /src="\/assets\/starter-forecast-engine\.js\?v=3"/);
+assert.match(page, /src="\/assets\/starter-forecast-engine\.js\?v=7"/);
+assert.match(page, /A quantity such as "1,000" in quotes is read as 1000/);
+assert.match(page, /A full stop is only for decimals/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
 assert.match(page, /src="\/assets\/starter-forecast\.js\?v=3"/);
 assert.match(page, /Email me to unlock the download/);

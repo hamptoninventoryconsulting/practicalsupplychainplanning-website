@@ -301,8 +301,19 @@
     return false;
   }
 
+  function brokenThousands(raw) {
+    var text = String(raw == null ? "" : raw).trim();
+    return text.indexOf(",") !== -1 && !/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(text);
+  }
+
   function parseQty(raw) {
     var text = String(raw == null ? "" : raw).trim();
+    if (text.indexOf(",") !== -1) {
+      if (!/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(text)) {
+        return null;
+      }
+      text = text.replace(/,/g, "");
+    }
     if (!/^-?\d+(\.\d+)?$/.test(text)) {
       return null;
     }
@@ -344,6 +355,81 @@
     if (bucket.rows.length < 8) {
       bucket.rows.push(rowNumber);
     }
+  }
+
+  function capMessages(messages) {
+    if (messages.length <= 10) {
+      return messages.slice();
+    }
+    var more = messages.length - 10;
+    return messages.slice(0, 10).concat(["and " + more + " more"]);
+  }
+
+  var THOUSANDS_HINT = "A thousands separator must group digits in threes, such as 1,000";
+
+  function fieldText(value) {
+    return String(value == null ? "" : value).trim();
+  }
+
+  function rowShape(cells, headerCount, normalizedHeaders, requiredLookup, rawHeaders) {
+    var i;
+    if (cells.length > headerCount) {
+      for (i = headerCount; i < cells.length; i += 1) {
+        if (fieldText(cells[i]) !== "") {
+          return { kind: "extra" };
+        }
+      }
+      return { kind: "ok", cells: cells.slice(0, headerCount) };
+    }
+    if (cells.length < headerCount) {
+      for (i = cells.length; i < headerCount; i += 1) {
+        if (requiredLookup[normalizedHeaders[i]]) {
+          var raw = rawHeaders ? fieldText(rawHeaders[i]) : "";
+          return { kind: "short", column: raw || requiredLookup[normalizedHeaders[i]] };
+        }
+      }
+      var padded = cells.slice();
+      while (padded.length < headerCount) {
+        padded.push("");
+      }
+      return { kind: "ok", cells: padded };
+    }
+    return { kind: "ok", cells: cells };
+  }
+
+  function shapeRows(dataRows, headerCount, normalizedHeaders, requiredLookup, rawHeaders) {
+    var extras = [];
+    var shorts = [];
+    var skip = Object.create(null);
+    for (var i = 0; i < dataRows.length; i += 1) {
+      var shape = rowShape(dataRows[i], headerCount, normalizedHeaders, requiredLookup, rawHeaders);
+      var rowNumber = i + 2;
+      if (shape.kind === "extra") {
+        extras.push(rowNumber);
+        skip[rowNumber] = true;
+      } else if (shape.kind === "short") {
+        shorts.push({ row: rowNumber, column: shape.column });
+        skip[rowNumber] = true;
+      } else {
+        dataRows[i] = shape.cells;
+      }
+    }
+    return { extras: extras, shorts: shorts, skip: skip };
+  }
+
+  function rowsLeftOut(rowNumbers, reason) {
+    if (!rowNumbers.length) {
+      return "";
+    }
+    var shown = rowNumbers.slice(0, 10);
+    var label = (shown.length === 1 ? "Row " : "Rows ") + shown.join(", ");
+    var more = rowNumbers.length - shown.length;
+    if (more > 0) {
+      label += ", and " + more + " more";
+    }
+    var verb = rowNumbers.length === 1 ? "was" : "were";
+    var pronoun = rowNumbers.length === 1 ? "it has" : "they have";
+    return label + " " + verb + " left out because " + pronoun + " " + reason + ".";
   }
 
   function skipWarning(bucket, detail) {
@@ -413,7 +499,7 @@
       return emptyResult(["The file has no header row. Download the template and match those column names."]);
     }
     if (usesSemicolons(text)) {
-      return emptyResult(["This file uses semicolons; save as comma-separated CSV"]);
+      return emptyResult(["This file uses semicolons. Save it as a comma-separated CSV and try again."]);
     }
     var headers = table[0].map(normalizeHeader);
     var missing = REQUIRED.filter(function (name) {
@@ -448,10 +534,26 @@
     if (!dataRows.length) {
       return emptyResult(["The file has no sales rows under the header."]);
     }
+    var requiredLookup = Object.create(null);
+    REQUIRED.forEach(function (name) {
+      requiredLookup[name] = name;
+    });
+    var shaped = shapeRows(dataRows, table[0].length, headers, requiredLookup, table[0]);
+    if (shaped.extras.length * 2 > dataRows.length) {
+      return emptyResult([
+        rowsLeftOut(
+          shaped.extras,
+          'more columns than the header. Put any value with a comma in quotes, such as "1,000" or "Acme, Ltd"'
+        ),
+      ]);
+    }
 
     var seenSkus = new Map();
     var skuCount = 0;
     for (var s = 0; s < dataRows.length; s += 1) {
+      if (shaped.skip[s + 2]) {
+        continue;
+      }
       var skuCell = dataRows[s][col.sku] == null ? "" : String(dataRows[s][col.sku]);
       if (String(skuCell).trim() === "") {
         continue;
@@ -472,6 +574,7 @@
       unreadable: skipBucket(),
       excel: skipBucket(),
       qty: skipBucket(),
+      qtyComma: skipBucket(),
       future: skipBucket(),
     };
     var spaced = Object.create(null);
@@ -505,6 +608,9 @@
     for (var r = 0; r < dataRows.length; r += 1) {
       var cells = dataRows[r];
       var rowNumber = r + 2;
+      if (shaped.skip[rowNumber]) {
+        continue;
+      }
       var sku = cells[col.sku] == null ? "" : String(cells[col.sku]);
       if (String(sku).trim() === "") {
         noteSkip(skipped.blankSku, rowNumber);
@@ -559,7 +665,7 @@
       }
       var qty = parseQty(cells[col.qty]);
       if (qty == null) {
-        noteSkip(skipped.qty, rowNumber);
+        noteSkip(brokenThousands(cells[col.qty]) ? skipped.qtyComma : skipped.qty, rowNumber);
         continue;
       }
       var dayKey = formatISO(parsed.date);
@@ -586,10 +692,44 @@
 
     var warnings = [];
     [
+      rowsLeftOut(
+        shaped.extras,
+        'more columns than the header. Put any value with a comma in quotes, such as "1,000" or "Acme, Ltd"'
+      ),
+    ]
+      .concat(
+        (function () {
+          var byColumn = Object.create(null);
+          var columns = [];
+          shaped.shorts.forEach(function (item) {
+            if (!byColumn[item.column]) {
+              byColumn[item.column] = [];
+              columns.push(item.column);
+            }
+            byColumn[item.column].push(item.row);
+          });
+          return columns.map(function (column) {
+            return rowsLeftOut(
+              byColumn[column],
+              "fewer columns than the header. " + column + " is missing"
+            );
+          });
+        })()
+      )
+      .forEach(function (message) {
+        if (message) {
+          warnings.push(message);
+        }
+      });
+    [
       skipWarning(skipped.blankSku, "the SKU was blank"),
       skipWarning(skipped.unreadable, "the date could not be read"),
       skipWarning(skipped.excel, "the date is an Excel date number. Save the file with real dates, not date numbers"),
       skipWarning(skipped.qty, "the quantity is not a number"),
+      skipWarning(
+        skipped.qtyComma,
+        "the quantity is not a number. " + THOUSANDS_HINT
+      ),
       skipWarning(skipped.future, "the date is after today"),
     ].forEach(function (message) {
       if (message) {
@@ -618,7 +758,7 @@
 
     var dateLine = buildDateLine(dayFirst, firstDateRef);
     if (dateStops.length) {
-      return emptyResult(dateStops, warnings, dateLine);
+      return emptyResult(capMessages(dateStops), warnings, dateLine);
     }
     if (!parsedDates && dateCells) {
       return emptyResult(

@@ -35,8 +35,8 @@
     ["sku", "SKU", true],
     ["ordered_qty", "Ordered Qty", true],
     ["required_date", "Required Date", true],
-    ["receipt_date", "Receipt Date", true],
-    ["received_qty", "Received Qty", true],
+    ["receipt_date", "Receipt Date", true, false],
+    ["received_qty", "Received Qty", true, false],
     ["damaged_qty", "Damaged Qty", false],
     ["damaged_reason", "Damaged Reason", false],
     ["arrived_date", "Arrived Date", false],
@@ -121,6 +121,20 @@
       .replace(/^\uFEFF/, "")
       .replace(/\r\n/g, "\n")
       .replace(/\r/g, "\n");
+    if (source.indexOf('"') === -1) {
+      if (!source) {
+        return [];
+      }
+      var plain = source.split("\n");
+      var plainRows = [];
+      for (var p = 0; p < plain.length; p += 1) {
+        if (plain[p] === "" && p === plain.length - 1) {
+          continue;
+        }
+        plainRows.push(plain[p].split(","));
+      }
+      return plainRows;
+    }
     var rows = [];
     var row = [];
     var field = "";
@@ -174,24 +188,43 @@
 
   function csvField(value) {
     var text = String(value == null ? "" : value);
-    if (/[",\n\r]/.test(text) || text !== text.trim()) {
-      return '"' + text.replace(/"/g, '""') + '"';
+    var quote = false;
+    for (var i = 0; i < text.length; i += 1) {
+      var code = text.charCodeAt(i);
+      if (code === 34 || code === 44 || code === 10 || code === 13) {
+        quote = true;
+        break;
+      }
     }
-    return text;
+    if (!quote && text !== text.trim()) {
+      quote = true;
+    }
+    if (!quote) {
+      return text;
+    }
+    return '"' + text.replace(/"/g, '""') + '"';
   }
 
   function csvLine(cells) {
     return cells.map(csvField).join(",");
   }
 
+  var datesByKey = Object.create(null);
+  var isoTextByDate = typeof WeakMap === "function" ? new WeakMap() : null;
+
   function utcDate(year, month, day) {
-    if (month < 1 || month > 12 || day < 1 || day > 31) {
-      return null;
+    var key = (year * 100 + month) * 100 + day;
+    if (Object.prototype.hasOwnProperty.call(datesByKey, key)) {
+      return datesByKey[key];
     }
-    var dt = new Date(Date.UTC(year, month - 1, day));
-    if (dt.getUTCFullYear() !== year || dt.getUTCMonth() !== month - 1 || dt.getUTCDate() !== day) {
-      return null;
+    var dt = null;
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      dt = new Date(Date.UTC(year, month - 1, day));
+      if (dt.getUTCFullYear() !== year || dt.getUTCMonth() !== month - 1 || dt.getUTCDate() !== day) {
+        dt = null;
+      }
     }
+    datesByKey[key] = dt;
     return dt;
   }
 
@@ -202,6 +235,12 @@
   }
 
   function formatISO(date) {
+    if (isoTextByDate) {
+      var cached = isoTextByDate.get(date);
+      if (cached) {
+        return cached;
+      }
+    }
     var month = String(date.getUTCMonth() + 1);
     var day = String(date.getUTCDate());
     if (month.length < 2) {
@@ -210,7 +249,11 @@
     if (day.length < 2) {
       day = "0" + day;
     }
-    return date.getUTCFullYear() + "-" + month + "-" + day;
+    var text = date.getUTCFullYear() + "-" + month + "-" + day;
+    if (isoTextByDate) {
+      isoTextByDate.set(date, text);
+    }
+    return text;
   }
 
   function formatLong(date) {
@@ -250,10 +293,49 @@
     return utcDate(year, month, day);
   }
 
+  function fastIso(text) {
+    for (var i = 0; i < 10; i += 1) {
+      if (i === 4 || i === 7) {
+        continue;
+      }
+      var code = text.charCodeAt(i);
+      if (code < 48 || code > 57) {
+        return null;
+      }
+    }
+    if (text.length > 10) {
+      var sep = text.charCodeAt(10);
+      if (sep !== 84 && sep !== 32) {
+        return null;
+      }
+    }
+    var year =
+      (text.charCodeAt(0) - 48) * 1000 +
+      (text.charCodeAt(1) - 48) * 100 +
+      (text.charCodeAt(2) - 48) * 10 +
+      (text.charCodeAt(3) - 48);
+    var month = (text.charCodeAt(5) - 48) * 10 + (text.charCodeAt(6) - 48);
+    var day = (text.charCodeAt(8) - 48) * 10 + (text.charCodeAt(9) - 48);
+    var isoDate = utcDate(year, month, day);
+    if (!isoDate) {
+      return { ok: false, reason: "unreadable", original: text };
+    }
+    return { ok: true, date: isoDate, iso: true, ambiguous: false, original: text };
+  }
+
   function parseDate(raw, dayFirst) {
-    var text = String(raw == null ? "" : raw).trim();
+    var text = raw == null ? "" : typeof raw === "string" ? raw : String(raw);
+    if (text.charCodeAt(0) <= 32 || text.charCodeAt(text.length - 1) <= 32) {
+      text = text.trim();
+    }
     if (!text) {
       return { ok: false, reason: "blank" };
+    }
+    if (text.length >= 10 && text.charCodeAt(4) === 45 && text.charCodeAt(7) === 45) {
+      var fast = fastIso(text);
+      if (fast) {
+        return fast;
+      }
     }
     if (/^\d+(\.\d+)?$/.test(text)) {
       return { ok: false, reason: "excel", original: text };
@@ -369,9 +451,40 @@
   }
 
   function parseNumber(raw) {
-    var text = String(raw == null ? "" : raw).trim();
+    if (raw == null) {
+      return { blank: true, value: null };
+    }
+    var text = typeof raw === "string" ? raw : String(raw);
+    if (text.charCodeAt(0) <= 32 || text.charCodeAt(text.length - 1) <= 32) {
+      text = text.trim();
+    }
     if (text === "") {
       return { blank: true, value: null };
+    }
+    var sign = 1;
+    var start = 0;
+    if (text.charCodeAt(0) === 45) {
+      sign = -1;
+      start = 1;
+    }
+    var digits = start < text.length;
+    var whole = 0;
+    for (var i = start; i < text.length; i += 1) {
+      var code = text.charCodeAt(i);
+      if (code < 48 || code > 57) {
+        digits = false;
+        break;
+      }
+      whole = whole * 10 + (code - 48);
+    }
+    if (digits) {
+      return { blank: false, value: sign * whole };
+    }
+    if (text.indexOf(",") !== -1) {
+      if (!/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(text)) {
+        return { blank: false, value: null, thousands: true };
+      }
+      text = text.replace(/,/g, "");
     }
     if (!/^-?\d+(\.\d+)?$/.test(text)) {
       return { blank: false, value: null };
@@ -460,6 +573,111 @@
     if (bucket.rows.length < 10) {
       bucket.rows.push(rowNumber);
     }
+  }
+
+  var THOUSANDS_HINT = "A thousands separator must group digits in threes, such as 1,000";
+
+  function fieldText(value) {
+    return String(value == null ? "" : value).trim();
+  }
+
+  function requiredMap(fields) {
+    var map = Object.create(null);
+    fields.forEach(function (field) {
+      var requiredOnRow = field.length > 3 ? field[3] : field[2];
+      if (requiredOnRow) {
+        map[field[0]] = field[1];
+      }
+    });
+    return map;
+  }
+
+  function rowShape(cells, headerCount, normalizedHeaders, requiredLookup, rawHeaders) {
+    var i;
+    if (cells.length > headerCount) {
+      for (i = headerCount; i < cells.length; i += 1) {
+        if (fieldText(cells[i]) !== "") {
+          return { kind: "extra" };
+        }
+      }
+      return { kind: "ok", cells: cells.slice(0, headerCount) };
+    }
+    if (cells.length < headerCount) {
+      for (i = cells.length; i < headerCount; i += 1) {
+        if (requiredLookup[normalizedHeaders[i]]) {
+          var raw = rawHeaders ? fieldText(rawHeaders[i]) : "";
+          return { kind: "short", column: raw || requiredLookup[normalizedHeaders[i]] };
+        }
+      }
+      var padded = cells.slice();
+      while (padded.length < headerCount) {
+        padded.push("");
+      }
+      return { kind: "ok", cells: padded };
+    }
+    return { kind: "ok", cells: cells };
+  }
+
+  function shapeRows(dataRows, headerCount, normalizedHeaders, requiredLookup, rawHeaders) {
+    var extras = [];
+    var shorts = [];
+    var skip = Object.create(null);
+    for (var i = 0; i < dataRows.length; i += 1) {
+      var shape = rowShape(dataRows[i], headerCount, normalizedHeaders, requiredLookup, rawHeaders);
+      var rowNumber = i + 2;
+      if (shape.kind === "extra") {
+        extras.push(rowNumber);
+        skip[rowNumber] = true;
+      } else if (shape.kind === "short") {
+        shorts.push({ row: rowNumber, column: shape.column });
+        skip[rowNumber] = true;
+      } else {
+        dataRows[i] = shape.cells;
+      }
+    }
+    return { extras: extras, shorts: shorts, skip: skip };
+  }
+
+  function rowsLeftOut(rowNumbers, reason) {
+    if (!rowNumbers.length) {
+      return "";
+    }
+    var bucket = skipBucket();
+    rowNumbers.forEach(function (rowNumber) {
+      noteSkip(bucket, rowNumber);
+    });
+    var pronoun = bucket.count === 1 ? "it has" : "they have";
+    return skipWarning(bucket, pronoun + " " + reason);
+  }
+
+  function columnWarnings(prefix, extras, shorts) {
+    var messages = [];
+    var extraMessage = rowsLeftOut(
+      extras,
+      'more columns than the header. Put any value with a comma in quotes, such as "1,000" or "Acme, Ltd"'
+    );
+    if (extraMessage) {
+      messages.push(prefix + extraMessage);
+    }
+    var byColumn = Object.create(null);
+    var columns = [];
+    shorts.forEach(function (item) {
+      if (!byColumn[item.column]) {
+        byColumn[item.column] = [];
+        columns.push(item.column);
+      }
+      byColumn[item.column].push(item.row);
+    });
+    columns.forEach(function (column) {
+      var shortMessage = rowsLeftOut(
+        byColumn[column],
+        "fewer columns than the header. " + column + " is missing"
+      );
+      if (shortMessage) {
+        messages.push(prefix + shortMessage);
+      }
+    });
+    return messages;
   }
 
   function skipWarning(bucket, detail) {
@@ -765,10 +983,26 @@
         freight: columnIndex(supplierLoaded.headers, "freight_arranged_by"),
         transit: columnIndex(supplierLoaded.headers, "expected_transit_days"),
       };
+      var supplierShape = shapeRows(
+        supplierLoaded.dataRows,
+        supplierLoaded.headers.length,
+        supplierLoaded.headers,
+        requiredMap(SUPPLIER_FIELDS),
+        supplierLoaded.table[0]
+      );
+      if (supplierShape.extras.length * 2 > supplierLoaded.dataRows.length) {
+        return emptyResult(columnWarnings("Supplier list: ", supplierShape.extras, []));
+      }
+      columnWarnings("Supplier list: ", supplierShape.extras, supplierShape.shorts).forEach(function (message) {
+        supplierWarnings.push(message);
+      });
       master = new Map();
       for (var s = 0; s < supplierLoaded.dataRows.length; s += 1) {
         var supplierCells = supplierLoaded.dataRows[s];
         var supplierRow = s + 2;
+        if (supplierShape.skip[supplierRow]) {
+          continue;
+        }
         var supplierRaw = String(cell(supplierCells, supplierCols.supplier));
         var supplierName = supplierRaw.trim();
         if (!supplierName) {
@@ -875,13 +1109,26 @@
     if (!poLoaded.dataRows.length) {
       return emptyResult(["The file has no purchase order lines under the header."]);
     }
+    var poShape = shapeRows(
+      poLoaded.dataRows,
+      poLoaded.headers.length,
+      poLoaded.headers,
+      requiredMap(PO_FIELDS),
+      poLoaded.table[0]
+    );
+    if (poShape.extras.length * 2 > poLoaded.dataRows.length) {
+      return emptyResult(columnWarnings("", poShape.extras, []));
+    }
 
     var skipped = {
       identity: skipBucket(),
       required: skipBucket(),
       ordered: skipBucket(),
+      orderedComma: skipBucket(),
       received: skipBucket(),
+      receivedComma: skipBucket(),
       damaged: skipBucket(),
+      damagedComma: skipBucket(),
       damagedOver: skipBucket(),
       judge: skipBucket(),
       excel: skipBucket(),
@@ -927,6 +1174,9 @@
     for (var r = 0; r < poLoaded.dataRows.length; r += 1) {
       var cells = poLoaded.dataRows[r];
       var rowNumber = r + 2;
+      if (poShape.skip[rowNumber]) {
+        continue;
+      }
       var poRaw = String(cell(cells, cols.po_number));
       var supplierRaw = String(cell(cells, cols.supplier));
       var skuRaw = String(cell(cells, cols.sku));
@@ -952,16 +1202,28 @@
       countAmbiguity(requiredParsed);
 
       var ordered = parseNumber(cell(cells, cols.ordered_qty));
+      if (ordered.thousands) {
+        noteSkip(skipped.orderedComma, rowNumber);
+        continue;
+      }
       if (ordered.blank || ordered.value == null || ordered.value <= 0) {
         noteSkip(skipped.ordered, rowNumber);
         continue;
       }
       var received = parseNumber(cell(cells, cols.received_qty));
+      if (received.thousands) {
+        noteSkip(skipped.receivedComma, rowNumber);
+        continue;
+      }
       if (!received.blank && (received.value == null || received.value < 0)) {
         noteSkip(skipped.received, rowNumber);
         continue;
       }
       var damaged = parseNumber(cell(cells, cols.damaged_qty));
+      if (damaged.thousands) {
+        noteSkip(skipped.damagedComma, rowNumber);
+        continue;
+      }
       if (!damaged.blank && (damaged.value == null || damaged.value < 0)) {
         noteSkip(skipped.damaged, rowNumber);
         continue;
@@ -1061,12 +1323,27 @@
     }
 
     var warnings = supplierWarnings.slice();
+    columnWarnings("", poShape.extras, poShape.shorts).forEach(function (message) {
+      warnings.push(message);
+    });
     [
       skipWarning(skipped.identity, "the PO number, supplier or SKU is blank"),
       skipWarning(skipped.required, "the required date is blank or could not be read"),
       skipWarning(skipped.ordered, "the ordered quantity must be a number above 0"),
+      skipWarning(
+        skipped.orderedComma,
+        "the ordered quantity is not a number. " + THOUSANDS_HINT
+      ),
       skipWarning(skipped.received, "the received quantity is not a number or is negative"),
+      skipWarning(
+        skipped.receivedComma,
+        "the received quantity is not a number. " + THOUSANDS_HINT
+      ),
       skipWarning(skipped.damaged, "the damaged quantity is not a number or is negative"),
+      skipWarning(
+        skipped.damagedComma,
+        "the damaged quantity is not a number. " + THOUSANDS_HINT
+      ),
       skipWarning(skipped.damagedOver, "the damaged quantity is greater than the received quantity"),
       skipWarning(skipped.judge, "a received quantity and a receipt date are both needed to judge the line"),
       skipWarning(skipped.excel, "the date is an Excel date number. Save dates as dates"),

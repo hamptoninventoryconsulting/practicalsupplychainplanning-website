@@ -104,7 +104,7 @@ assert.strictEqual(damagedOver.ok, false);
 assert.match(damagedOver.errors.join(" "), /No usable purchase order lines/);
 assert.ok(warns(damagedOver, /Row 2 was left out because the damaged quantity is greater than the received quantity/));
 
-const notDue = run(["1,Acme,LATE,10,2026-03-01,,,,", "2,Acme,WAIT,10,2026-03-20,,,,"], { asAt: "2026-03-10" });
+const notDue = run(["1,Acme,LATE,10,2026-03-01,,,,,", "2,Acme,WAIT,10,2026-03-20,,,,,"], { asAt: "2026-03-10" });
 assert.strictEqual(notDue.ok, true, JSON.stringify(notDue.errors));
 assert.strictEqual(notDue.overall.lines, 1);
 assert.strictEqual(lineOf(notDue, "LATE").countedText, "Y");
@@ -113,17 +113,17 @@ assert.strictEqual(lineOf(notDue, "LATE").inFull, false);
 assert.strictEqual(lineOf(notDue, "LATE").reason, "Not received");
 assert.strictEqual(lineOf(notDue, "WAIT").countedText, "N: not due yet");
 assert.match(notDue.notes.join(" "), /1 line not due yet/);
-const nowDue = run(["1,Acme,WAIT,10,2026-03-20,,,,"], { asAt: "2026-03-21" });
+const nowDue = run(["1,Acme,WAIT,10,2026-03-20,,,,,"], { asAt: "2026-03-21" });
 assert.strictEqual(nowDue.overall.lines, 1);
 assert.strictEqual(nowDue.lines[0].reason, "Not received");
-const stillInside = run(["1,Acme,WAIT,10,2026-03-10,,,,"], { asAt: "2026-03-11", daysLate: 1 });
+const stillInside = run(["1,Acme,WAIT,10,2026-03-10,,,,,"], { asAt: "2026-03-11", daysLate: 1 });
 assert.strictEqual(stillInside.ok, false);
 assert.match(stillInside.errors[0], /No lines are measured/);
 assert.match(stillInside.errors[0], /1 line not due yet/);
 
 const repeated = run([
   "1001,Acme,00123,100,2026-03-10,2026-03-09,40,,,",
-  "1001,Acme,00123,80,2026-03-10,,,,",
+  "1001,Acme,00123,80,2026-03-10,,,,,",
   "1001,Acme,00123,100,2026-03-10,2026-03-12,60,,,",
 ]);
 assert.strictEqual(repeated.lines.length, 1);
@@ -289,6 +289,102 @@ assert.strictEqual(listedStops.errors.length, 11);
 assert.match(listedStops.errors[0], /Row 2:/);
 assert.strictEqual(listedStops.errors[10], "and 2 more");
 
+const thousands = run([
+  '1,Acme,A,"1,000",2026-03-10,2026-03-10,"1,000",,,',
+  '2,Acme,B,"1,200.5",2026-03-10,2026-03-10,"1,000.25","200.25",,',
+]);
+assert.strictEqual(thousands.ok, true, JSON.stringify(thousands.errors) + JSON.stringify(thousands.warnings));
+assert.strictEqual(lineOf(thousands, "A").ordered, 1000);
+assert.strictEqual(lineOf(thousands, "A").received, 1000);
+assert.strictEqual(lineOf(thousands, "A").inFull, true);
+assert.strictEqual(lineOf(thousands, "B").ordered, 1200.5);
+assert.strictEqual(lineOf(thousands, "B").received, 1000.25);
+assert.strictEqual(lineOf(thousands, "B").damaged, 200.25);
+const badThousands = run([
+  '1,Acme,A,"1,00",2026-03-10,2026-03-10,10,,,',
+  "2,Acme,B,10,2026-03-10,2026-03-10,10,,,",
+]);
+assert.strictEqual(badThousands.ok, true, JSON.stringify(badThousands.errors));
+assert.strictEqual(badThousands.lines.length, 1);
+assert.ok(warns(badThousands, /ordered quantity/));
+assert.ok(warns(badThousands, /thousands separator/));
+const unquotedMiddle = run([
+  "1,Acme,A,1,000,2026-03-10,2026-03-10,1000,0,note,2026-04-01",
+  "2,Acme,B,10,2026-03-10,2026-03-10,10,,,",
+]);
+assert.strictEqual(unquotedMiddle.ok, true, JSON.stringify(unquotedMiddle.errors));
+assert.strictEqual(unquotedMiddle.lines.length, 1);
+assert.strictEqual(lineOf(unquotedMiddle, "B").ordered, 10);
+assert.ok(warns(unquotedMiddle, /Row 2 was left out because it has more columns than the header/));
+assert.ok(warns(unquotedMiddle, /"1,000"/));
+assert.ok(!unquotedMiddle.lines.some(function (line) { return /Short 999/.test(line.reason); }));
+const unquotedReceived = run([
+  "1,Acme,A,1000,2026-03-10,2026-03-10,1,000,0,Crushed,2026-04-01",
+  "2,Acme,B,10,2026-03-10,2026-03-10,10,,,",
+]);
+assert.strictEqual(unquotedReceived.ok, true, JSON.stringify(unquotedReceived.errors));
+assert.strictEqual(unquotedReceived.lines.length, 1);
+assert.strictEqual(lineOf(unquotedReceived, "B").received, 10);
+assert.ok(!unquotedReceived.lines.some(function (line) { return line.sku === "A"; }));
+const acmeSplit = run([
+  "1,Acme, Ltd,A,10,2026-03-10,2026-03-10,10,0,Crushed,2026-04-01",
+  '2,"Acme, Ltd",B,10,2026-03-10,2026-03-10,10,,,',
+]);
+assert.strictEqual(acmeSplit.ok, true, JSON.stringify(acmeSplit.errors) + JSON.stringify(acmeSplit.warnings));
+assert.strictEqual(acmeSplit.lines.length, 1);
+assert.strictEqual(acmeSplit.lines[0].supplier, "Acme, Ltd");
+assert.strictEqual(acmeSplit.lines[0].sku, "B");
+assert.ok(warns(acmeSplit, /Row 2 was left out because it has more columns than the header/));
+assert.ok(warns(acmeSplit, /"Acme, Ltd"/));
+const shortOptional = run(["1,Acme,A,10,2026-03-10,2026-03-10,10"]);
+assert.strictEqual(shortOptional.ok, true, JSON.stringify(shortOptional.errors) + JSON.stringify(shortOptional.warnings));
+assert.strictEqual(shortOptional.lines.length, 1);
+assert.strictEqual(shortOptional.lines[0].ordered, 10);
+assert.strictEqual(shortOptional.lines[0].received, 10);
+assert.strictEqual(shortOptional.lines[0].damaged, 0);
+assert.strictEqual(warns(shortOptional, /columns than the header/), false);
+const trailingComma = run(["1,Acme,A,10,2026-03-10,2026-03-10,10,,,,"]);
+assert.strictEqual(trailingComma.ok, true, JSON.stringify(trailingComma.warnings));
+assert.strictEqual(trailingComma.lines[0].received, 10);
+assert.strictEqual(warns(trailingComma, /more columns/), false);
+const shortRequired = run([
+  "1,Acme,A,10",
+  "2,Acme,B,10,2026-03-10,2026-03-10,10,,,",
+]);
+assert.strictEqual(shortRequired.ok, true, JSON.stringify(shortRequired.errors));
+assert.strictEqual(shortRequired.lines.length, 1);
+assert.strictEqual(lineOf(shortRequired, "B").sku, "B");
+assert.ok(
+  shortRequired.warnings.indexOf(
+    "Row 2 was left out because it has fewer columns than the header. Required Date is missing."
+  ) !== -1
+);
+const shortUnreceived = run(["1,Acme,LATE,10,2026-04-10"]);
+assert.strictEqual(shortUnreceived.ok, true, JSON.stringify(shortUnreceived.errors) + JSON.stringify(shortUnreceived.warnings));
+assert.strictEqual(shortUnreceived.overall.lines, 1);
+assert.strictEqual(shortUnreceived.lines[0].counted, true);
+assert.strictEqual(shortUnreceived.lines[0].reason, "Not received");
+assert.strictEqual(shortUnreceived.lines[0].onTime, false);
+assert.strictEqual(shortUnreceived.lines[0].inFull, false);
+assert.strictEqual(shortUnreceived.lines[0].difot, false);
+assert.strictEqual(warns(shortUnreceived, /fewer columns/), false);
+const supplierShort = run(["1,C,A,10,2026-03-10,2026-03-10,10,,,"], {
+  supplierText: "Supplier,Freight arranged by,Expected transit days\nC,Supplier\n",
+  supplierFileName: "suppliers.csv",
+});
+assert.strictEqual(supplierShort.ok, true, JSON.stringify(supplierShort.errors) + JSON.stringify(supplierShort.warnings));
+assert.strictEqual(supplierShort.suppliers[0].supplier, "C");
+assert.strictEqual(supplierShort.suppliers[0].freight, "Supplier delivers");
+assert.strictEqual(warns(supplierShort, /columns than the header/), false);
+const mostlyUnquoted = run([
+  "1,Acme,A,1,000,2026-03-10,2026-03-10,10,0,note,extra",
+  "2,Acme,B,2,000,2026-03-10,2026-03-10,10,0,note,extra",
+  "3,Acme,C,10,2026-03-10,2026-03-10,10,,,",
+]);
+assert.strictEqual(mostlyUnquoted.ok, false);
+assert.match(mostlyUnquoted.errors[0], /Rows 2, 3 were left out because they have more columns than the header/);
+assert.strictEqual(mostlyUnquoted.summaryCsv, "");
+
 const semicolons = run("PO Number;Supplier;SKU\n1;Acme;A\n");
 assert.deepStrictEqual(semicolons.errors, [
   "This file uses semicolons. Save it as a comma-separated CSV and try again.",
@@ -391,6 +487,8 @@ assert.match(page, /id="df-measure-to"/);
 assert.match(page, /id="df-as-at"/);
 assert.match(page, /Day\/Month\/Year/);
 assert.match(page, /your accounting or purchasing system/);
+assert.match(page, /A quantity such as "1,000" in quotes is read as 1000/);
+assert.match(page, /A full stop is only for decimals/);
 assert.match(page, /Missing dates\? Add them from your forwarder's bill of lading or tracking before you upload\./);
 assert.match(page, /supplier bill date/);
 assert.match(page, /does not change the supplier's DIFOT/);
