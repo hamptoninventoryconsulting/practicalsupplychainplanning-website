@@ -104,6 +104,14 @@
     var waitTimer = null;
     var resetting = false;
     var allowed = panelAvailable(root);
+    var wordingVersion = options.wordingVersion || "sim-results-v1";
+    var wordingRequired =
+      options.wordingRequired || "Email me the results of the scenario I ran. This is a one-off email.";
+    var wordingOptional =
+      options.wordingOptional ||
+      "Also send me new articles from Practical Supply Chain Planning. Unsubscribe any time.";
+    var sentUrl = options.sentUrl || "/learn/safety-stock-simulator/sent/";
+    var sentMessage = options.sentMessage || SUCCESS;
 
     function turnstileRenderable() {
       return Boolean(window.turnstile && typeof window.turnstile.render === "function");
@@ -250,7 +258,7 @@
           return options.buildSummary();
         })
         .then(function (summary) {
-          if (!summary || !summary.reopenUrl) {
+          if (!summary || (summary.kind !== "starter-forecast" && !summary.reopenUrl)) {
             throw new Error("summary");
           }
           return fetch("/api/results-email", {
@@ -264,10 +272,10 @@
               turnstileToken: token,
               pageUrl: window.location.origin + window.location.pathname + window.location.search,
               utm: readUtm(),
-              wordingVersion: "sim-results-v1",
+              wordingVersion: wordingVersion,
               wordingText: {
-                required: "Email me the results of the scenario I ran. This is a one-off email.",
-                optional: "Also send me new articles from Practical Supply Chain Planning. Unsubscribe any time.",
+                required: wordingRequired,
+                optional: wordingOptional,
               },
               formId: options.formId,
               summary: summary,
@@ -285,12 +293,15 @@
           if (result.ok && result.data && result.data.ok) {
             form.hidden = true;
             sent.hidden = false;
-            sent.textContent = SUCCESS;
+            sent.textContent = sentMessage;
             var frame = document.createElement("iframe");
             frame.hidden = true;
             frame.setAttribute("title", "Sent");
-            frame.src = "/learn/safety-stock-simulator/sent/";
+            frame.src = sentUrl;
             root.appendChild(frame);
+            if (typeof options.onSent === "function") {
+              options.onSent();
+            }
             return;
           }
           resetWidget();

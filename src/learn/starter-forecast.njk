@@ -1,0 +1,182 @@
+---json
+{
+  "layout": "layouts/simulator.njk",
+  "title": "Starter Forecast — Practical Supply Chain Planning",
+  "description": "Turn a sales history CSV into a weekly forecast. A 12-week average, worked out in your browser. The file is never uploaded.",
+  "canonical": "https://practicalsupplychainplanning.com/learn/starter-forecast/",
+  "nav": "learn",
+  "permalink": "/learn/starter-forecast/",
+  "scripts": [
+    "/assets/starter-forecast-engine.js?v=2",
+    "/assets/sim-results-form.js?v=6",
+    "/assets/starter-forecast.js?v=2"
+  ]
+}
+---
+<h1 class="page-title">Starter Forecast</h1>
+      <p class="tagline">
+        A 12-week average of your sales, repeated for each week of the plan.
+      </p>
+
+      <div class="sim-app" id="sf-app">
+        <div id="sf-errors" class="sim-error" hidden role="alert"></div>
+        <div id="sf-warnings" class="sim-warning" hidden></div>
+
+        <section class="card">
+          <h2 class="card__title">What this does</h2>
+          <div class="content">
+            <p>
+              This page reads a sales history CSV and writes a weekly forecast.
+              Each SKU gets one average, and that average is repeated for every
+              forecast week.
+            </p>
+            <p>
+              The file is processed in this browser and is never sent. The
+              confirmation email does not include your SKUs or sales.
+            </p>
+            <p>The average uses these rules:</p>
+            <ul>
+              <li>Each sale moves back to the Monday of its week. Sales from every location are added together.</li>
+              <li>The history window is the 12 complete weeks before the plan start week. Sales in the plan start week or later are left out.</li>
+              <li>A SKU's first sale week is the first week with net sales above zero. Weeks before that are left out. Zero weeks after that are counted. Weeks used is that count, capped at 12.</li>
+              <li>The average is the total of those weeks divided by weeks used. A negative average is set to 0 and flagged. The result is rounded to 2 decimals.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">What a 12-week average can't do</h2>
+          <div class="content">
+            <ul>
+              <li>A rise, a fall, or a seasonal peak stays outside this average. Every forecast week gets the same number.</li>
+              <li>A week when you were out of stock still shows only what was sold.</li>
+              <li>A new SKU uses the weeks since its first sale, so a short run of sales can move the average a lot.</li>
+              <li>One unusual week stays in the average until it falls out of the 12 weeks.</li>
+              <li>Locations are added together. There is one forecast per SKU.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Settings</h2>
+          <div class="sim-grid">
+            <label class="sim-field" for="sf-date-order">
+              Date order
+              <select id="sf-date-order">
+                <option value="dmy" selected>Day/Month/Year</option>
+                <option value="mdy">Month/Day/Year</option>
+              </select>
+            </label>
+            <label class="sim-field" for="sf-plan-start">
+              Plan start date
+              <input id="sf-plan-start" type="date" />
+            </label>
+            <label class="sim-field" for="sf-horizon">
+              Forecast weeks
+              <input id="sf-horizon" type="number" min="1" max="52" step="1" value="13" />
+            </label>
+          </div>
+          <p class="sim-meta">
+            Week 1 is the Monday of the plan start week. Use the same number of
+            weeks as your stock plan. The default is 13. Year-month-day dates
+            are always read as written.
+          </p>
+          <p id="sf-date-line" class="sim-meta" hidden></p>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Sales history</h2>
+          <div class="content">
+            <p>
+              Use a CSV with these columns: order_id, order_datetime, sku, qty,
+              fulfillment_location. Extra columns are ignored. SKUs are kept
+              exactly as written.
+            </p>
+            <p>
+              Limits: CSV only, 10 MB, 200,000 rows, 5,000 SKUs.
+              <a href="/assets/template_Sales_History.csv" download="template_Sales_History.csv">Download template_Sales_History.csv</a>.
+              The sample dates are in September 2026. If your plan start week is much later, move the plan start date back or replace the dates.
+            </p>
+          </div>
+          <label class="sim-field" for="sf-file">
+            Sales history CSV
+            <input id="sf-file" type="file" accept=".csv,text/csv" />
+          </label>
+          <p id="sf-file-name" class="sim-meta" hidden></p>
+        </section>
+
+        <section class="card" id="sf-output" hidden>
+          <h2 class="card__title">Preview</h2>
+          <p id="sf-output-date" class="sim-meta"></p>
+          <p id="sf-location-note" class="sim-meta"></p>
+          <div id="sf-notes" class="sim-meta" hidden></div>
+
+          <h3 class="sf-subhead">Summary</h3>
+          <p class="sim-meta">Weeks used and the flags are listed here, and in the summary CSV.</p>
+          <div class="sim-table-wrap">
+            <table class="sim-table">
+              <caption class="visually-hidden">Weekly forecast, weeks used, and flags by SKU</caption>
+              <thead>
+                <tr>
+                  <th scope="col">SKU</th>
+                  <th scope="col">Weekly Forecast</th>
+                  <th scope="col">Weeks Used</th>
+                  <th scope="col">First Sale Week</th>
+                  <th scope="col">Locations</th>
+                  <th scope="col">Flags</th>
+                </tr>
+              </thead>
+              <tbody id="sf-summary-body"></tbody>
+            </table>
+          </div>
+
+          <h3 class="sf-subhead">First forecast weeks</h3>
+          <p id="sf-preview-note" class="sim-meta"></p>
+          <div class="sim-table-wrap">
+            <table class="sim-table">
+              <caption class="visually-hidden">First SKUs and forecast weeks</caption>
+              <thead>
+                <tr>
+                  <th scope="col">SKU</th>
+                  <th scope="col">Forecast Qty</th>
+                  <th scope="col">Week Starting Date</th>
+                </tr>
+              </thead>
+              <tbody id="sf-preview-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card" id="sf-gate" hidden>
+          <h2 class="card__title">Download the files</h2>
+          <div class="content">
+            <p>
+              The preview above is ready. Enter your email to download the
+              forecast and the summary. The email is a confirmation only. It
+              does not include your SKUs or sales.
+            </p>
+            <p>
+              The articles box starts unticked. The download does not depend
+              on ticking it.
+            </p>
+          </div>
+        </section>
+
+        {% set resultsId = "sf-results" %}
+        {% set resultsTitle = "Email me to unlock the download" %}
+        {% set resultsConsentText = "Email me to unlock the download." %}
+        {% set resultsSentText = "Sent. The download is unlocked on this page. Check your inbox (and spam folder)." %}
+        {% include "partials/sim-results-form.njk" %}
+
+        <section class="card" id="sf-downloads" hidden>
+          <h2 class="card__title">Your files</h2>
+          <p class="sim-meta">
+            Both files are built in this browser. The forecast file has one
+            row per SKU per week. The summary file has weeks used and the flags.
+          </p>
+          <div class="sim-actions">
+            <button type="button" id="sf-download-forecast" class="sim-button">Download forecast CSV</button>
+            <button type="button" id="sf-download-summary" class="sim-button sim-button--secondary">Download summary CSV</button>
+          </div>
+        </section>
+      </div>

@@ -15,4 +15,10 @@ module.exports = [
       "Illustrative estimates for up to 10 SKUs. One average weekly forecast, your stock, and your prices.",
     href: "/learn/safety-stock-simulator/own-data/",
   },
+  {
+    title: "Starter Forecast",
+    description:
+      "A 12-week average of your sales history, repeated for each week of the plan. The file stays in your browser.",
+    href: "/learn/starter-forecast/",
+  },
 ];

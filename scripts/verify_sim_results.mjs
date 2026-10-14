@@ -13,6 +13,11 @@ import {
   EMAIL_LIMIT,
   IP_LIMIT,
   SCHEMA_SQL,
+  OPTIONAL_WORDING,
+  STARTER_FORM_ID,
+  STARTER_REQUIRED_WORDING,
+  STARTER_SUBJECT,
+  STARTER_WORDING_VERSION,
   SUBJECT,
   SUCCESS_MESSAGE,
   WORDING_VERSION,
@@ -181,6 +186,24 @@ function post(body, headers) {
     headers: merged,
     body: JSON.stringify(body),
   });
+}
+
+function starterBody(overrides) {
+  return payload(
+    Object.assign(
+      {
+        wordingVersion: STARTER_WORDING_VERSION,
+        wordingText: {
+          required: STARTER_REQUIRED_WORDING,
+          optional: OPTIONAL_WORDING,
+        },
+        formId: STARTER_FORM_ID,
+        pageUrl: "https://practicalsupplychainplanning.com/learn/starter-forecast/",
+        summary: { kind: "starter-forecast" },
+      },
+      overrides || {}
+    )
+  );
 }
 
 function payload(overrides) {
@@ -362,6 +385,82 @@ assert.match(articlesMail.text, /Unsubscribe: https:\/\/practicalsupplychainplan
 assert.match(articlesMail.html, />Unsubscribe<\/a>/);
 assert.match(articlesMail.headers["List-Unsubscribe"], /<https:\/\/practicalsupplychainplanning\.com\/unsubscribe\/\?t=/);
 assert.strictEqual(articlesMail.headers["List-Unsubscribe-Post"], "List-Unsubscribe=One-Click");
+
+const starterDb = openDb();
+const starter = await send(
+  starterDb.db,
+  starterBody({
+    email: "forecast@example.com",
+    articlesConsent: false,
+    pageUrl: "https://practicalsupplychainplanning.com/learn/starter-forecast/?utm_source=newsletter",
+  })
+);
+assert.strictEqual(starter.status, 200, JSON.stringify(starter.json));
+const starterMail = JSON.parse(
+  starter.calls.find(function (call) {
+    return call.url.includes("/emails");
+  }).body
+);
+assert.strictEqual(starterMail.subject, STARTER_SUBJECT);
+assert.doesNotMatch(starterMail.text, /00123|Forecast Qty|Weeks Used|SKU-/);
+assert.doesNotMatch(starterMail.html, /00123|Forecast Qty|Weeks Used|SKU-/);
+assert.doesNotMatch(starterMail.text, /Practical Stock Planner/);
+assert.ok(!starterMail.attachments || starterMail.attachments.length === 0);
+assert.doesNotMatch(starterMail.text, /your business should|\brecommended\b/i);
+const starterRow = starterDb.sqlite.prepare("SELECT * FROM consent").get();
+assert.strictEqual(starterRow.form_id, "starter-forecast");
+assert.strictEqual(starterRow.page_url, "/learn/starter-forecast/?utm_source=newsletter");
+assert.strictEqual(starterRow.wording_version, STARTER_WORDING_VERSION);
+assert.strictEqual(starterRow.wording_text, STARTER_REQUIRED_WORDING + "\n" + OPTIONAL_WORDING);
+assert.doesNotMatch(starterRow.wording_text, /results of the scenario/);
+assert.strictEqual(starterRow.articles_box, 0);
+assert.strictEqual(
+  starter.calls.some(function (call) {
+    return call.url.includes("/contacts");
+  }),
+  false
+);
+
+const starterArticles = await send(
+  openDb().db,
+  starterBody({
+    email: "forecast-articles@example.com",
+    articlesConsent: true,
+  })
+);
+assert.strictEqual(starterArticles.status, 200, JSON.stringify(starterArticles.json));
+const starterArticlesMail = JSON.parse(
+  starterArticles.calls.find(function (call) {
+    return call.url.includes("/emails");
+  }).body
+);
+assert.match(starterArticlesMail.text, /new articles/);
+assert.doesNotMatch(starterArticlesMail.text, /00123|Forecast Qty|Weeks Used/);
+assert.ok(
+  starterArticles.calls.some(function (call) {
+    return call.url.includes("/contacts");
+  })
+);
+
+const starterLeak = await send(
+  openDb().db,
+  starterBody({
+    email: "leak@example.com",
+    summary: { kind: "starter-forecast", sku: "00123", qty: 12 },
+  })
+);
+assert.strictEqual(starterLeak.status, 400);
+
+const starterOldWording = await send(
+  openDb().db,
+  payload({
+    email: "old-wording@example.com",
+    formId: "starter-forecast",
+    pageUrl: "https://practicalsupplychainplanning.com/learn/starter-forecast/",
+    summary: { kind: "starter-forecast" },
+  })
+);
+assert.strictEqual(starterOldWording.status, 400);
 
 const failContact = okFetch();
 const original = failContact;

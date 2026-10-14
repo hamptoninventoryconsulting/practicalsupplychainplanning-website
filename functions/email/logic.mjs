@@ -67,6 +67,10 @@ export const KEEP_IN_TOUCH_ADD_FAILED = "We couldn't add you to the list. Try ag
 export const KEEP_IN_TOUCH_UNSUBSCRIBED =
   "This address is unsubscribed. Email support@practicalsupplychainplanning.com if you want to join again.";
 export const SUBJECT = "Your Safety Stock Simulator results: the scenario you ran";
+export const STARTER_FORM_ID = "starter-forecast";
+export const STARTER_SUBJECT = "Your Starter Forecast is ready to download";
+export const STARTER_WORDING_VERSION = "starter-forecast-v1";
+export const STARTER_REQUIRED_WORDING = "Email me to unlock the download.";
 export const FROM_ADDRESS =
   "Daniel at Practical Supply Chain Planning <hello@news.practicalsupplychainplanning.com>";
 export const REPLY_TO = "support@practicalsupplychainplanning.com";
@@ -215,8 +219,8 @@ export async function handleResultsEmail(request, env, deps) {
         ip,
         submission.formId,
         submission.pageUrl,
-        WORDING_VERSION,
-        REQUIRED_WORDING + "\n" + OPTIONAL_WORDING,
+        submission.wordingVersion,
+        submission.wordingRequired + "\n" + OPTIONAL_WORDING,
         submission.utm.source,
         submission.utm.medium,
         submission.utm.campaign,
@@ -496,6 +500,9 @@ function chartImageTag(index) {
 }
 
 export async function buildMessage(submission, token, signingKey) {
+  if (submission.summary && submission.summary.kind === "starter-forecast") {
+    return buildStarterMessage(submission, token, signingKey);
+  }
   const summary = submission.summary;
   const unsub = await unsubscribeUrl(token, signingKey);
   const pairedCharts = chartsPairedWithSkus(summary);
@@ -760,21 +767,41 @@ function validateSubmission(body) {
   if (body.resultsConsent !== true) {
     throw new HttpError(400, "Check the form and try again.");
   }
-  if (body.wordingVersion !== WORDING_VERSION) {
+  // A later results page adds its form id here. The check, the record, and the do-not-email list stay shared.
+  if (
+    body.formId !== "safety-stock-simulator" &&
+    body.formId !== "own-data-simulator" &&
+    body.formId !== STARTER_FORM_ID
+  ) {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  const starterForm = body.formId === STARTER_FORM_ID;
+  const expectedVersion = starterForm ? STARTER_WORDING_VERSION : WORDING_VERSION;
+  const expectedRequired = starterForm ? STARTER_REQUIRED_WORDING : REQUIRED_WORDING;
+  if (body.wordingVersion !== expectedVersion) {
     throw new HttpError(400, "Check the form and try again.");
   }
   const wording = body.wordingText;
-  if (!wording || wording.required !== REQUIRED_WORDING || wording.optional !== OPTIONAL_WORDING) {
-    throw new HttpError(400, "Check the form and try again.");
-  }
-  // A later results page adds its form id here. The check, the record, and the do-not-email list stay shared.
-  if (body.formId !== "safety-stock-simulator" && body.formId !== "own-data-simulator") {
+  if (!wording || wording.required !== expectedRequired || wording.optional !== OPTIONAL_WORDING) {
     throw new HttpError(400, "Check the form and try again.");
   }
   if (typeof body.turnstileToken !== "string" || body.turnstileToken.length < 8 || body.turnstileToken.length > 2048) {
     throw new HttpError(400, "The check failed. Refresh the page and try again.");
   }
   const pageUrl = cleanPageUrl(body.pageUrl, body.formId);
+  if (body.formId === STARTER_FORM_ID) {
+    return {
+      email: email,
+      articles: body.articlesConsent === true,
+      turnstileToken: body.turnstileToken,
+      formId: body.formId,
+      pageUrl: pageUrl,
+      utm: cleanUtm(body.utm),
+      summary: validateStarterSummary(body.summary),
+      wordingVersion: expectedVersion,
+      wordingRequired: expectedRequired,
+    };
+  }
   const summary = validateSummary(body.summary, email);
   if (body.formId === "own-data-simulator" && summary.kind !== "own-data") {
     throw new HttpError(400, "Check the form and try again.");
@@ -790,6 +817,8 @@ function validateSubmission(body) {
     pageUrl: pageUrl,
     utm: cleanUtm(body.utm),
     summary: summary,
+    wordingVersion: expectedVersion,
+    wordingRequired: expectedRequired,
   };
 }
 
@@ -985,10 +1014,7 @@ function cleanPageUrl(value, formId) {
   if (url.protocol !== "https:" || !hostAllowed(url.hostname)) {
     throw new HttpError(400, "Check the form and try again.");
   }
-  const expected =
-    formId === "own-data-simulator"
-      ? "/learn/safety-stock-simulator/own-data/"
-      : "/learn/safety-stock-simulator/";
+  const expected = pagePathForForm(formId);
   if (url.pathname !== expected) {
     throw new HttpError(400, "Check the form and try again.");
   }
@@ -1007,6 +1033,84 @@ function cleanPageUrl(value, formId) {
     throw new HttpError(400, "Check the form and try again.");
   }
   return page;
+}
+
+function pagePathForForm(formId) {
+  if (formId === "own-data-simulator") {
+    return "/learn/safety-stock-simulator/own-data/";
+  }
+  if (formId === STARTER_FORM_ID) {
+    return "/learn/starter-forecast/";
+  }
+  return "/learn/safety-stock-simulator/";
+}
+
+function validateStarterSummary(summary) {
+  if (!summary || typeof summary !== "object" || Array.isArray(summary)) {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  onlyKeys(summary, ["kind"]);
+  if (summary.kind !== "starter-forecast") {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  return { kind: "starter-forecast" };
+}
+
+const STARTER_NOTE =
+  "This is a 12-week average of sales history read in your browser. It is not advice for your business.";
+
+async function buildStarterMessage(submission, token, signingKey) {
+  const unsub = await unsubscribeUrl(token, signingKey);
+  const page = SITE + "/learn/starter-forecast/";
+  const blocks = [
+    "Your Starter Forecast is ready to download on the page where you built it.",
+    page,
+    "",
+    "The sales file was read in your browser. It was not sent to us. This email does not include your items or sales.",
+    "",
+    STARTER_NOTE,
+    "",
+    sellerLine(),
+    "You're receiving this because you asked for this confirmation.",
+  ];
+  if (submission.articles) {
+    blocks.push("You also asked to hear about new articles. Unsubscribe any time.");
+  }
+  blocks.push("Unsubscribe: " + unsub);
+  blocks.push(REPLY_TO);
+  const text = blocks.join("\n");
+  const html = [
+    "<!DOCTYPE html><html><body style=\"font-family:Georgia,serif;color:#1c1917;\">",
+    "<p>Your Starter Forecast is ready to download on the page where you built it.</p>",
+    "<p><a href=\"" + escapeHtml(page) + "\">Open Starter Forecast</a></p>",
+    "<p>The sales file was read in your browser. It was not sent to us. This email does not include your items or sales.</p>",
+    "<p>" + escapeHtml(STARTER_NOTE) + "</p>",
+    "<p>" +
+      escapeHtml(sellerLine()) +
+      "<br>You're receiving this because you asked for this confirmation.",
+    submission.articles ? "<br>You also asked to hear about new articles. Unsubscribe any time." : "",
+    "<br><a href=\"" +
+      escapeHtml(unsub) +
+      "\">Unsubscribe</a><br><a href=\"mailto:" +
+      REPLY_TO +
+      "\">" +
+      REPLY_TO +
+      "</a></p></body></html>",
+  ].join("");
+  assertCleanCopy(text);
+  assertCleanCopy(html.replace(/<[^>]+>/g, " "));
+  return {
+    from: FROM_ADDRESS,
+    to: [submission.email],
+    reply_to: REPLY_TO,
+    subject: STARTER_SUBJECT,
+    text: text,
+    html: html,
+    headers: {
+      "List-Unsubscribe": "<mailto:" + REPLY_TO + "?subject=Unsubscribe>, <" + unsub + ">",
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    },
+  };
 }
 
 function cleanUtm(value) {
