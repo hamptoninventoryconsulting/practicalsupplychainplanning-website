@@ -62,9 +62,20 @@ assert.strictEqual(lineOf(worked, "B").reason, "Late 2 days");
 assert.match(lineOf(worked, "C").reason, /Short 10 \(10%\)/);
 assert.strictEqual(lineOf(worked, "D").onTime, false);
 assert.strictEqual(lineOf(worked, "D").inFull, true);
-assert.match(worked.summaryLine, /DIFOT 25\.0% \(1 of 4 lines\)/);
-assert.match(worked.summaryLine, /Days early allowed 2/);
-assert.match(worked.summaryLine, /Days late allowed 0/);
+assert.strictEqual(worked.summaryLine, "4 lines measured. 1 supplier. 4 purchase orders.");
+assert.strictEqual(worked.counts.lines, 4);
+assert.strictEqual(worked.counts.suppliers, 1);
+assert.strictEqual(worked.counts.purchaseOrders, 4);
+assert.strictEqual(worked.settings.filter(function (setting) {
+  return setting.label === "Days early allowed";
+})[0].value, "2");
+assert.strictEqual(worked.settings.filter(function (setting) {
+  return setting.label === "Days late allowed";
+})[0].value, "0");
+assert.doesNotMatch(worked.summaryCsv, /^Overall,/m);
+assert.doesNotMatch(worked.summaryCsv, /^Month,/m);
+assert.match(worked.summaryCsv, /Supplier,Acme,,4,2,3,1,50\.0,75\.0,25\.0/);
+assert.match(worked.summaryCsv, /Supplier-Month,Acme,2026-03,4,2,3,1,50\.0,75\.0,25\.0/);
 assert.match(worked.dateLine, /First date 10\/03\/2026 read as 10 March 2026/);
 
 const earlyEdge = run(
@@ -169,13 +180,57 @@ assert.deepStrictEqual(
   }),
   ["2026-03:1", "2026-04:1"]
 );
+assert.strictEqual(months.monthNote, "");
+assert.doesNotMatch(months.notes.join(" "), /older month/);
+function monthRowsFor(supplier, count, year, month) {
+  const rows = [];
+  for (let i = 0; i < count; i += 1) {
+    const date = new Date(Date.UTC(year, month - 1 + i, 10));
+    const iso = date.toISOString().slice(0, 10);
+    rows.push("PO" + i + "," + supplier + ",SKU" + i + ",10," + iso + "," + iso + ",10,,,");
+  }
+  return rows;
+}
+const manyMonths = run(monthRowsFor("Alpha", 25, 2024, 1).concat(monthRowsFor("Beta", 26, 2024, 1)), {
+  asAt: "2026-10-14",
+});
+assert.strictEqual(manyMonths.ok, true, JSON.stringify(manyMonths.errors));
+function shownMonths(result, supplier) {
+  return result.supplierMonths.filter(function (group) {
+    return group.supplier === supplier;
+  })[0].months;
+}
+assert.strictEqual(shownMonths(manyMonths, "Alpha").length, 24);
+assert.strictEqual(shownMonths(manyMonths, "Alpha")[0].month, "2024-02");
+assert.strictEqual(shownMonths(manyMonths, "Alpha")[23].month, "2026-01");
+assert.strictEqual(shownMonths(manyMonths, "Beta").length, 24);
+assert.strictEqual(shownMonths(manyMonths, "Beta")[0].month, "2024-03");
+assert.strictEqual(shownMonths(manyMonths, "Beta")[23].month, "2026-02");
+assert.strictEqual(
+  manyMonths.monthNote,
+  "Alpha has 1 older month and Beta has 2 older months in the summary CSV. The latest 24 months are shown here."
+);
+assert.doesNotMatch(manyMonths.notes.join(" "), /older month/);
+assert.match(manyMonths.summaryCsv, /Supplier-Month,Alpha,2024-01,/);
+assert.match(manyMonths.summaryCsv, /Supplier-Month,Beta,2024-01,/);
+const exactMonths = run(monthRowsFor("Alpha", 24, 2024, 1), { asAt: "2026-10-14" });
+assert.strictEqual(exactMonths.monthNote, "");
+assert.strictEqual(shownMonths(exactMonths, "Alpha").length, 24);
+assert.strictEqual(shownMonths(exactMonths, "Alpha")[0].month, "2024-01");
 const ranged = run(
   ["1,Alpha,IN,10,2026-03-10,2026-03-10,10,,,", "2,Alpha,OUT,10,2026-01-10,2026-01-10,10,,,"],
   { measureFrom: "2026-03-01", measureTo: "2026-03-31" }
 );
 assert.strictEqual(ranged.overall.lines, 1);
+assert.strictEqual(ranged.counts.lines, 1);
+assert.strictEqual(ranged.counts.purchaseOrders, 1);
 assert.strictEqual(lineOf(ranged, "OUT").countedText, "N: outside the measure range");
-assert.match(ranged.summaryLine, /Measured 2026-03-01 to 2026-03-31/);
+assert.strictEqual(ranged.settings.filter(function (setting) {
+  return setting.label === "Measure from";
+})[0].value, "2026-03-01");
+assert.strictEqual(ranged.settings.filter(function (setting) {
+  return setting.label === "Measure to";
+})[0].value, "2026-03-31");
 
 const suppliers = [
   "Supplier,Freight arranged by,Expected transit days",
@@ -201,7 +256,10 @@ assert.strictEqual(freight.freight[0].measurable, 2);
 assert.strictEqual(freight.freight[0].onTimePct, "50.0");
 assert.match(freight.freight[0].note, /1 line not measurable/);
 assert.match(freight.notes.join(" "), /does not change a supplier's DIFOT/);
-assert.match(freight.summaryCsv, /Freight,Shenzhen Widgets/);
+assert.match(freight.summaryCsv, /Supplier,Shenzhen Widgets,,3,/);
+assert.match(freight.summaryCsv, /Supplier-Month,Shenzhen Widgets,2026-03,/);
+assert.doesNotMatch(freight.summaryCsv, /^Freight,/m);
+assert.doesNotMatch(freight.summaryCsv, /^Overall,/m);
 assert.match(freight.notes.join(" "), /1 supplier in the supplier list is not in the PO file/);
 assert.strictEqual(lineOf(freight, "NONE").difot, true);
 assert.strictEqual(lineOf(freight, "NONE").freightOnTime, "");
@@ -691,7 +749,10 @@ assert.match(summary, /Over-delivery counts as in full,Yes/);
 assert.match(summary, /As at date,2026-10-14/);
 const summaryTable = summary.slice(summary.indexOf("Level,"));
 assert.ok(summaryTable.startsWith(engine.SUMMARY_HEADER.join(",")));
-assert.match(summaryTable, /Overall,,,4,2,3,1,50\.0,75\.0,25\.0/);
+assert.doesNotMatch(summaryTable, /^Overall,/m);
+assert.doesNotMatch(summaryTable, /^Month,/m);
+assert.match(summaryTable, /Supplier,Acme,,4,2,3,1,50\.0,75\.0,25\.0/);
+assert.match(summaryTable, /Supplier-Month,Acme,2026-03,4,2,3,1,50\.0,75\.0,25\.0/);
 assert.match(worked.linesCsv, /2026-03-09/);
 assert.ok(worked.linesCsv.includes(engine.LINES_HEADER.join(",")));
 assert.strictEqual(worked.summaryFileName, "DIFOT_summary_2026-10-14.csv");
@@ -728,6 +789,15 @@ const sample = run(samplePo, {
   asAt: "2026-10-14",
 });
 assert.strictEqual(sample.ok, true, JSON.stringify(sample.errors) + JSON.stringify(sample.warnings));
+assert.strictEqual(sample.counts.lines, 393);
+assert.strictEqual(sample.counts.suppliers, 5);
+assert.strictEqual(sample.counts.purchaseOrders, 50);
+assert.strictEqual(sample.summaryLine, "393 lines measured. 5 suppliers. 50 purchase orders.");
+assert.strictEqual(sample.monthNote, "");
+assert.doesNotMatch(sample.notes.join(" "), /older month/);
+assert.doesNotMatch(sample.summaryCsv, /^Overall,/m);
+assert.doesNotMatch(sample.summaryCsv, /^Month,/m);
+assert.doesNotMatch(sample.summaryLine, /DIFOT /);
 assert.strictEqual(sample.overall.lines, 393);
 assert.strictEqual(sample.overall.difotPct, "81.2");
 assert.strictEqual(sample.overall.difotLines, 319);
@@ -789,6 +859,64 @@ assert.strictEqual(outbackFreight.onTimePct, "49.3");
 assert.strictEqual(outbackFreight.averageTransit, "28.6");
 assert.strictEqual(outbackFreight.longestTransit, "33");
 assert.strictEqual(outbackFreight.note, "");
+function sampleMonth(supplier, month) {
+  const group = sample.supplierMonths.filter(function (row) {
+    return row.supplier === supplier;
+  })[0];
+  return group.months.filter(function (row) {
+    return row.month === month;
+  })[0];
+}
+const sampleMonths = {
+  "Outback Tools & Parts": {
+    "2026-06": ["24", "70.8", "79.2", "54.2", "52.2"],
+    "2026-07": ["24", "54.2", "79.2", "37.5", "60.9"],
+    "2026-08": ["16", "75.0", "75.0", "62.5", "35.7"],
+    "2026-09": ["8", "62.5", "62.5", "37.5", "28.6"],
+  },
+  "Harbour Electrical Supplies": {
+    "2026-06": ["24", "87.5", "83.3", "75.0", ""],
+    "2026-07": ["24", "83.3", "91.7", "75.0", ""],
+    "2026-08": ["16", "93.8", "93.8", "87.5", ""],
+    "2026-09": ["16", "81.3", "87.5", "75.0", ""],
+  },
+  "Southern Cross Hardware": {
+    "2026-06": ["24", "79.2", "100.0", "79.2", "54.2"],
+    "2026-07": ["24", "87.5", "87.5", "79.2", "69.6"],
+    "2026-08": ["24", "87.5", "83.3", "75.0", "52.2"],
+    "2026-09": ["9", "88.9", "100.0", "88.9", "62.5"],
+  },
+  "Coastal Fasteners": {
+    "2026-06": ["24", "100.0", "100.0", "100.0", ""],
+    "2026-07": ["24", "91.7", "100.0", "91.7", ""],
+    "2026-08": ["24", "100.0", "100.0", "100.0", ""],
+    "2026-09": ["8", "100.0", "100.0", "100.0", ""],
+  },
+  "Brisbane Packaging Co": {
+    "2026-06": ["24", "100.0", "100.0", "100.0", ""],
+    "2026-07": ["24", "100.0", "100.0", "100.0", ""],
+    "2026-08": ["24", "100.0", "100.0", "100.0", ""],
+    "2026-09": ["8", "100.0", "100.0", "100.0", ""],
+  },
+};
+Object.keys(sampleMonths).forEach(function (supplier) {
+  Object.keys(sampleMonths[supplier]).forEach(function (month) {
+    const expected = sampleMonths[supplier][month];
+    const row = sampleMonth(supplier, month);
+    assert.ok(row, supplier + " " + month);
+    assert.strictEqual(String(row.lines), expected[0], supplier + " " + month + " lines");
+    assert.strictEqual(row.onTimePct, expected[1], supplier + " " + month + " on time");
+    assert.strictEqual(row.inFullPct, expected[2], supplier + " " + month + " in full");
+    assert.strictEqual(row.difotPct, expected[3], supplier + " " + month + " difot");
+    if (expected[4]) {
+      assert.strictEqual(row.freightStats.onTimePct, expected[4], supplier + " " + month + " freight");
+    } else {
+      assert.strictEqual(row.freightStats, null, supplier + " " + month + " freight");
+    }
+  });
+});
+assert.strictEqual(sampleMonth("Southern Cross Hardware", "2026-09").freightStats.note, "1 line not measurable");
+assert.match(sample.summaryCsv, /Supplier-Month,Southern Cross Hardware,2026-09,9,/);
 
 const big = ["PO Number,Supplier,SKU,Ordered Qty,Required Date,Arrived at Your Site Date,Received Qty"];
 for (let i = 0; i < 200000; i += 1) {
@@ -841,7 +969,25 @@ assert.match(page, /leave Received Qty blank/);
 assert.match(page, /handover date is after the arrival date/);
 assert.match(page, /Freight days use only the rows that have arrived/);
 assert.match(page, /rest of the ordered quantity/);
-assert.match(page, /difot-engine\.js\?v=8/);
+assert.match(page, /difot-engine\.js\?v=10/);
+assert.match(page, /difot-calculator\.js\?v=3/);
+assert.match(page, /<summary>What DIFOT is and why it matters<\/summary>/);
+assert.match(page, /<summary>Your files<\/summary>/);
+assert.match(page, /<summary>How the calculation works<\/summary>/);
+assert.match(page, /Delivered In Full, On Time/);
+assert.match(page, /sliding scale/);
+assert.match(page, /Agree the allowance with each supplier/);
+assert.match(page, /percentage on\s+this page applies to the whole file/);
+assert.match(page, /Rerun with a\s+different\s+percentage to check one supplier/);
+assert.match(page, /agreed\s+lead time is 3 weeks/);
+assert.match(page, /look up Incoterms/);
+assert.match(page, /ready for shipping on the agreed\s+date/);
+assert.match(page, /There is no overall total/);
+assert.match(page, /id="df-lines"/);
+assert.match(page, /id="df-suppliers"/);
+assert.match(page, /id="df-pos"/);
+assert.match(page, /id="df-supplier-months"/);
+assert.doesNotMatch(page, /id="df-difot"|id="df-on-time"|id="df-in-full"|id="df-summary-line"/);
 assert.doesNotMatch(page, /Receipt Date|ship date/i);
 assert.match(page, /id="df-downloads" hidden/);
 assert.match(page, /id="df-results" hidden/);
@@ -854,6 +1000,8 @@ assert.doesNotMatch(ui, /Xero|ERP|Stock Planner|Demand Planner|coming soon/i);
 assert.match(ui, /formId:\s*"difot-calculator"/);
 assert.match(ui, /return \{ kind: "difot-calculator" \}/);
 assert.doesNotMatch(ui, /buildSummary:[\s\S]*?return \{[^}]*supplier/);
+assert.match(ui, /result\.monthNote/);
+assert.doesNotMatch(ui, /older months are/);
 assert.match(article, /<a href="\/learn\/difot-calculator\/">Calculate your suppliers' DIFOT free<\/a>/);
 assert.doesNotMatch(article, /Stock Planner|Xero/);
 const sentPage = fs.readFileSync(path.join(SITE, "learn", "difot-calculator", "sent", "index.html"), "utf8");
@@ -887,19 +1035,14 @@ function settingsKeepDownload() {
     "df-po-name",
     "df-supplier-name",
     "df-output",
-    "df-summary-line",
-    "df-difot",
-    "df-on-time",
-    "df-in-full",
     "df-lines",
+    "df-suppliers",
+    "df-pos",
     "df-settings",
     "df-notes",
     "df-supplier-body",
-    "df-month-body",
+    "df-supplier-months",
     "df-month-note",
-    "df-freight-wrap",
-    "df-freight-note",
-    "df-freight-body",
     "df-gate",
     "df-downloads",
     "df-download-summary",
@@ -974,6 +1117,14 @@ function settingsKeepDownload() {
   ids["df-po-file"].files = [{ name: "lines.csv", size: csv.length }];
   ids["df-po-file"].listeners.change();
   assert.strictEqual(shows, 1);
+  assert.strictEqual(ids["df-lines"].textContent, "1");
+  assert.strictEqual(ids["df-suppliers"].textContent, "1");
+  assert.strictEqual(ids["df-pos"].textContent, "1");
+  assert.match(ids["df-supplier-body"].innerHTML, /Acme/);
+  assert.match(ids["df-supplier-body"].innerHTML, /100\.0%/);
+  assert.match(ids["df-supplier-months"].innerHTML, /2026-03/);
+  assert.match(ids["df-supplier-months"].innerHTML, /Acme/);
+  assert.doesNotMatch(ids["df-supplier-months"].innerHTML, /Freight on time/);
   assert.strictEqual(ids["df-downloads"].hidden, true);
   const sentSummary = attached.buildSummary();
   assert.strictEqual(sentSummary.kind, "difot-calculator");

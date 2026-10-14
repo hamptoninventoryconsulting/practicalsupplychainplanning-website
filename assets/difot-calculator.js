@@ -84,6 +84,77 @@
     return value ? escapeHtml(value) : "—";
   }
 
+  function freightCells(stats) {
+    if (!stats) {
+      return "<td>—</td><td>—</td><td>—</td><td class=\"difot-text\"></td>";
+    }
+    var onTime = stats.onTimePct
+      ? stats.onTimePct + "% (" + stats.onTimeLines + " of " + stats.measurable + ")"
+      : "—";
+    return (
+      "<td>" +
+      escapeHtml(onTime) +
+      "</td><td>" +
+      dash(stats.averageTransit) +
+      "</td><td>" +
+      dash(stats.longestTransit) +
+      "</td><td class=\"difot-text\">" +
+      escapeHtml(stats.note) +
+      "</td>"
+    );
+  }
+
+  function monthTable(group) {
+    var freightHead = "";
+    if (group.mode === "me") {
+      freightHead =
+        "<th scope=\"col\">Freight on time</th>" +
+        "<th scope=\"col\">Average transit days</th>" +
+        "<th scope=\"col\">Longest transit days</th>" +
+        "<th scope=\"col\" class=\"difot-text\">Freight note</th>";
+    }
+    var body = group.months
+      .map(function (row) {
+        var freight = "";
+        if (group.mode === "me") {
+          freight = freightCells(row.freightStats);
+        }
+        return (
+          "<tr><td>" +
+          escapeHtml(row.month) +
+          "</td><td>" +
+          escapeHtml(String(row.lines)) +
+          "</td><td>" +
+          pctCell(row.onTimePct, row.onTimeLines, row.lines) +
+          "</td><td>" +
+          pctCell(row.inFullPct, row.inFullLines, row.lines) +
+          "</td><td>" +
+          pctCell(row.difotPct, row.difotLines, row.lines) +
+          "</td><td>" +
+          escapeHtml(String(row.lateLines)) +
+          "</td><td>" +
+          escapeHtml(String(row.shortLines)) +
+          "</td><td>" +
+          dash(row.avgDaysLate) +
+          "</td>" +
+          freight +
+          "</tr>"
+        );
+      })
+      .join("");
+    return (
+      "<h3 class=\"sf-subhead\">" +
+      escapeHtml(group.supplier) +
+      "</h3><div class=\"sim-table-wrap\"><table class=\"sim-table\"><caption class=\"visually-hidden\">DIFOT by month for " +
+      escapeHtml(group.supplier) +
+      "</caption><thead><tr><th scope=\"col\">Month</th><th scope=\"col\">Lines</th><th scope=\"col\">On time</th><th scope=\"col\">In full</th><th scope=\"col\">DIFOT</th><th scope=\"col\">Late lines</th><th scope=\"col\">Short lines</th><th scope=\"col\">Avg days late</th>" +
+      freightHead +
+      "</tr></thead><tbody>" +
+      body +
+      "</tbody></table></div>"
+    );
+  }
+
   function fail(messages, result) {
     showList($("df-errors"), messages);
     $("df-output").hidden = true;
@@ -113,14 +184,9 @@
     applyDateLine(result);
     showList($("df-warnings"), result.warnings);
     showList($("df-notes"), result.notes);
-    $("df-summary-line").textContent = result.summaryLine;
-    $("df-difot").textContent =
-      result.overall.difotPct + "% (" + result.overall.difotLines + " of " + result.overall.lines + " lines)";
-    $("df-on-time").textContent =
-      result.overall.onTimePct + "% (" + result.overall.onTimeLines + " of " + result.overall.lines + " lines)";
-    $("df-in-full").textContent =
-      result.overall.inFullPct + "% (" + result.overall.inFullLines + " of " + result.overall.lines + " lines)";
-    $("df-lines").textContent = String(result.overall.lines);
+    $("df-lines").textContent = String(result.counts.lines);
+    $("df-suppliers").textContent = String(result.counts.suppliers);
+    $("df-pos").textContent = String(result.counts.purchaseOrders);
     $("df-settings").innerHTML = result.settings
       .map(function (setting) {
         return "<li>" + escapeHtml(setting.label) + ": " + escapeHtml(setting.value) + "</li>";
@@ -148,64 +214,19 @@
           escapeHtml(String(row.shortLines)) +
           "</td><td>" +
           dash(row.avgDaysLate) +
-          "</td></tr>"
+          "</td>" +
+          freightCells(row.freightStats) +
+          "</tr>"
         );
       })
       .join("");
 
-    $("df-month-body").innerHTML = result.months
-      .map(function (row) {
-        return (
-          "<tr><td>" +
-          escapeHtml(row.month) +
-          "</td><td>" +
-          escapeHtml(String(row.lines)) +
-          "</td><td>" +
-          pctCell(row.onTimePct, row.onTimeLines, row.lines) +
-          "</td><td>" +
-          pctCell(row.inFullPct, row.inFullLines, row.lines) +
-          "</td><td>" +
-          pctCell(row.difotPct, row.difotLines, row.lines) +
-          "</td></tr>"
-        );
-      })
+    $("df-supplier-months").innerHTML = (result.supplierMonths || [])
+      .map(monthTable)
       .join("");
-    $("df-month-note").hidden = !result.monthsHidden;
-    $("df-month-note").textContent = result.monthsHidden
-      ? result.monthsHidden +
-        (result.monthsHidden === 1 ? " older month is" : " older months are") +
-        " in the totals and in the summary CSV."
-      : "";
-
-    if (result.freight && result.freight.length) {
-      $("df-freight-wrap").hidden = false;
-      $("df-freight-note").textContent = result.freightNote;
-      $("df-freight-body").innerHTML = result.freight
-        .map(function (row) {
-          var onTime = row.onTimePct
-            ? row.onTimePct + "% (" + row.onTimeLines + " of " + row.measurable + ")"
-            : "—";
-          return (
-            "<tr><td class=\"sim-sku\">" +
-            escapeHtml(row.supplier) +
-            "</td><td>" +
-            escapeHtml(String(row.lines)) +
-            "</td><td>" +
-            escapeHtml(onTime) +
-            "</td><td>" +
-            dash(row.averageTransit) +
-            "</td><td>" +
-            dash(row.longestTransit) +
-            "</td><td class=\"difot-text\">" +
-            escapeHtml(row.note) +
-            "</td></tr>"
-          );
-        })
-        .join("");
-    } else {
-      $("df-freight-wrap").hidden = true;
-      $("df-freight-body").innerHTML = "";
-    }
+    var monthNote = result.monthNote || "";
+    $("df-month-note").hidden = !monthNote;
+    $("df-month-note").textContent = monthNote;
 
     $("df-output").hidden = false;
     $("df-gate").hidden = false;

@@ -7,9 +7,9 @@
   "nav": "learn",
   "permalink": "/learn/difot-calculator/",
   "scripts": [
-    "/assets/difot-engine.js?v=8",
+    "/assets/difot-engine.js?v=10",
     "/assets/sim-results-form.js?v=7",
-    "/assets/difot-calculator.js?v=1"
+    "/assets/difot-calculator.js?v=3"
   ]
 }
 ---
@@ -22,18 +22,93 @@
         <div id="df-errors" class="sim-error" hidden role="alert"></div>
         <div id="df-warnings" class="sim-warning" hidden></div>
 
-        <section class="card">
-          <h2 class="card__title">What this does</h2>
+        <details class="sim-details">
+          <summary>What DIFOT is and why it matters</summary>
+          <div class="content">
+            <p>
+              DIFOT stands for Delivered In Full, On Time. It is the share of order
+              lines a supplier delivers with the full quantity, by the date you
+              needed them. A line counts only if it is both on time and in full.
+              Late, short or damaged is a miss.
+            </p>
+            <p>
+              Why it matters: every late or short delivery has to be covered by
+              stock you hold. Unreliable suppliers push up safety stock, tie up
+              cash and cause stock-outs your customers notice. DIFOT turns
+              "they are usually fine" into a number you can track, compare
+              between suppliers and raise in supplier reviews.
+            </p>
+            <p>
+              In full usually works on a sliding scale. If you order 10, you need
+              all 10 for a hit. If you order 10,000, 9,900 might reasonably count
+              as a hit. Agree the allowance with each supplier. The percentage on
+              this page applies to the whole file. Rerun with a different
+              percentage to check one supplier.
+            </p>
+            <p>
+              DIFOT also shows whether agreed lead times are real. If the agreed
+              lead time is 3 weeks but the supplier always delivers in 4, that
+              gap needs to be addressed, either with the supplier or in your
+              planning lead times.
+            </p>
+            <p>
+              Why freight is separate: when you arrange the freight, the supplier
+              is responsible for having the goods ready for shipping on the agreed
+              date. Getting them to you is the freight company's part. Measuring
+              these separately shows who to talk to. For the detail of who is
+              responsible for what, look up Incoterms.
+            </p>
+          </div>
+        </details>
+
+        <details class="sim-details">
+          <summary>Your files</summary>
           <div class="content">
             <p>
               This page reads a purchase order lines CSV and an optional supplier
-              list. It works out which lines were on time, which were in full,
-              and which were both. That last figure is DIFOT.
+              list. The files are processed in this browser and are never sent.
+              The confirmation email does not include your suppliers or orders.
             </p>
             <p>
-              The files are processed in this browser and are never sent. The
-              confirmation email does not include your suppliers or orders.
+              Export a CSV from your accounting or purchasing system. Extra
+              columns are ignored. SKUs and PO numbers are kept as text, so
+              leading zeros stay. A quantity such as "1,000" in quotes is read as 1000.
+              A full stop is only for decimals.
             </p>
+            <p>
+              The purchase order file needs PO Number, Supplier, SKU, Ordered
+              Qty, Required Date, and Arrived at Your Site Date. Received Qty is
+              needed once the goods are at your site. When you arrange the freight
+              and the goods are not there yet, you can leave Received Qty blank:
+              on time uses the handover date, and the line counts as in full until
+              you fill the quantity in. Damaged Qty, Damaged Reason, and Handed to
+              Freight Date are optional. Fill in Handed to Freight Date on every
+              received line where you arrange the freight.
+            </p>
+            <p>
+              The supplier list is optional. Without it, every supplier is
+              treated as Supplier delivers and freight is not shown. The list
+              needs Supplier and Freight arranged by. Use Supplier delivers or
+              I arrange freight. Supplier and Me are also accepted. Expected
+              transit days is a whole number from 0 to 365, and it is used only
+              when you arrange the freight.
+            </p>
+            <p>
+              Missing dates? Add Arrived at Your Site Date from the day the goods arrived. If you arrange the freight add Handed to Freight Date from the freight company's paperwork or tracking before you upload. If those goods are not at your site yet you can leave Received Qty blank and the line counts as in full until you fill it in.
+              If the only date you have for a supplier who delivers to you is the supplier's invoice date, you can use that as Arrived at Your Site Date.
+            </p>
+            <p>
+              Limits: purchase order file CSV only, 10 MB, 200,000 rows.
+              Supplier list CSV only, 1 MB, 5,000 suppliers.
+              <a href="/assets/template_DIFOT_PO_Lines.csv" download="template_DIFOT_PO_Lines.csv">Download template_DIFOT_PO_Lines.csv</a>.
+              <a href="/assets/template_DIFOT_Suppliers.csv" download="template_DIFOT_Suppliers.csv">Download template_DIFOT_Suppliers.csv</a>.
+            </p>
+          </div>
+        </details>
+
+        <details class="sim-details">
+          <summary>How the calculation works</summary>
+          <div class="content">
             <p>A line is scored like this:</p>
             <ul>
               <li>On time, when the supplier delivers to you, compares Arrived at Your Site Date with the required date. A line that is too early is a miss, labelled Early.</li>
@@ -46,9 +121,10 @@
               <li>Freight you arrange is measured from Handed to Freight Date to Arrived at Your Site Date, and compared with the expected transit days. It does not change the supplier's DIFOT. Freight days use only the rows that have arrived. If the goods have been handed over but have not arrived yet, the line still counts for DIFOT and is left out of the freight figures. Leave Received Qty blank and the ordered quantity counts as delivered in full until you fill the quantity in. If the same line has goods already at your site and another handover with no quantity yet, that handover counts as the rest of the ordered quantity until you fill it in.</li>
               <li>If the handover date is after the arrival date, that line is left out of the freight figures. On time still uses the handover date.</li>
               <li>If you arrange the freight and a received line has no Handed to Freight Date, that line is left out. If the supplier delivers to you, a Handed to Freight Date on the line is not used.</li>
+              <li>The shortfall setting is one percentage for every line in the file. Results are shown supplier by supplier, and by the month of the required date for each supplier. There is no overall total.</li>
             </ul>
           </div>
-        </section>
+        </details>
 
         <section class="card">
           <h2 class="card__title">Settings</h2>
@@ -95,50 +171,18 @@
           <p class="sim-meta">
             Leave the measure dates blank to use the earliest and latest required
             dates in the file. Year-month-day dates are always read as written.
-            The shortfall is applied to each line. Raise days early allowed to
-            make an early delivery count as on time.
+            The shortfall is one percentage for the whole file. Rerun with a
+            different percentage to check one supplier. Raise days early
+            allowed to make an early delivery count as on time.
           </p>
           <p id="df-date-line" class="sim-meta" hidden></p>
         </section>
 
         <section class="card">
-          <h2 class="card__title">Files</h2>
-          <div class="content">
-            <p>
-              Export a CSV from your accounting or purchasing system. Extra
-              columns are ignored. SKUs and PO numbers are kept as text, so
-              leading zeros stay. A quantity such as "1,000" in quotes is read as 1000.
-              A full stop is only for decimals.
-            </p>
-            <p>
-              The purchase order file needs PO Number, Supplier, SKU, Ordered
-              Qty, Required Date, and Arrived at Your Site Date. Received Qty is
-              needed once the goods are at your site. When you arrange the freight
-              and the goods are not there yet, you can leave Received Qty blank:
-              on time uses the handover date, and the line counts as in full until
-              you fill the quantity in. Damaged Qty, Damaged Reason, and Handed to
-              Freight Date are optional. Fill in Handed to Freight Date on every
-              received line where you arrange the freight.
-            </p>
-            <p>
-              The supplier list is optional. Without it, every supplier is
-              treated as Supplier delivers and freight is not shown. The list
-              needs Supplier and Freight arranged by. Use Supplier delivers or
-              I arrange freight. Supplier and Me are also accepted. Expected
-              transit days is a whole number from 0 to 365, and it is used only
-              when you arrange the freight.
-            </p>
-            <p>
-              Missing dates? Add Arrived at Your Site Date from the day the goods arrived. If you arrange the freight add Handed to Freight Date from the freight company's paperwork or tracking before you upload. If those goods are not at your site yet you can leave Received Qty blank and the line counts as in full until you fill it in.
-              If the only date you have for a supplier who delivers to you is the supplier's invoice date, you can use that as Arrived at Your Site Date.
-            </p>
-            <p>
-              Limits: purchase order file CSV only, 10 MB, 200,000 rows.
-              Supplier list CSV only, 1 MB, 5,000 suppliers.
-              <a href="/assets/template_DIFOT_PO_Lines.csv" download="template_DIFOT_PO_Lines.csv">Download template_DIFOT_PO_Lines.csv</a>.
-              <a href="/assets/template_DIFOT_Suppliers.csv" download="template_DIFOT_Suppliers.csv">Download template_DIFOT_Suppliers.csv</a>.
-            </p>
-          </div>
+          <h2 class="card__title">Upload</h2>
+          <p class="sim-meta">
+            Column names, templates and limits are under Your files above.
+          </p>
           <div class="sim-grid">
             <label class="sim-field" for="df-po-file">
               Purchase order lines CSV
@@ -155,23 +199,18 @@
 
         <section class="card" id="df-output" hidden>
           <h2 class="card__title">Preview</h2>
-          <p id="df-summary-line" class="sim-meta"></p>
-          <div class="sim-metrics" id="df-tiles">
-            <div class="sim-metric">
-              <div class="sim-metric__label">DIFOT</div>
-              <div class="sim-metric__value" id="df-difot"></div>
-            </div>
-            <div class="sim-metric">
-              <div class="sim-metric__label">On time</div>
-              <div class="sim-metric__value" id="df-on-time"></div>
-            </div>
-            <div class="sim-metric">
-              <div class="sim-metric__label">In full</div>
-              <div class="sim-metric__value" id="df-in-full"></div>
-            </div>
+          <div class="sim-metrics sim-metrics--counts" id="df-tiles">
             <div class="sim-metric">
               <div class="sim-metric__label">Lines measured</div>
               <div class="sim-metric__value" id="df-lines"></div>
+            </div>
+            <div class="sim-metric">
+              <div class="sim-metric__label">Suppliers</div>
+              <div class="sim-metric__value" id="df-suppliers"></div>
+            </div>
+            <div class="sim-metric">
+              <div class="sim-metric__label">POs</div>
+              <div class="sim-metric__value" id="df-pos"></div>
             </div>
           </div>
           <h3 class="sf-subhead">Settings used</h3>
@@ -179,7 +218,7 @@
           <div id="df-notes" class="sim-meta" hidden></div>
 
           <h3 class="sf-subhead">By supplier</h3>
-          <p class="sim-meta">Worst DIFOT first. Percentages are of the lines measured for that supplier.</p>
+          <p class="sim-meta">Worst DIFOT first. Percentages are of the lines measured for that supplier. Freight figures are filled in only where you arrange the freight.</p>
           <div class="sim-table-wrap">
             <table class="sim-table">
               <caption class="visually-hidden">DIFOT by supplier</caption>
@@ -194,6 +233,10 @@
                   <th scope="col">Late lines</th>
                   <th scope="col">Short lines</th>
                   <th scope="col">Avg days late</th>
+                  <th scope="col">Freight on time</th>
+                  <th scope="col">Average transit days</th>
+                  <th scope="col">Longest transit days</th>
+                  <th scope="col" class="difot-text">Freight note</th>
                 </tr>
               </thead>
               <tbody id="df-supplier-body"></tbody>
@@ -201,44 +244,9 @@
           </div>
 
           <h3 class="sf-subhead">By month</h3>
-          <p class="sim-meta">Month of the required date. Up to 24 months are shown here.</p>
+          <p class="sim-meta">Month of the required date, for each supplier. Up to 24 months are shown for each supplier.</p>
           <p id="df-month-note" class="sim-meta" hidden></p>
-          <div class="sim-table-wrap">
-            <table class="sim-table">
-              <caption class="visually-hidden">DIFOT by month of required date</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Month</th>
-                  <th scope="col">Lines</th>
-                  <th scope="col">On time</th>
-                  <th scope="col">In full</th>
-                  <th scope="col">DIFOT</th>
-                </tr>
-              </thead>
-              <tbody id="df-month-body"></tbody>
-            </table>
-          </div>
-
-          <div id="df-freight-wrap" hidden>
-            <h3 class="sf-subhead">Freight you arrange</h3>
-            <p id="df-freight-note" class="sim-meta"></p>
-            <div class="sim-table-wrap">
-              <table class="sim-table">
-                <caption class="visually-hidden">Freight performance for suppliers where you arrange freight</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Supplier</th>
-                    <th scope="col">Lines</th>
-                    <th scope="col">Freight on time</th>
-                    <th scope="col">Average transit days</th>
-                    <th scope="col">Longest transit days</th>
-                    <th scope="col" class="difot-text">Note</th>
-                  </tr>
-                </thead>
-                <tbody id="df-freight-body"></tbody>
-              </table>
-            </div>
-          </div>
+          <div id="df-supplier-months"></div>
         </section>
 
         <section class="card" id="df-gate" hidden>
@@ -263,11 +271,12 @@
         {% include "partials/sim-results-form.njk" %}
 
         <section class="card" id="df-downloads" hidden>
-          <h2 class="card__title">Your files</h2>
+          <h2 class="card__title">Downloads</h2>
           <p class="sim-meta">
             Both files are built in this browser. Dates are year-month-day.
-            The summary lists the settings and the roll-ups. The line file has
-            every line, including lines that were not counted.
+            The summary lists the settings, each supplier, and each supplier
+            by month. It has no overall total. The line file has every line,
+            including lines that were not counted.
           </p>
           <div class="sim-actions">
             <button type="button" id="df-download-summary" class="sim-button">Download summary CSV</button>

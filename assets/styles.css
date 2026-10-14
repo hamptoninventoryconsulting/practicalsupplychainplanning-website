@@ -1026,6 +1026,10 @@ main {
   margin: 1rem 0;
 }
 
+.sim-metrics--counts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .sim-metric {
   padding: 0.8rem 0.9rem;
   border: 1px solid var(--color-border);
@@ -1219,6 +1223,19 @@ main {
   margin: 0;
 }
 
+.sim-details > .content {
+  padding: 1rem 1.15rem 1.15rem;
+}
+
+.sim-details > .content ul {
+  margin: 0 0 1rem;
+  padding-left: 1.5rem;
+}
+
+.sim-details > .content li + li {
+  margin-top: 0.35rem;
+}
+
 .sim-badge {
   display: inline-block;
   margin: 0 0 0.75rem;
@@ -1329,6 +1346,7 @@ main {
   .sim-params,
   .sim-grid,
   .sim-metrics,
+  .sim-metrics--counts,
   .sim-mode-choices {
     grid-template-columns: 1fr;
   }
