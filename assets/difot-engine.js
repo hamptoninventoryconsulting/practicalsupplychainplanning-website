@@ -755,7 +755,7 @@
       suppliers: [],
       months: [],
       supplierMonths: [],
-      monthsHidden: 0,
+      monthNote: "",
       freight: [],
       freightNote: "",
       summaryCsv: "",
@@ -2133,7 +2133,7 @@
       return 0;
     });
     var supplierMonths = [];
-    var monthsHidden = 0;
+    var hiddenMonths = [];
     supplierRows.forEach(function (supplier) {
       var months = [];
       pairRows.forEach(function (pair) {
@@ -2183,7 +2183,8 @@
       });
       var shown = months;
       if (months.length > MAX_MONTHS_ON_SCREEN) {
-        monthsHidden += months.length - MAX_MONTHS_ON_SCREEN;
+        var hiddenCount = months.length - MAX_MONTHS_ON_SCREEN;
+        hiddenMonths.push({ supplier: supplier.supplier, count: hiddenCount });
         shown = months.slice(months.length - MAX_MONTHS_ON_SCREEN);
       }
       supplierMonths.push({
@@ -2193,12 +2194,19 @@
         months: shown,
       });
     });
-    if (monthsHidden) {
-      notes.push(
-        monthsHidden +
-          (monthsHidden === 1 ? " older month is" : " older months are") +
-          " in the summary CSV."
-      );
+    var monthNote = "";
+    if (hiddenMonths.length) {
+      monthNote =
+        listAnd(
+          hiddenMonths.map(function (item) {
+            return (
+              item.supplier +
+              " has " +
+              item.count +
+              (item.count === 1 ? " older month" : " older months")
+            );
+          })
+        ) + " in the summary CSV. The latest 24 months are shown here.";
     }
 
     var lineBody = [LINES_HEADER.join(",")];
@@ -2260,7 +2268,7 @@
       months: monthRows,
       allMonths: monthRows,
       supplierMonths: supplierMonths,
-      monthsHidden: monthsHidden,
+      monthNote: monthNote,
       freight: freightRows,
       freightNote: freightRows.length
         ? "Freight performance is separate. It does not change a supplier's DIFOT."

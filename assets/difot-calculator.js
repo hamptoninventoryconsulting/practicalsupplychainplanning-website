@@ -224,12 +224,9 @@
     $("df-supplier-months").innerHTML = (result.supplierMonths || [])
       .map(monthTable)
       .join("");
-    $("df-month-note").hidden = !result.monthsHidden;
-    $("df-month-note").textContent = result.monthsHidden
-      ? result.monthsHidden +
-        (result.monthsHidden === 1 ? " older month is" : " older months are") +
-        " in the summary CSV."
-      : "";
+    var monthNote = result.monthNote || "";
+    $("df-month-note").hidden = !monthNote;
+    $("df-month-note").textContent = monthNote;
 
     $("df-output").hidden = false;
     $("df-gate").hidden = false;

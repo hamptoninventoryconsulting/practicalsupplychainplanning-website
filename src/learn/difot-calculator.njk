@@ -7,9 +7,9 @@
   "nav": "learn",
   "permalink": "/learn/difot-calculator/",
   "scripts": [
-    "/assets/difot-engine.js?v=9",
+    "/assets/difot-engine.js?v=10",
     "/assets/sim-results-form.js?v=7",
-    "/assets/difot-calculator.js?v=2"
+    "/assets/difot-calculator.js?v=3"
   ]
 }
 ---
@@ -41,7 +41,9 @@
             <p>
               In full usually works on a sliding scale. If you order 10, you need
               all 10 for a hit. If you order 10,000, 9,900 might reasonably count
-              as a hit. Agree the allowance with each supplier.
+              as a hit. Agree the allowance with each supplier. The percentage on
+              this page applies to the whole file. Rerun with a different
+              percentage to check one supplier.
             </p>
             <p>
               DIFOT also shows whether agreed lead times are real. If the agreed
@@ -169,8 +171,9 @@
           <p class="sim-meta">
             Leave the measure dates blank to use the earliest and latest required
             dates in the file. Year-month-day dates are always read as written.
-            The shortfall is one percentage, applied to every line. Raise days
-            early allowed to make an early delivery count as on time.
+            The shortfall is one percentage for the whole file. Rerun with a
+            different percentage to check one supplier. Raise days early
+            allowed to make an early delivery count as on time.
           </p>
           <p id="df-date-line" class="sim-meta" hidden></p>
         </section>

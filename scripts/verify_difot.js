@@ -180,6 +180,43 @@ assert.deepStrictEqual(
   }),
   ["2026-03:1", "2026-04:1"]
 );
+assert.strictEqual(months.monthNote, "");
+assert.doesNotMatch(months.notes.join(" "), /older month/);
+function monthRowsFor(supplier, count, year, month) {
+  const rows = [];
+  for (let i = 0; i < count; i += 1) {
+    const date = new Date(Date.UTC(year, month - 1 + i, 10));
+    const iso = date.toISOString().slice(0, 10);
+    rows.push("PO" + i + "," + supplier + ",SKU" + i + ",10," + iso + "," + iso + ",10,,,");
+  }
+  return rows;
+}
+const manyMonths = run(monthRowsFor("Alpha", 25, 2024, 1).concat(monthRowsFor("Beta", 26, 2024, 1)), {
+  asAt: "2026-10-14",
+});
+assert.strictEqual(manyMonths.ok, true, JSON.stringify(manyMonths.errors));
+function shownMonths(result, supplier) {
+  return result.supplierMonths.filter(function (group) {
+    return group.supplier === supplier;
+  })[0].months;
+}
+assert.strictEqual(shownMonths(manyMonths, "Alpha").length, 24);
+assert.strictEqual(shownMonths(manyMonths, "Alpha")[0].month, "2024-02");
+assert.strictEqual(shownMonths(manyMonths, "Alpha")[23].month, "2026-01");
+assert.strictEqual(shownMonths(manyMonths, "Beta").length, 24);
+assert.strictEqual(shownMonths(manyMonths, "Beta")[0].month, "2024-03");
+assert.strictEqual(shownMonths(manyMonths, "Beta")[23].month, "2026-02");
+assert.strictEqual(
+  manyMonths.monthNote,
+  "Alpha has 1 older month and Beta has 2 older months in the summary CSV. The latest 24 months are shown here."
+);
+assert.doesNotMatch(manyMonths.notes.join(" "), /older month/);
+assert.match(manyMonths.summaryCsv, /Supplier-Month,Alpha,2024-01,/);
+assert.match(manyMonths.summaryCsv, /Supplier-Month,Beta,2024-01,/);
+const exactMonths = run(monthRowsFor("Alpha", 24, 2024, 1), { asAt: "2026-10-14" });
+assert.strictEqual(exactMonths.monthNote, "");
+assert.strictEqual(shownMonths(exactMonths, "Alpha").length, 24);
+assert.strictEqual(shownMonths(exactMonths, "Alpha")[0].month, "2024-01");
 const ranged = run(
   ["1,Alpha,IN,10,2026-03-10,2026-03-10,10,,,", "2,Alpha,OUT,10,2026-01-10,2026-01-10,10,,,"],
   { measureFrom: "2026-03-01", measureTo: "2026-03-31" }
@@ -756,6 +793,8 @@ assert.strictEqual(sample.counts.lines, 393);
 assert.strictEqual(sample.counts.suppliers, 5);
 assert.strictEqual(sample.counts.purchaseOrders, 50);
 assert.strictEqual(sample.summaryLine, "393 lines measured. 5 suppliers. 50 purchase orders.");
+assert.strictEqual(sample.monthNote, "");
+assert.doesNotMatch(sample.notes.join(" "), /older month/);
 assert.doesNotMatch(sample.summaryCsv, /^Overall,/m);
 assert.doesNotMatch(sample.summaryCsv, /^Month,/m);
 assert.doesNotMatch(sample.summaryLine, /DIFOT /);
@@ -930,14 +969,16 @@ assert.match(page, /leave Received Qty blank/);
 assert.match(page, /handover date is after the arrival date/);
 assert.match(page, /Freight days use only the rows that have arrived/);
 assert.match(page, /rest of the ordered quantity/);
-assert.match(page, /difot-engine\.js\?v=9/);
-assert.match(page, /difot-calculator\.js\?v=2/);
+assert.match(page, /difot-engine\.js\?v=10/);
+assert.match(page, /difot-calculator\.js\?v=3/);
 assert.match(page, /<summary>What DIFOT is and why it matters<\/summary>/);
 assert.match(page, /<summary>Your files<\/summary>/);
 assert.match(page, /<summary>How the calculation works<\/summary>/);
 assert.match(page, /Delivered In Full, On Time/);
 assert.match(page, /sliding scale/);
 assert.match(page, /Agree the allowance with each supplier/);
+assert.match(page, /percentage on\s+this page applies to the whole file/);
+assert.match(page, /Rerun with a\s+different\s+percentage to check one supplier/);
 assert.match(page, /agreed\s+lead time is 3 weeks/);
 assert.match(page, /look up Incoterms/);
 assert.match(page, /ready for shipping on the agreed\s+date/);
@@ -959,6 +1000,8 @@ assert.doesNotMatch(ui, /Xero|ERP|Stock Planner|Demand Planner|coming soon/i);
 assert.match(ui, /formId:\s*"difot-calculator"/);
 assert.match(ui, /return \{ kind: "difot-calculator" \}/);
 assert.doesNotMatch(ui, /buildSummary:[\s\S]*?return \{[^}]*supplier/);
+assert.match(ui, /result\.monthNote/);
+assert.doesNotMatch(ui, /older months are/);
 assert.match(article, /<a href="\/learn\/difot-calculator\/">Calculate your suppliers' DIFOT free<\/a>/);
 assert.doesNotMatch(article, /Stock Planner|Xero/);
 const sentPage = fs.readFileSync(path.join(SITE, "learn", "difot-calculator", "sent", "index.html"), "utf8");
