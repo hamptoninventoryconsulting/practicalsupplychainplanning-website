@@ -610,7 +610,7 @@
         "Some SKUs contain only digits. A spreadsheet can drop zeros from the front of a code, so 00123 can become 123. If your codes use leading zeros, set that column to text before you export."
       );
     }
-    if (slashDates > 0 && ambiguousDates === slashDates) {
+    if (slashDates > 0 && ambiguousDates === slashDates && !dateStops.length) {
       warnings.push(
         "Every day/month date in this file could be read the other way. Check the date setting against the first date line."
       );

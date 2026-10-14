@@ -31,7 +31,7 @@ assert.match(partial, /async><\/script>/);
 assert.doesNotMatch(partial, /api\.js[^>]*defer/);
 assert.match(
   fs.readFileSync(path.join(ROOT, "src", "learn", "safety-stock-simulator.njk"), "utf8"),
-  /sim-results-form\.js\?v=6/
+  /sim-results-form\.js\?v=7/
 );
 
 function Element(spec) {
@@ -354,5 +354,49 @@ const starterFrame = starterForm.built.root.children.find(function (child) {
 });
 assert.strictEqual(starterFrame.src, "/learn/starter-forecast/sent/");
 assert.strictEqual(starterUnlocked, true);
+
+let difotUnlocked = false;
+const difotForm = load(
+  { pscpTurnstileQueue: [] },
+  {
+    formId: "difot-calculator",
+    buildSummary: function () {
+      return { kind: "difot-calculator" };
+    },
+    onSent: function () {
+      difotUnlocked = true;
+    },
+    wordingVersion: "difot-calculator-v1",
+    wordingRequired: "Email me to unlock the download.",
+    sentUrl: "/learn/difot-calculator/sent/",
+    sentMessage: "Sent. The download is unlocked on this page. Check your inbox (and spam folder).",
+  }
+);
+difotForm.api.show();
+const difotState = {
+  readyCalls: 0,
+  renders: [],
+  resets: [],
+  token: "",
+  reenter: false,
+  options: null,
+  widget: null,
+};
+difotForm.sandbox.window.turnstile = turnstileStub(difotState);
+difotForm.sandbox.window.pscpTurnstileQueue[0]();
+assert.strictEqual(difotForm.built.form.querySelector('[name="articles"]').checked, false);
+difotForm.built.email.value = "difot@example.com";
+difotForm.built.results.checked = true;
+difotState.token = "difot-token-1234";
+difotState.renders[0].callback(difotState.token);
+difotForm.built.form.listeners.submit({ preventDefault: function () {} });
+await wait(20);
+assert.strictEqual(difotForm.posts.length, 1);
+const difotBody = JSON.parse(difotForm.posts[0].body);
+assert.strictEqual(difotBody.formId, "difot-calculator");
+assert.deepStrictEqual(difotBody.summary, { kind: "difot-calculator" });
+assert.strictEqual(difotBody.articlesConsent, false);
+assert.strictEqual(difotBody.wordingVersion, "difot-calculator-v1");
+assert.strictEqual(difotUnlocked, true);
 
 console.log("Turnstile form load checks OK.");

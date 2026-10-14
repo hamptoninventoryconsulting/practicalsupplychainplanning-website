@@ -12,6 +12,8 @@
   var fileName = "";
   var current = null;
   var unlocked = false;
+  var fileToken = 0;
+  var sentToken = 0;
   var resultsForm = { show: function () {}, hide: function () {} };
 
   function $(id) {
@@ -207,10 +209,14 @@
         if (!current || !current.ok) {
           return null;
         }
+        sentToken = fileToken;
         return { kind: "starter-forecast" };
       },
       onSent: function () {
-        if (!current || !current.ok) {
+        if (!current || !current.ok || sentToken !== fileToken) {
+          if (current && current.ok) {
+            resultsForm.show();
+          }
           return;
         }
         unlocked = true;
@@ -220,6 +226,7 @@
 
     $("sf-file").addEventListener("change", function () {
       var file = $("sf-file").files && $("sf-file").files[0];
+      fileToken += 1;
       fileText = "";
       fileName = "";
       current = null;

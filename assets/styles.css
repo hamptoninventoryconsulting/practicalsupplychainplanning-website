@@ -872,6 +872,11 @@ main {
   white-space: pre-wrap;
 }
 
+.sim-table th.difot-text,
+.sim-table td.difot-text {
+  text-align: left;
+}
+
 .sf-subhead {
   margin: 1.5rem 0 0.75rem;
   font-size: 1.05rem;

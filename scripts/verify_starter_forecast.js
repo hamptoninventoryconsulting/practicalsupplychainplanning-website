@@ -347,6 +347,11 @@ const isoAndClear = run([line("2026-03-30", "A", 4), line("13/04/2026", "B", 4)]
 assert.strictEqual(isoAndClear.ok, true, JSON.stringify(isoAndClear.errors));
 assert.strictEqual(warnsOtherWay(isoAndClear), false);
 
+const stopAndAmbiguous = run([line("03/04/2026", "A", 4), line("10/13/2026", "B", 4)]);
+assert.strictEqual(stopAndAmbiguous.ok, false);
+assert.strictEqual(warnsOtherWay(stopAndAmbiguous), false);
+assert.match(stopAndAmbiguous.dateLine, /first date 03\/04\/2026 read as 3 April 2026/);
+
 const semicolons = run([], {
   text: "order_id;order_datetime;sku;qty;fulfillment_location\n1;2026-03-30;A;4;Main\n",
 });
@@ -441,9 +446,9 @@ assert.match(page, /id="sf-downloads" hidden/);
 assert.match(page, /id="sf-results" hidden/);
 assert.match(page, /name="articles"/);
 assert.doesNotMatch(page, /name="articles"[^>]*checked/);
-assert.match(page, /src="\/assets\/starter-forecast-engine\.js\?v=2"/);
-assert.match(page, /src="\/assets\/sim-results-form\.js\?v=6"/);
-assert.match(page, /src="\/assets\/starter-forecast\.js\?v=2"/);
+assert.match(page, /src="\/assets\/starter-forecast-engine\.js\?v=3"/);
+assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
+assert.match(page, /src="\/assets\/starter-forecast\.js\?v=3"/);
 assert.match(page, /Email me to unlock the download/);
 assert.doesNotMatch(page, /results of the scenario/);
 assert.match(ui, /Email me to unlock the download/);
@@ -579,6 +584,9 @@ function settingsChangeKeepsDownload() {
   assert.strictEqual(ids["sf-downloads"].hidden, true);
   assert.strictEqual(ids["sf-date-line"].hidden, false);
   assert.match(ids["sf-date-line"].textContent, /first date 2026-03-30 read as 30 March 2026/);
+  const sentSummary = attached.buildSummary();
+  assert.strictEqual(sentSummary.kind, "starter-forecast");
+  assert.deepStrictEqual(Object.keys(sentSummary), ["kind"]);
   attached.onSent();
   assert.strictEqual(ids["sf-downloads"].hidden, false);
   ids["sf-horizon"].value = "8";
@@ -600,6 +608,11 @@ function settingsChangeKeepsDownload() {
   ids["sf-file"].listeners.change();
   assert.strictEqual(ids["sf-downloads"].hidden, true);
   assert.strictEqual(shows, 2);
+  attached.buildSummary();
+  ids["sf-file"].listeners.change();
+  assert.strictEqual(ids["sf-downloads"].hidden, true);
+  attached.onSent();
+  assert.strictEqual(ids["sf-downloads"].hidden, true);
 }
 
 settingsChangeKeepsDownload();

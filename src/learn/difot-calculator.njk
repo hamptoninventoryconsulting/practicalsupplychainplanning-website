@@ -1,0 +1,267 @@
+---json
+{
+  "layout": "layouts/simulator.njk",
+  "title": "DIFOT Calculator — Practical Supply Chain Planning",
+  "description": "See which supplier lines were on time and in full. The files stay in your browser and are never uploaded.",
+  "canonical": "https://practicalsupplychainplanning.com/learn/difot-calculator/",
+  "nav": "learn",
+  "permalink": "/learn/difot-calculator/",
+  "scripts": [
+    "/assets/difot-engine.js?v=1",
+    "/assets/sim-results-form.js?v=7",
+    "/assets/difot-calculator.js?v=1"
+  ]
+}
+---
+<h1 class="page-title">DIFOT Calculator</h1>
+      <p class="tagline">
+        On time and in full, for each purchase order line.
+      </p>
+
+      <div class="sim-app" id="df-app">
+        <div id="df-errors" class="sim-error" hidden role="alert"></div>
+        <div id="df-warnings" class="sim-warning" hidden></div>
+
+        <section class="card">
+          <h2 class="card__title">What this does</h2>
+          <div class="content">
+            <p>
+              This page reads a purchase order lines CSV and an optional supplier
+              list. It works out which lines were on time, which were in full,
+              and which were both. That last figure is DIFOT.
+            </p>
+            <p>
+              The files are processed in this browser and are never sent. The
+              confirmation email does not include your suppliers or orders.
+            </p>
+            <p>A line is scored like this:</p>
+            <ul>
+              <li>On time compares the receipt date with the required date. A line that is too early is a miss, labelled Early.</li>
+              <li>In full compares the accepted quantity with the ordered quantity. Accepted quantity is the received quantity minus any damaged or rejected quantity.</li>
+              <li>DIFOT is the lines that are both on time and in full. It is at most the lower of those two figures. It is not one multiplied by the other.</li>
+              <li>Lines are counted, not whole orders and not quantity.</li>
+              <li>An unreceived line that is overdue on the as-at date counts as a miss. A line that is not due yet is left out.</li>
+              <li>If the same PO number and SKU appears more than once, the rows are combined. Quantities are added and the latest receipt date is used. The ordered quantity is the largest one in the group.</li>
+              <li>When you arrange the freight, the receipt date is the ship date. Freight is measured separately, from that date to the arrived date, and it does not change the supplier's DIFOT.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Settings</h2>
+          <div class="sim-grid">
+            <label class="sim-field" for="df-date-order">
+              Date format
+              <select id="df-date-order">
+                <option value="dmy" selected>Day/Month/Year</option>
+                <option value="mdy">Month/Day/Year</option>
+              </select>
+            </label>
+            <label class="sim-field" for="df-days-early">
+              Days early allowed
+              <input id="df-days-early" type="number" min="0" max="60" step="1" value="2" />
+            </label>
+            <label class="sim-field" for="df-days-late">
+              Days late allowed
+              <input id="df-days-late" type="number" min="0" max="60" step="1" value="0" />
+            </label>
+            <label class="sim-field" for="df-shortfall">
+              Shortfall allowed (%)
+              <input id="df-shortfall" type="number" min="0" max="50" step="1" value="0" />
+            </label>
+            <label class="sim-field" for="df-over">
+              Over-delivery counts as in full
+              <select id="df-over">
+                <option value="yes" selected>Yes</option>
+                <option value="no">No</option>
+              </select>
+            </label>
+            <label class="sim-field" for="df-as-at">
+              As at date
+              <input id="df-as-at" type="date" />
+            </label>
+            <label class="sim-field" for="df-measure-from">
+              Measure lines due from
+              <input id="df-measure-from" type="date" />
+            </label>
+            <label class="sim-field" for="df-measure-to">
+              Measure lines due to
+              <input id="df-measure-to" type="date" />
+            </label>
+          </div>
+          <p class="sim-meta">
+            Leave the measure dates blank to use the earliest and latest required
+            dates in the file. Year-month-day dates are always read as written.
+            The shortfall is applied to each line. Raise days early allowed to
+            make an early receipt count as on time.
+          </p>
+          <p id="df-date-line" class="sim-meta" hidden></p>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Files</h2>
+          <div class="content">
+            <p>
+              Export a CSV from your accounting or purchasing system. Extra
+              columns are ignored. SKUs and PO numbers are kept as text, so
+              leading zeros stay.
+            </p>
+            <p>
+              The purchase order file needs PO Number, Supplier, SKU, Ordered
+              Qty, Required Date, Receipt Date, and Received Qty. Damaged Qty,
+              Damaged Reason, and Arrived Date are optional.
+            </p>
+            <p>
+              The supplier list is optional. Without it, every supplier is
+              treated as Supplier delivers and freight is not shown. The list
+              needs Supplier and Freight arranged by. Use Supplier or Me.
+              Expected transit days is a whole number from 0 to 365, and it is
+              used only when you arrange the freight.
+            </p>
+            <p>
+              Missing dates? Add them from your forwarder's bill of lading or tracking before you upload.
+              If a supplier bill date is all you have, you can use it as the receipt date.
+            </p>
+            <p>
+              Limits: purchase order file CSV only, 10 MB, 200,000 rows.
+              Supplier list CSV only, 1 MB, 5,000 suppliers.
+              <a href="/assets/template_DIFOT_PO_Lines.csv" download="template_DIFOT_PO_Lines.csv">Download template_DIFOT_PO_Lines.csv</a>.
+              <a href="/assets/template_DIFOT_Suppliers.csv" download="template_DIFOT_Suppliers.csv">Download template_DIFOT_Suppliers.csv</a>.
+            </p>
+          </div>
+          <div class="sim-grid">
+            <label class="sim-field" for="df-po-file">
+              Purchase order lines CSV
+              <input id="df-po-file" type="file" accept=".csv,text/csv" />
+            </label>
+            <label class="sim-field" for="df-supplier-file">
+              Supplier list CSV, optional
+              <input id="df-supplier-file" type="file" accept=".csv,text/csv" />
+            </label>
+          </div>
+          <p id="df-po-name" class="sim-meta" hidden></p>
+          <p id="df-supplier-name" class="sim-meta" hidden></p>
+        </section>
+
+        <section class="card" id="df-output" hidden>
+          <h2 class="card__title">Preview</h2>
+          <p id="df-summary-line" class="sim-meta"></p>
+          <div class="sim-metrics" id="df-tiles">
+            <div class="sim-metric">
+              <div class="sim-metric__label">DIFOT</div>
+              <div class="sim-metric__value" id="df-difot"></div>
+            </div>
+            <div class="sim-metric">
+              <div class="sim-metric__label">On time</div>
+              <div class="sim-metric__value" id="df-on-time"></div>
+            </div>
+            <div class="sim-metric">
+              <div class="sim-metric__label">In full</div>
+              <div class="sim-metric__value" id="df-in-full"></div>
+            </div>
+            <div class="sim-metric">
+              <div class="sim-metric__label">Lines measured</div>
+              <div class="sim-metric__value" id="df-lines"></div>
+            </div>
+          </div>
+          <h3 class="sf-subhead">Settings used</h3>
+          <ul id="df-settings" class="sim-meta"></ul>
+          <div id="df-notes" class="sim-meta" hidden></div>
+
+          <h3 class="sf-subhead">By supplier</h3>
+          <p class="sim-meta">Worst DIFOT first. Percentages are of the lines measured for that supplier.</p>
+          <div class="sim-table-wrap">
+            <table class="sim-table">
+              <caption class="visually-hidden">DIFOT by supplier</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Supplier</th>
+                  <th scope="col" class="difot-text">Freight arranged by</th>
+                  <th scope="col">Lines</th>
+                  <th scope="col">On time</th>
+                  <th scope="col">In full</th>
+                  <th scope="col">DIFOT</th>
+                  <th scope="col">Late lines</th>
+                  <th scope="col">Short lines</th>
+                  <th scope="col">Avg days late</th>
+                </tr>
+              </thead>
+              <tbody id="df-supplier-body"></tbody>
+            </table>
+          </div>
+
+          <h3 class="sf-subhead">By month</h3>
+          <p class="sim-meta">Month of the required date. Up to 24 months are shown here.</p>
+          <p id="df-month-note" class="sim-meta" hidden></p>
+          <div class="sim-table-wrap">
+            <table class="sim-table">
+              <caption class="visually-hidden">DIFOT by month of required date</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Month</th>
+                  <th scope="col">Lines</th>
+                  <th scope="col">On time</th>
+                  <th scope="col">In full</th>
+                  <th scope="col">DIFOT</th>
+                </tr>
+              </thead>
+              <tbody id="df-month-body"></tbody>
+            </table>
+          </div>
+
+          <div id="df-freight-wrap" hidden>
+            <h3 class="sf-subhead">Freight you arrange</h3>
+            <p id="df-freight-note" class="sim-meta"></p>
+            <div class="sim-table-wrap">
+              <table class="sim-table">
+                <caption class="visually-hidden">Freight performance for suppliers where you arrange freight</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Supplier</th>
+                    <th scope="col">Lines</th>
+                    <th scope="col">Freight on time</th>
+                    <th scope="col">Average transit days</th>
+                    <th scope="col">Longest transit days</th>
+                    <th scope="col" class="difot-text">Note</th>
+                  </tr>
+                </thead>
+                <tbody id="df-freight-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" id="df-gate" hidden>
+          <h2 class="card__title">Download the files</h2>
+          <div class="content">
+            <p>
+              The preview above is ready. Enter your email to download the
+              summary and the line detail. The email is a confirmation only.
+              It does not include your suppliers or orders.
+            </p>
+            <p>
+              The articles box starts unticked. The download does not depend
+              on ticking it.
+            </p>
+          </div>
+        </section>
+
+        {% set resultsId = "df-results" %}
+        {% set resultsTitle = "Email me to unlock the download" %}
+        {% set resultsConsentText = "Email me to unlock the download." %}
+        {% set resultsSentText = "Sent. The download is unlocked on this page. Check your inbox (and spam folder)." %}
+        {% include "partials/sim-results-form.njk" %}
+
+        <section class="card" id="df-downloads" hidden>
+          <h2 class="card__title">Your files</h2>
+          <p class="sim-meta">
+            Both files are built in this browser. Dates are year-month-day.
+            The summary lists the settings and the roll-ups. The line file has
+            every line, including lines that were not counted.
+          </p>
+          <div class="sim-actions">
+            <button type="button" id="df-download-summary" class="sim-button">Download summary CSV</button>
+            <button type="button" id="df-download-lines" class="sim-button sim-button--secondary">Download line detail CSV</button>
+          </div>
+        </section>
+      </div>

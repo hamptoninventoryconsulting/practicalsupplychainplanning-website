@@ -86,6 +86,7 @@ CORE_PAGES = (
     "/learn/safety-stock-simulator/",
     "/learn/safety-stock-simulator/own-data/",
     "/learn/starter-forecast/",
+    "/learn/difot-calculator/",
     "/products/",
     "/products/practical-stock-planner/",
     "/terms/",
@@ -105,6 +106,7 @@ CANONICAL_PAGES = (
         f"{SITE_ORIGIN}/learn/safety-stock-simulator/own-data/",
     ),
     ("learn/starter-forecast/index.html", f"{SITE_ORIGIN}/learn/starter-forecast/"),
+    ("learn/difot-calculator/index.html", f"{SITE_ORIGIN}/learn/difot-calculator/"),
     ("products/index.html", f"{SITE_ORIGIN}/products/"),
     ("products/practical-stock-planner/index.html", f"{SITE_ORIGIN}/products/practical-stock-planner/"),
     ("terms/index.html", f"{SITE_ORIGIN}/terms/"),
@@ -1120,6 +1122,19 @@ def verify_seller(errors: list[str]) -> None:
             fail(f"{relative} is missing the seller name", errors)
 
 
+def verify_difot_sent(errors: list[str]) -> None:
+    sent = SITE / "learn" / "difot-calculator" / "sent" / "index.html"
+    if not sent.is_file():
+        fail("/learn/difot-calculator/sent/ is missing from the build", errors)
+        return
+    text = sent.read_text(encoding="utf-8")
+    if not NOINDEX_RE.search(text):
+        fail("/learn/difot-calculator/sent/ must be noindex", errors)
+    sitemap = SITEMAP_PATH.read_text(encoding="utf-8") if SITEMAP_PATH.is_file() else ""
+    if "/learn/difot-calculator/sent/" in sitemap:
+        fail("/learn/difot-calculator/sent/ must not appear in sitemap.xml", errors)
+
+
 def verify_simulator_assets(errors: list[str]) -> None:
     scenarios = SITE / "learn" / "safety-stock-simulator" / "scenarios.json"
     if not scenarios.is_file():
@@ -1149,6 +1164,7 @@ def main() -> int:
         verify_stylesheet_version(errors, version)
         verify_listing_fix(errors, posts)
         verify_simulator_assets(errors)
+        verify_difot_sent(errors)
         verify_seller(errors)
     except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
         fail(str(exc), errors)

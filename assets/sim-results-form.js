@@ -258,7 +258,10 @@
           return options.buildSummary();
         })
         .then(function (summary) {
-          if (!summary || (summary.kind !== "starter-forecast" && !summary.reopenUrl)) {
+          if (
+            !summary ||
+            (summary.kind !== "starter-forecast" && summary.kind !== "difot-calculator" && !summary.reopenUrl)
+          ) {
             throw new Error("summary");
           }
           return fetch("/api/results-email", {
