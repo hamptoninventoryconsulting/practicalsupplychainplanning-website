@@ -137,7 +137,7 @@
           "<tr><td class=\"sim-sku\">" +
           escapeHtml(row.sku) +
           "</td><td>" +
-          escapeHtml(row.qty.toFixed(2)) +
+          escapeHtml(String(row.qty)) +
           "</td><td>" +
           escapeHtml(row.week) +
           "</td></tr>"

@@ -7,15 +7,15 @@
   "nav": "learn",
   "permalink": "/learn/starter-forecast/",
   "scripts": [
-    "/assets/starter-forecast-engine.js?v=7",
+    "/assets/starter-forecast-engine.js?v=8",
     "/assets/sim-results-form.js?v=7",
-    "/assets/starter-forecast.js?v=3"
+    "/assets/starter-forecast.js?v=4"
   ]
 }
 ---
 <h1 class="page-title">Starter Forecast</h1>
       <p class="tagline">
-        A 12-week average of your sales, repeated for each week of the plan.
+        A 12-week average of your sales, written as whole units for each week of the plan.
       </p>
 
       <div class="sim-app" id="sf-app">
@@ -27,8 +27,8 @@
           <div class="content">
             <p>
               This page reads a sales history CSV and writes a weekly forecast.
-              Each SKU gets one average, and that average is repeated for every
-              forecast week.
+              Each SKU gets one average. Weekly quantities are whole numbers.
+              Slow sellers get 1 unit every few weeks so the total matches the average.
             </p>
             <p>
               The file is processed in this browser and is never sent. The
@@ -40,6 +40,7 @@
               <li>The history window is the 12 complete weeks before the plan start week. Sales in the plan start week or later are left out.</li>
               <li>A SKU's first sale week is the first week with net sales above zero. Weeks before that are left out. Zero weeks after that are counted. Weeks used is that count, capped at 12.</li>
               <li>The average is the total of those weeks divided by weeks used. A negative average is set to 0 and flagged. The result is rounded to 2 decimals.</li>
+              <li>Weekly quantities are whole numbers. Slow sellers get 1 unit every few weeks so the total matches the average. The summary keeps that average, to 2 decimals, next to weeks used, so you can check it with a calculator.</li>
             </ul>
           </div>
         </section>
@@ -48,7 +49,7 @@
           <h2 class="card__title">What a 12-week average can't do</h2>
           <div class="content">
             <ul>
-              <li>A rise, a fall, or a seasonal peak stays outside this average. Every forecast week gets the same number.</li>
+              <li>A rise, a fall, or a seasonal peak stays outside this average. The rate does not climb or fall from week to week.</li>
               <li>A week when you were out of stock still shows only what was sold.</li>
               <li>A new SKU uses the weeks since its first sale, so a short run of sales can move the average a lot.</li>
               <li>One unusual week stays in the average until it falls out of the 12 weeks.</li>
@@ -113,7 +114,7 @@
           <div id="sf-notes" class="sim-meta" hidden></div>
 
           <h3 class="sf-subhead">Summary</h3>
-          <p class="sim-meta">Weeks used and the flags are listed here, and in the summary CSV.</p>
+          <p class="sim-meta">The weekly forecast column is the average, to 2 decimals, so you can check it with a calculator. Weeks used and the flags are listed here, and in the summary CSV.</p>
           <div class="sim-table-wrap">
             <table class="sim-table">
               <caption class="visually-hidden">Weekly forecast, weeks used, and flags by SKU</caption>
@@ -132,6 +133,7 @@
           </div>
 
           <h3 class="sf-subhead">First forecast weeks</h3>
+          <p class="sim-meta">Weekly quantities are whole numbers. Slow sellers get 1 unit every few weeks so the total matches the average.</p>
           <p id="sf-preview-note" class="sim-meta"></p>
           <div class="sim-table-wrap">
             <table class="sim-table">
@@ -173,7 +175,9 @@
           <h2 class="card__title">Your files</h2>
           <p class="sim-meta">
             Both files are built in this browser. The forecast file has one
-            row per SKU per week. The summary file has weeks used and the flags.
+            row per SKU per week, and the quantity is a whole number. The
+            summary file keeps the average, to 2 decimals, next to weeks used,
+            plus the flags.
           </p>
           <div class="sim-actions">
             <button type="button" id="sf-download-forecast" class="sim-button">Download forecast CSV</button>
