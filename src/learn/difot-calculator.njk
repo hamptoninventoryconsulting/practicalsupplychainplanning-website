@@ -9,7 +9,7 @@
   "scripts": [
     "/assets/difot-engine.js?v=10",
     "/assets/sim-results-form.js?v=7",
-    "/assets/difot-calculator.js?v=3"
+    "/assets/difot-calculator.js?v=5"
   ]
 }
 ---
@@ -218,35 +218,9 @@
           <div id="df-notes" class="sim-meta" hidden></div>
 
           <h3 class="sf-subhead">By supplier</h3>
-          <p class="sim-meta">Worst DIFOT first. Percentages are of the lines measured for that supplier. Freight figures are filled in only where you arrange the freight.</p>
-          <div class="sim-table-wrap">
-            <table class="sim-table">
-              <caption class="visually-hidden">DIFOT by supplier</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Supplier</th>
-                  <th scope="col" class="difot-text">Freight arranged by</th>
-                  <th scope="col">Lines</th>
-                  <th scope="col">On time</th>
-                  <th scope="col">In full</th>
-                  <th scope="col">DIFOT</th>
-                  <th scope="col">Late lines</th>
-                  <th scope="col">Short lines</th>
-                  <th scope="col">Avg days late</th>
-                  <th scope="col">Freight on time</th>
-                  <th scope="col">Average transit days</th>
-                  <th scope="col">Longest transit days</th>
-                  <th scope="col" class="difot-text">Freight note</th>
-                </tr>
-              </thead>
-              <tbody id="df-supplier-body"></tbody>
-            </table>
-          </div>
-
-          <h3 class="sf-subhead">By month</h3>
-          <p class="sim-meta">Month of the required date, for each supplier. Up to 24 months are shown for each supplier.</p>
+          <p class="sim-meta">Worst DIFOT first. Select a supplier to see on time, in full, freight, and each month.</p>
           <p id="df-month-note" class="sim-meta" hidden></p>
-          <div id="df-supplier-months"></div>
+          <div id="df-supplier-cards" class="difot-suppliers"></div>
         </section>
 
         <section class="card" id="df-gate" hidden>
