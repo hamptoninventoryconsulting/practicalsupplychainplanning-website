@@ -76,8 +76,34 @@
     dateLine.textContent = text;
   }
 
+  var MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
   function pctCell(pct, count, total) {
     return escapeHtml(pct) + "% (" + escapeHtml(String(count)) + " of " + escapeHtml(String(total)) + ")";
+  }
+
+  function monthLabel(key) {
+    var match = String(key || "").match(/^(\d{4})-(\d{2})$/);
+    if (!match) {
+      return escapeHtml(key);
+    }
+    var index = Number(match[2]) - 1;
+    if (index < 0 || index > 11) {
+      return escapeHtml(key);
+    }
+    return MONTH_LABELS[index] + " " + match[1];
+  }
+
+  function pctStack(pct, count, total) {
+    return (
+      "<span class=\"difot-month__pct\">" +
+      escapeHtml(pct) +
+      "%</span><span class=\"difot-month__count\">" +
+      escapeHtml(String(count)) +
+      " of " +
+      escapeHtml(String(total)) +
+      "</span>"
+    );
   }
 
   function fact(label, value) {
@@ -95,9 +121,17 @@
     return value ? escapeHtml(value) : "None";
   }
 
+  function freightOnTimeStack(stats) {
+    if (!stats || !stats.onTimePct) {
+      return "Not measurable";
+    }
+    return pctStack(stats.onTimePct, stats.onTimeLines, stats.measurable);
+  }
+
   function monthTable(group) {
+    var wide = group.mode === "me";
     var freightHead = "";
-    if (group.mode === "me") {
+    if (wide) {
       freightHead =
         "<th scope=\"col\">Freight on time</th>" +
         "<th scope=\"col\">Average transit days</th>" +
@@ -107,12 +141,12 @@
     var body = (group.months || [])
       .map(function (row) {
         var freight = "";
-        if (group.mode === "me") {
+        if (wide) {
           var stats = row.freightStats;
           var notMeasured = stats ? String(stats.population - stats.measurable) : "0";
           freight =
             "<td>" +
-            freightOnTimeText(stats) +
+            freightOnTimeStack(stats) +
             "</td><td>" +
             plainNumber(stats && stats.averageTransit) +
             "</td><td>" +
@@ -122,16 +156,16 @@
             "</td>";
         }
         return (
-          "<tr><td>" +
-          escapeHtml(row.month) +
+          "<tr><td class=\"difot-month__label\">" +
+          monthLabel(row.month) +
           "</td><td>" +
           escapeHtml(String(row.lines)) +
           "</td><td>" +
-          pctCell(row.onTimePct, row.onTimeLines, row.lines) +
+          pctStack(row.onTimePct, row.onTimeLines, row.lines) +
           "</td><td>" +
-          pctCell(row.inFullPct, row.inFullLines, row.lines) +
+          pctStack(row.inFullPct, row.inFullLines, row.lines) +
           "</td><td>" +
-          pctCell(row.difotPct, row.difotLines, row.lines) +
+          pctStack(row.difotPct, row.difotLines, row.lines) +
           "</td><td>" +
           escapeHtml(String(row.lateLines)) +
           "</td><td>" +
@@ -145,9 +179,11 @@
       })
       .join("");
     return (
-      "<h3 class=\"sf-subhead\">By month</h3><p class=\"sim-meta\">Month of the required date.</p><div class=\"sim-table-wrap\"><table class=\"sim-table\"><caption class=\"visually-hidden\">DIFOT by month for " +
+      "<h3 class=\"sf-subhead\">By month</h3><p class=\"sim-meta\">Month of the required date.</p><div class=\"sim-table-wrap difot-month" +
+      (wide ? " difot-month--freight" : "") +
+      "\"><table class=\"sim-table\"><caption class=\"visually-hidden\">DIFOT by month for " +
       escapeHtml(group.supplier) +
-      "</caption><thead><tr><th scope=\"col\">Month</th><th scope=\"col\">Lines</th><th scope=\"col\">On time</th><th scope=\"col\">In full</th><th scope=\"col\">DIFOT</th><th scope=\"col\">Late lines</th><th scope=\"col\">Short lines</th><th scope=\"col\">Average days late</th>" +
+      "</caption><thead><tr><th scope=\"col\" class=\"difot-month__label\">Month</th><th scope=\"col\">Lines</th><th scope=\"col\">On time</th><th scope=\"col\">In full</th><th scope=\"col\">DIFOT</th><th scope=\"col\">Late lines</th><th scope=\"col\">Short lines</th><th scope=\"col\">Average days late</th>" +
       freightHead +
       "</tr></thead><tbody>" +
       body +
@@ -155,7 +191,7 @@
     );
   }
 
-  function supplierCard(row, group, index) {
+  function supplierCard(row, group, index, open) {
     var detailId = "df-supplier-detail-" + index;
     var facts =
       fact("On time", pctCell(row.onTimePct, row.onTimeLines, row.lines)) +
@@ -175,7 +211,11 @@
         "</dl>";
     }
     return (
-      "<article class=\"difot-supplier\"><button type=\"button\" class=\"difot-supplier__toggle\" aria-expanded=\"false\" aria-controls=\"" +
+      "<article class=\"difot-supplier\" data-supplier=\"" +
+      escapeHtml(row.supplier) +
+      "\"><button type=\"button\" class=\"difot-supplier__toggle\" aria-expanded=\"" +
+      (open ? "true" : "false") +
+      "\" aria-controls=\"" +
       detailId +
       "\"><span class=\"difot-supplier__name\">" +
       escapeHtml(row.supplier) +
@@ -189,7 +229,9 @@
       escapeHtml(row.freight) +
       "</span></button><div class=\"difot-supplier__detail\" id=\"" +
       detailId +
-      "\" hidden><dl class=\"difot-supplier__facts\">" +
+      "\"" +
+      (open ? "" : " hidden") +
+      "><dl class=\"difot-supplier__facts\">" +
       facts +
       "</dl>" +
       freight +
@@ -247,6 +289,26 @@
     URL.revokeObjectURL(url);
   }
 
+  function openSupplierNames() {
+    var root = $("df-supplier-cards");
+    var open = {};
+    if (!root || typeof root.querySelectorAll !== "function") {
+      return open;
+    }
+    var articles = root.querySelectorAll("article.difot-supplier");
+    Array.prototype.forEach.call(articles, function (article) {
+      var button = article.querySelector ? article.querySelector("button.difot-supplier__toggle") : null;
+      if (!button || button.getAttribute("aria-expanded") !== "true") {
+        return;
+      }
+      var name = article.getAttribute("data-supplier");
+      if (name) {
+        open[name] = true;
+      }
+    });
+    return open;
+  }
+
   function render(result) {
     $("df-errors").hidden = true;
     $("df-errors").innerHTML = "";
@@ -266,9 +328,10 @@
     (result.supplierMonths || []).forEach(function (group) {
       monthsBySupplier[group.supplier] = group;
     });
+    var openSuppliers = openSupplierNames();
     $("df-supplier-cards").innerHTML = result.suppliers
       .map(function (row, index) {
-        return supplierCard(row, monthsBySupplier[row.supplier], index);
+        return supplierCard(row, monthsBySupplier[row.supplier], index, openSuppliers[row.supplier]);
       })
       .join("");
     var monthNote = result.monthNote || "";

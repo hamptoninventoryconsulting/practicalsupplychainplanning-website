@@ -1171,6 +1171,61 @@ main {
   margin-top: 0.25rem;
 }
 
+.difot-month .sim-table {
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}
+
+.difot-month th,
+.difot-month td {
+  padding: 0.4rem 0.35rem;
+}
+
+.difot-month th {
+  font-size: 0.75rem;
+  line-height: 1.25;
+  vertical-align: bottom;
+}
+
+.difot-month__label {
+  white-space: nowrap;
+}
+
+.difot-month__pct,
+.difot-month__count {
+  display: block;
+}
+
+.difot-month__count {
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.difot-month--freight .sim-table {
+  width: 100%;
+  table-layout: auto;
+  font-size: 0.75rem;
+}
+
+.difot-month--freight th,
+.difot-month--freight td {
+  padding: 0.3rem 0.2rem;
+}
+
+.difot-month--freight th {
+  font-size: 0.6875rem;
+}
+
+.difot-month--freight .difot-month__label {
+  width: 1%;
+  overflow-wrap: normal;
+}
+
+.difot-month--freight .difot-month__pct,
+.difot-month--freight .difot-month__count {
+  white-space: nowrap;
+}
+
 .sim-note {
   margin: 0 0 1rem;
   font-size: 0.9375rem;

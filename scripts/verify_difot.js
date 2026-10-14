@@ -970,7 +970,10 @@ assert.match(page, /handover date is after the arrival date/);
 assert.match(page, /Freight days use only the rows that have arrived/);
 assert.match(page, /rest of the ordered quantity/);
 assert.match(page, /difot-engine\.js\?v=10/);
-assert.match(page, /difot-calculator\.js\?v=4/);
+assert.match(page, /difot-calculator\.js\?v=5/);
+const css = fs.readFileSync(path.join(ROOT, "assets", "styles.css"), "utf8");
+assert.match(css, /\.difot-month__label\s*\{[^}]*white-space:\s*nowrap/);
+assert.match(css, /\.difot-month--freight \.sim-table\s*\{[^}]*width:\s*100%/);
 assert.match(page, /<summary>What DIFOT is and why it matters<\/summary>/);
 assert.match(page, /<summary>Your files<\/summary>/);
 assert.match(page, /<summary>How the calculation works<\/summary>/);
@@ -1062,7 +1065,30 @@ function settingsKeepDownload() {
   ids["df-measure-to"] = element("");
   ids["df-po-file"] = element("");
   ids["df-supplier-file"] = element("");
-  const csv = HEADER + "\n1,Acme,A,10,2026-03-10,2026-03-10,10,,,\n";
+  ids["df-supplier-cards"].querySelectorAll = function () {
+    var html = this.innerHTML || "";
+    var re = /data-supplier="([^"]*)"[\s\S]*?aria-expanded="(true|false)"/g;
+    var found = [];
+    var match;
+    while ((match = re.exec(html))) {
+      found.push({ supplier: match[1], expanded: match[2] });
+    }
+    return found.map(function (item) {
+      return {
+        getAttribute: function (name) {
+          return name === "data-supplier" ? item.supplier : null;
+        },
+        querySelector: function () {
+          return {
+            getAttribute: function (name) {
+              return name === "aria-expanded" ? item.expanded : null;
+            },
+          };
+        },
+      };
+    });
+  };
+  let csv = HEADER + "\n1,Acme,A,10,2026-03-10,2026-03-10,10,,,\n";
   let shows = 0;
   let attached = null;
   const RealDate = Date;
@@ -1130,9 +1156,11 @@ function settingsKeepDownload() {
   assert.match(cards, /1 of 1 lines/);
   assert.match(cards, /Supplier delivers/);
   assert.match(cards, /hidden/);
-  assert.match(cards, /2026-03/);
+  assert.match(cards, /difot-month__label">Mar 2026</);
+  assert.doesNotMatch(cards, /2026-03/);
   assert.match(cards, /On time/);
   assert.match(cards, /In full/);
+  assert.match(cards, /1 of 1/);
   assert.doesNotMatch(cards, /Freight on time/);
   assert.strictEqual(ids["df-downloads"].hidden, true);
   const sentSummary = attached.buildSummary();
@@ -1144,9 +1172,29 @@ function settingsKeepDownload() {
   ids["df-days-early"].listeners.change();
   assert.strictEqual(ids["df-downloads"].hidden, false);
   assert.strictEqual(shows, 1);
+  assert.match(ids["df-supplier-cards"].innerHTML, /aria-expanded="false"/);
+  ids["df-supplier-cards"].innerHTML = ids["df-supplier-cards"].innerHTML.replace(
+    'aria-expanded="false"',
+    'aria-expanded="true"'
+  );
   ids["df-days-late"].value = "1";
   ids["df-days-late"].listeners.change();
   assert.strictEqual(ids["df-downloads"].hidden, false);
+  assert.match(ids["df-supplier-cards"].innerHTML, /aria-expanded="true"/);
+  assert.doesNotMatch(ids["df-supplier-cards"].innerHTML, /id="df-supplier-detail-0" hidden/);
+  assert.match(ids["df-supplier-cards"].innerHTML, /Mar 2026/);
+  csv =
+    HEADER +
+    "\n1,Acme,A,10,2026-03-10,2026-03-10,10,,,\n2,Beta,B,10,2026-04-10,2026-04-12,10,,,\n";
+  ids["df-po-file"].listeners.change();
+  assert.match(ids["df-supplier-cards"].innerHTML, /data-supplier="Acme"[\s\S]*?aria-expanded="true"/);
+  assert.match(ids["df-supplier-cards"].innerHTML, /data-supplier="Beta"[\s\S]*?aria-expanded="false"/);
+  ids["df-shortfall"].value = "5";
+  ids["df-shortfall"].listeners.change();
+  assert.match(ids["df-supplier-cards"].innerHTML, /data-supplier="Acme"[\s\S]*?aria-expanded="true"/);
+  assert.match(ids["df-supplier-cards"].innerHTML, /data-supplier="Beta"[\s\S]*?aria-expanded="false"/);
+  assert.match(ids["df-supplier-cards"].innerHTML, /Apr 2026/);
+  assert.match(ids["df-supplier-cards"].innerHTML, /Mar 2026/);
   attached.buildSummary();
   ids["df-po-file"].listeners.change();
   assert.strictEqual(ids["df-downloads"].hidden, true);
