@@ -1,5 +1,5 @@
 <section class="card sim-results" id="{{ resultsId }}" hidden data-results-email="on">
-  <h2 class="card__title">Email me my results</h2>
+  <h2 class="card__title">{{ resultsTitle or "Email me my results" }}</h2>
   <form id="{{ resultsId }}-form" novalidate>
     <p class="sim-results__status" id="{{ resultsId }}-status" role="status"></p>
     <label class="sim-field" for="{{ resultsId }}-address">
@@ -8,7 +8,7 @@
     </label>
     <label class="sim-check" for="{{ resultsId }}-results">
       <input id="{{ resultsId }}-results" name="results" type="checkbox" />
-      Email me the results of the scenario I ran. This is a one-off email.
+      {{ resultsConsentText or "Email me the results of the scenario I ran. This is a one-off email." }}
     </label>
     <label class="sim-check" for="{{ resultsId }}-articles">
       <input id="{{ resultsId }}-articles" name="articles" type="checkbox" />
@@ -22,7 +22,7 @@
     </div>
     <button id="{{ resultsId }}-send" class="sim-button" type="submit" disabled>Send</button>
   </form>
-  <p class="sim-results__sent" id="{{ resultsId }}-sent" hidden>Sent. Check your inbox (and spam folder).</p>
+  <p class="sim-results__sent" id="{{ resultsId }}-sent" hidden>{{ resultsSentText or "Sent. Check your inbox (and spam folder)." }}</p>
 </section>
 <script>
   window.pscpTurnstileQueue = window.pscpTurnstileQueue || [];

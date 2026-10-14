@@ -58,15 +58,24 @@
       "</ul>";
   }
 
-  function fail(messages) {
+  function applyDateLine(result) {
+    var dateLine = $("sf-date-line");
+    if (!dateLine) {
+      return;
+    }
+    var text = result && result.dateLine ? result.dateLine : "";
+    dateLine.hidden = !text;
+    dateLine.textContent = text;
+  }
+
+  function fail(messages, result) {
     var el = $("sf-errors");
     showList(el, messages);
     $("sf-output").hidden = true;
     $("sf-gate").hidden = true;
     $("sf-downloads").hidden = true;
-    $("sf-date-line").hidden = true;
+    applyDateLine(result);
     showList($("sf-warnings"), []);
-    unlocked = false;
     current = null;
     resultsForm.hide();
   }
@@ -86,9 +95,7 @@
   function render(result) {
     $("sf-errors").hidden = true;
     $("sf-errors").innerHTML = "";
-    var dateLine = $("sf-date-line");
-    dateLine.hidden = !result.dateLine;
-    dateLine.textContent = result.dateLine;
+    applyDateLine(result);
     $("sf-output-date").textContent = result.dateLine;
     $("sf-location-note").textContent = result.locationNote;
     showList($("sf-notes"), result.notes);
@@ -146,9 +153,12 @@
 
     $("sf-output").hidden = false;
     $("sf-gate").hidden = false;
-    $("sf-downloads").hidden = true;
-    unlocked = false;
-    resultsForm.show();
+    if (unlocked) {
+      $("sf-downloads").hidden = false;
+    } else {
+      $("sf-downloads").hidden = true;
+      resultsForm.show();
+    }
   }
 
   function rebuild() {
@@ -170,7 +180,7 @@
     });
     current = result.ok ? result : null;
     if (!result.ok) {
-      fail(result.errors);
+      fail(result.errors, result);
       if (result.warnings && result.warnings.length) {
         showList($("sf-warnings"), result.warnings);
         $("sf-warnings").hidden = false;
@@ -189,6 +199,10 @@
     resultsForm = window.SimResultsForm.attach({
       id: "sf-results",
       formId: "starter-forecast",
+      wordingVersion: "starter-forecast-v1",
+      wordingRequired: "Email me to unlock the download.",
+      sentUrl: "/learn/starter-forecast/sent/",
+      sentMessage: "Sent. The download is unlocked on this page. Check your inbox (and spam folder).",
       buildSummary: function () {
         if (!current || !current.ok) {
           return null;

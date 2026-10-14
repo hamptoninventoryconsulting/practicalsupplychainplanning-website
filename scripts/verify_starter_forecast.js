@@ -8,6 +8,7 @@
 const assert = require("assert");
 const fs = require("fs");
 const path = require("path");
+const vm = require("vm");
 
 const ROOT = path.resolve(__dirname, "..");
 const SITE = path.join(ROOT, "_site");
@@ -151,7 +152,8 @@ assert.deepStrictEqual(earlyRow.flags, []);
 const oldRow = skuOf(early, "OLD");
 assert.strictEqual(oldRow.weeksUsed, 12);
 assertQty(oldRow, "0.00");
-assert.ok(oldRow.flags.indexOf("No sales in window") !== -1);
+assert.ok(oldRow.flags.indexOf("No sales") !== -1);
+assert.ok(oldRow.flags.indexOf("No sales in window") === -1);
 assert.ok(oldRow.flags.indexOf("History may be longer than this file shows") !== -1);
 
 const dayLine = run([line("03/04/2026", "A", 12)]);
@@ -286,7 +288,71 @@ assert.match(noWindow.errors[0], /12 weeks/);
 
 const badSetting = run([line("13/04/2026", "A", 4)], { dayFirst: false });
 assert.strictEqual(badSetting.ok, false);
-assert.match(badSetting.errors[0], /Month\/Day\/Year/);
+assert.strictEqual(
+  badSetting.errors[0],
+  "Row 2: 13/04/2026 does not fit Month/Day/Year. Switch to Day/Month/Year."
+);
+assert.match(badSetting.dateLine, /first date 13\/04\/2026 read as 13 April 2026/);
+
+const impossible = run([line("2026-03-30", "KEEP", 4), line("10/13/2026", "STOP", 4)]);
+assert.strictEqual(impossible.ok, false);
+assert.strictEqual(impossible.forecastCsv, "");
+assert.strictEqual(impossible.skus.length, 0);
+assert.strictEqual(
+  impossible.errors[0],
+  "Row 3: 10/13/2026 does not fit Day/Month/Year. Switch to Month/Day/Year."
+);
+assert.strictEqual(
+  impossible.dateLine,
+  "Dates read as Day/Month/Year: first date 2026-03-30 read as 30 March 2026."
+);
+
+const impossibleFirst = run([line("10/13/2026", "A", 4)]);
+assert.strictEqual(impossibleFirst.ok, false);
+assert.strictEqual(
+  impossibleFirst.errors[0],
+  "Row 2: 10/13/2026 does not fit Day/Month/Year. Switch to Month/Day/Year."
+);
+assert.strictEqual(
+  impossibleFirst.dateLine,
+  "Dates read as Day/Month/Year: first date 10/13/2026 read as 13 October 2026 under Month/Day/Year."
+);
+
+const shortYear = run([line("10/13/26", "A", 4)]);
+assert.strictEqual(shortYear.ok, false);
+assert.match(shortYear.errors[0], /Row 2: 10\/13\/26 uses a 2-digit year/);
+assert.match(shortYear.errors[0], /2026/);
+assert.strictEqual(shortYear.forecastCsv, "");
+
+const gapWeeks = run([line("2026-01-12", "EARLY", 4), line("2026-01-26", "LATE", 4)]);
+assert.strictEqual(gapWeeks.ok, true, JSON.stringify(gapWeeks.errors));
+assert.ok(skuOf(gapWeeks, "EARLY").flags.indexOf("History may be longer than this file shows") !== -1);
+assert.ok(skuOf(gapWeeks, "LATE").flags.indexOf("History may be longer than this file shows") === -1);
+
+function warnsOtherWay(result) {
+  return (result.warnings || []).some(function (warning) {
+    return warning.indexOf("other way") !== -1;
+  });
+}
+
+const isoOnly = run([line("2026-03-30", "A", 4), line("2026-03-16", "A", 4)]);
+assert.strictEqual(isoOnly.ok, true, JSON.stringify(isoOnly.errors));
+assert.strictEqual(warnsOtherWay(isoOnly), false);
+
+const isoAndAmbiguous = run([line("2026-03-30", "A", 4), line("03/04/2026", "B", 4)]);
+assert.strictEqual(isoAndAmbiguous.ok, true, JSON.stringify(isoAndAmbiguous.errors));
+assert.strictEqual(warnsOtherWay(isoAndAmbiguous), true);
+
+const isoAndClear = run([line("2026-03-30", "A", 4), line("13/04/2026", "B", 4)]);
+assert.strictEqual(isoAndClear.ok, true, JSON.stringify(isoAndClear.errors));
+assert.strictEqual(warnsOtherWay(isoAndClear), false);
+
+const semicolons = run([], {
+  text: "order_id;order_datetime;sku;qty;fulfillment_location\n1;2026-03-30;A;4;Main\n",
+});
+assert.strictEqual(semicolons.ok, false);
+assert.deepStrictEqual(semicolons.errors, ["This file uses semicolons; save as comma-separated CSV"]);
+assert.doesNotMatch(semicolons.errors.join(" "), /couldn.t find|not found/i);
 
 const notCsv = run([line(WINDOW[11], "A", 1)], { fileName: "history.xlsx" });
 assert.strictEqual(notCsv.ok, false);
@@ -375,9 +441,22 @@ assert.match(page, /id="sf-downloads" hidden/);
 assert.match(page, /id="sf-results" hidden/);
 assert.match(page, /name="articles"/);
 assert.doesNotMatch(page, /name="articles"[^>]*checked/);
-assert.match(page, /src="\/assets\/starter-forecast-engine\.js\?v=1"/);
-assert.match(page, /src="\/assets\/sim-results-form\.js\?v=5"/);
-assert.match(page, /src="\/assets\/starter-forecast\.js\?v=1"/);
+assert.match(page, /src="\/assets\/starter-forecast-engine\.js\?v=2"/);
+assert.match(page, /src="\/assets\/sim-results-form\.js\?v=6"/);
+assert.match(page, /src="\/assets\/starter-forecast\.js\?v=2"/);
+assert.match(page, /Email me to unlock the download/);
+assert.doesNotMatch(page, /results of the scenario/);
+assert.match(ui, /Email me to unlock the download/);
+assert.doesNotMatch(ui, /results of the scenario/);
+assert.match(ui, /\/learn\/starter-forecast\/sent\//);
+const sentPage = fs.readFileSync(
+  path.join(SITE, "learn", "starter-forecast", "sent", "index.html"),
+  "utf8"
+);
+assert.match(sentPage, /noindex/);
+assert.match(sentPage, /The download is unlocked on the Starter Forecast page/);
+assert.doesNotMatch(sentPage, /results of the scenario/);
+assert.ok(!fs.readFileSync(path.join(SITE, "sitemap.xml"), "utf8").includes("/learn/starter-forecast/sent/"));
 assert.doesNotMatch(sourcePage, /coming soon|ERP|Demand Planner|Stock Planner/i);
 assert.doesNotMatch(ui, /coming soon|ERP|Demand Planner|Stock Planner/i);
 assert.match(ui, /formId:\s*"starter-forecast"/);
@@ -389,5 +468,140 @@ assert.match(
   fs.readFileSync(path.join(ROOT, "src", "_data", "learnTools.js"), "utf8"),
   /\/learn\/starter-forecast\//
 );
+
+function element(value) {
+  return {
+    hidden: false,
+    textContent: "",
+    innerHTML: "",
+    value: value == null ? "" : value,
+    files: [],
+    listeners: {},
+    addEventListener: function (type, fn) {
+      this.listeners[type] = fn;
+    },
+  };
+}
+
+function settingsChangeKeepsDownload() {
+  const uiSource = fs.readFileSync(path.join(ROOT, "assets", "starter-forecast.js"), "utf8");
+  const ids = {};
+  [
+    "sf-errors",
+    "sf-output",
+    "sf-gate",
+    "sf-downloads",
+    "sf-date-line",
+    "sf-warnings",
+    "sf-output-date",
+    "sf-location-note",
+    "sf-notes",
+    "sf-summary-body",
+    "sf-preview-body",
+    "sf-preview-note",
+    "sf-file-name",
+    "sf-download-forecast",
+    "sf-download-summary",
+  ].forEach(function (id) {
+    ids[id] = element("");
+  });
+  ids["sf-date-order"] = element("dmy");
+  ids["sf-plan-start"] = element("");
+  ids["sf-horizon"] = element("13");
+  ids["sf-file"] = element("");
+  const csv = "order_id,order_datetime,sku,qty,fulfillment_location\n1,2026-03-30,A,4,Main\n";
+  let shows = 0;
+  let attached = null;
+  const RealDate = Date;
+  function FixedDate() {
+    return new RealDate(2026, 9, 14, 12, 0, 0);
+  }
+  FixedDate.prototype = RealDate.prototype;
+  FixedDate.now = function () {
+    return new RealDate(2026, 9, 14, 12, 0, 0).getTime();
+  };
+  FixedDate.parse = RealDate.parse;
+  FixedDate.UTC = RealDate.UTC;
+  function FileReader() {
+    this.result = "";
+  }
+  FileReader.prototype.readAsText = function () {
+    this.result = csv;
+    this.onload();
+  };
+  const sandbox = {
+    document: {
+      getElementById: function (id) {
+        return ids[id] || null;
+      },
+      createElement: function () {
+        return element("");
+      },
+      body: {
+        appendChild: function () {},
+        removeChild: function () {},
+      },
+    },
+    TextEncoder: TextEncoder,
+    Date: FixedDate,
+    FileReader: FileReader,
+    URL: {
+      createObjectURL: function () {
+        return "blob:test";
+      },
+      revokeObjectURL: function () {},
+    },
+    Blob: function Blob() {},
+    console: console,
+  };
+  sandbox.window = sandbox;
+  sandbox.window.StarterForecast = engine;
+  sandbox.window.SimResultsForm = {
+    attach: function (options) {
+      attached = options;
+      return {
+        show: function () {
+          shows += 1;
+        },
+        hide: function () {},
+      };
+    },
+  };
+  vm.runInNewContext(uiSource, sandbox, { filename: "starter-forecast.js" });
+  assert.strictEqual(attached.wordingRequired, "Email me to unlock the download.");
+  assert.strictEqual(attached.wordingVersion, "starter-forecast-v1");
+  assert.strictEqual(attached.sentUrl, "/learn/starter-forecast/sent/");
+  assert.doesNotMatch(attached.wordingRequired, /results of the scenario/);
+  ids["sf-plan-start"].value = "2026-04-06";
+  ids["sf-file"].files = [{ name: "history.csv", size: csv.length }];
+  ids["sf-file"].listeners.change();
+  assert.strictEqual(shows, 1);
+  assert.strictEqual(ids["sf-downloads"].hidden, true);
+  assert.strictEqual(ids["sf-date-line"].hidden, false);
+  assert.match(ids["sf-date-line"].textContent, /first date 2026-03-30 read as 30 March 2026/);
+  attached.onSent();
+  assert.strictEqual(ids["sf-downloads"].hidden, false);
+  ids["sf-horizon"].value = "8";
+  ids["sf-horizon"].listeners.change();
+  assert.strictEqual(ids["sf-downloads"].hidden, false);
+  assert.strictEqual(shows, 1);
+  ids["sf-date-order"].value = "mdy";
+  ids["sf-date-order"].listeners.change();
+  assert.strictEqual(ids["sf-downloads"].hidden, false);
+  assert.strictEqual(shows, 1);
+  ids["sf-plan-start"].value = "2026-01-05";
+  ids["sf-plan-start"].listeners.change();
+  assert.strictEqual(ids["sf-downloads"].hidden, true);
+  assert.strictEqual(shows, 1);
+  ids["sf-plan-start"].value = "2026-04-06";
+  ids["sf-plan-start"].listeners.change();
+  assert.strictEqual(ids["sf-downloads"].hidden, false);
+  assert.strictEqual(shows, 1);
+  ids["sf-file"].listeners.change();
+  assert.strictEqual(ids["sf-downloads"].hidden, true);
+  assert.strictEqual(shows, 2);
+}
+
+settingsChangeKeepsDownload();
 
 console.log("Starter Forecast checks passed.");

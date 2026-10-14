@@ -69,6 +69,8 @@ export const KEEP_IN_TOUCH_UNSUBSCRIBED =
 export const SUBJECT = "Your Safety Stock Simulator results: the scenario you ran";
 export const STARTER_FORM_ID = "starter-forecast";
 export const STARTER_SUBJECT = "Your Starter Forecast is ready to download";
+export const STARTER_WORDING_VERSION = "starter-forecast-v1";
+export const STARTER_REQUIRED_WORDING = "Email me to unlock the download.";
 export const FROM_ADDRESS =
   "Daniel at Practical Supply Chain Planning <hello@news.practicalsupplychainplanning.com>";
 export const REPLY_TO = "support@practicalsupplychainplanning.com";
@@ -217,8 +219,8 @@ export async function handleResultsEmail(request, env, deps) {
         ip,
         submission.formId,
         submission.pageUrl,
-        WORDING_VERSION,
-        REQUIRED_WORDING + "\n" + OPTIONAL_WORDING,
+        submission.wordingVersion,
+        submission.wordingRequired + "\n" + OPTIONAL_WORDING,
         submission.utm.source,
         submission.utm.medium,
         submission.utm.campaign,
@@ -765,19 +767,22 @@ function validateSubmission(body) {
   if (body.resultsConsent !== true) {
     throw new HttpError(400, "Check the form and try again.");
   }
-  if (body.wordingVersion !== WORDING_VERSION) {
-    throw new HttpError(400, "Check the form and try again.");
-  }
-  const wording = body.wordingText;
-  if (!wording || wording.required !== REQUIRED_WORDING || wording.optional !== OPTIONAL_WORDING) {
-    throw new HttpError(400, "Check the form and try again.");
-  }
   // A later results page adds its form id here. The check, the record, and the do-not-email list stay shared.
   if (
     body.formId !== "safety-stock-simulator" &&
     body.formId !== "own-data-simulator" &&
     body.formId !== STARTER_FORM_ID
   ) {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  const starterForm = body.formId === STARTER_FORM_ID;
+  const expectedVersion = starterForm ? STARTER_WORDING_VERSION : WORDING_VERSION;
+  const expectedRequired = starterForm ? STARTER_REQUIRED_WORDING : REQUIRED_WORDING;
+  if (body.wordingVersion !== expectedVersion) {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  const wording = body.wordingText;
+  if (!wording || wording.required !== expectedRequired || wording.optional !== OPTIONAL_WORDING) {
     throw new HttpError(400, "Check the form and try again.");
   }
   if (typeof body.turnstileToken !== "string" || body.turnstileToken.length < 8 || body.turnstileToken.length > 2048) {
@@ -793,6 +798,8 @@ function validateSubmission(body) {
       pageUrl: pageUrl,
       utm: cleanUtm(body.utm),
       summary: validateStarterSummary(body.summary),
+      wordingVersion: expectedVersion,
+      wordingRequired: expectedRequired,
     };
   }
   const summary = validateSummary(body.summary, email);
@@ -810,6 +817,8 @@ function validateSubmission(body) {
     pageUrl: pageUrl,
     utm: cleanUtm(body.utm),
     summary: summary,
+    wordingVersion: expectedVersion,
+    wordingRequired: expectedRequired,
   };
 }
 

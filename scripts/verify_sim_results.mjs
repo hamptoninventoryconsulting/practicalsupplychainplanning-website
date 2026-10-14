@@ -13,8 +13,11 @@ import {
   EMAIL_LIMIT,
   IP_LIMIT,
   SCHEMA_SQL,
+  OPTIONAL_WORDING,
   STARTER_FORM_ID,
+  STARTER_REQUIRED_WORDING,
   STARTER_SUBJECT,
+  STARTER_WORDING_VERSION,
   SUBJECT,
   SUCCESS_MESSAGE,
   WORDING_VERSION,
@@ -183,6 +186,24 @@ function post(body, headers) {
     headers: merged,
     body: JSON.stringify(body),
   });
+}
+
+function starterBody(overrides) {
+  return payload(
+    Object.assign(
+      {
+        wordingVersion: STARTER_WORDING_VERSION,
+        wordingText: {
+          required: STARTER_REQUIRED_WORDING,
+          optional: OPTIONAL_WORDING,
+        },
+        formId: STARTER_FORM_ID,
+        pageUrl: "https://practicalsupplychainplanning.com/learn/starter-forecast/",
+        summary: { kind: "starter-forecast" },
+      },
+      overrides || {}
+    )
+  );
 }
 
 function payload(overrides) {
@@ -368,12 +389,10 @@ assert.strictEqual(articlesMail.headers["List-Unsubscribe-Post"], "List-Unsubscr
 const starterDb = openDb();
 const starter = await send(
   starterDb.db,
-  payload({
+  starterBody({
     email: "forecast@example.com",
     articlesConsent: false,
-    formId: STARTER_FORM_ID,
     pageUrl: "https://practicalsupplychainplanning.com/learn/starter-forecast/?utm_source=newsletter",
-    summary: { kind: "starter-forecast" },
   })
 );
 assert.strictEqual(starter.status, 200, JSON.stringify(starter.json));
@@ -391,6 +410,9 @@ assert.doesNotMatch(starterMail.text, /your business should|\brecommended\b/i);
 const starterRow = starterDb.sqlite.prepare("SELECT * FROM consent").get();
 assert.strictEqual(starterRow.form_id, "starter-forecast");
 assert.strictEqual(starterRow.page_url, "/learn/starter-forecast/?utm_source=newsletter");
+assert.strictEqual(starterRow.wording_version, STARTER_WORDING_VERSION);
+assert.strictEqual(starterRow.wording_text, STARTER_REQUIRED_WORDING + "\n" + OPTIONAL_WORDING);
+assert.doesNotMatch(starterRow.wording_text, /results of the scenario/);
 assert.strictEqual(starterRow.articles_box, 0);
 assert.strictEqual(
   starter.calls.some(function (call) {
@@ -401,12 +423,9 @@ assert.strictEqual(
 
 const starterArticles = await send(
   openDb().db,
-  payload({
+  starterBody({
     email: "forecast-articles@example.com",
     articlesConsent: true,
-    formId: "starter-forecast",
-    pageUrl: "https://practicalsupplychainplanning.com/learn/starter-forecast/",
-    summary: { kind: "starter-forecast" },
   })
 );
 assert.strictEqual(starterArticles.status, 200, JSON.stringify(starterArticles.json));
@@ -425,14 +444,23 @@ assert.ok(
 
 const starterLeak = await send(
   openDb().db,
-  payload({
+  starterBody({
     email: "leak@example.com",
-    formId: "starter-forecast",
-    pageUrl: "https://practicalsupplychainplanning.com/learn/starter-forecast/",
     summary: { kind: "starter-forecast", sku: "00123", qty: 12 },
   })
 );
 assert.strictEqual(starterLeak.status, 400);
+
+const starterOldWording = await send(
+  openDb().db,
+  payload({
+    email: "old-wording@example.com",
+    formId: "starter-forecast",
+    pageUrl: "https://practicalsupplychainplanning.com/learn/starter-forecast/",
+    summary: { kind: "starter-forecast" },
+  })
+);
+assert.strictEqual(starterOldWording.status, 400);
 
 const failContact = okFetch();
 const original = failContact;

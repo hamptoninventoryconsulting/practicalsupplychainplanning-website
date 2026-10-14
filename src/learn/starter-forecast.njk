@@ -7,9 +7,9 @@
   "nav": "learn",
   "permalink": "/learn/starter-forecast/",
   "scripts": [
-    "/assets/starter-forecast-engine.js?v=1",
-    "/assets/sim-results-form.js?v=5",
-    "/assets/starter-forecast.js?v=1"
+    "/assets/starter-forecast-engine.js?v=2",
+    "/assets/sim-results-form.js?v=6",
+    "/assets/starter-forecast.js?v=2"
   ]
 }
 ---
@@ -163,6 +163,9 @@
         </section>
 
         {% set resultsId = "sf-results" %}
+        {% set resultsTitle = "Email me to unlock the download" %}
+        {% set resultsConsentText = "Email me to unlock the download." %}
+        {% set resultsSentText = "Sent. The download is unlocked on this page. Check your inbox (and spam folder)." %}
         {% include "partials/sim-results-form.njk" %}
 
         <section class="card" id="sf-downloads" hidden>

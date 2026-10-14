@@ -168,6 +168,21 @@
     return utcDate(Number(match[1]), Number(match[2]), Number(match[3]));
   }
 
+  function slashFields(text) {
+    return text.match(
+      /^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?$/
+    );
+  }
+
+  function slashDate(match, dayFirst) {
+    var first = Number(match[1]);
+    var second = Number(match[2]);
+    var year = Number(match[3]);
+    var day = dayFirst ? first : second;
+    var month = dayFirst ? second : first;
+    return utcDate(year, month, day);
+  }
+
   function parseOrderDate(raw, dayFirst) {
     var text = String(raw == null ? "" : raw).trim();
     if (!text) {
@@ -184,21 +199,24 @@
       }
       return { ok: true, date: isoDate, iso: true, ambiguous: false, original: text };
     }
-    var parts = text.match(
-      /^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?$/
-    );
+    if (/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2})(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?$/.test(text)) {
+      return { ok: false, reason: "shortYear", original: text };
+    }
+    var parts = slashFields(text);
     if (!parts) {
       return { ok: false, reason: "unreadable" };
     }
+    var date = slashDate(parts, dayFirst);
+    if (!date) {
+      return {
+        ok: false,
+        reason: "impossible",
+        original: text,
+        otherDate: slashDate(parts, !dayFirst),
+      };
+    }
     var first = Number(parts[1]);
     var second = Number(parts[2]);
-    var year = Number(parts[3]);
-    var day = dayFirst ? first : second;
-    var month = dayFirst ? second : first;
-    var date = utcDate(year, month, day);
-    if (!date) {
-      return { ok: false, reason: "unreadable" };
-    }
     return {
       ok: true,
       date: date,
@@ -206,6 +224,81 @@
       ambiguous: first <= 12 && second <= 12 && first !== second,
       original: text,
     };
+  }
+
+  function shownDate(original) {
+    var shown = String(original || "");
+    var timeCut = shown.search(/[T\s]\d{1,2}:/);
+    if (timeCut !== -1) {
+      shown = shown.slice(0, timeCut);
+    }
+    return shown;
+  }
+
+  function formatName(dayFirst) {
+    return dayFirst ? "Day/Month/Year" : "Month/Day/Year";
+  }
+
+  function buildDateLine(dayFirst, ref) {
+    if (!ref) {
+      return "";
+    }
+    var prefix = "Dates read as " + formatName(dayFirst) + ": first date " + shownDate(ref.original);
+    if (ref.date && ref.chosen) {
+      return prefix + " read as " + formatLong(ref.date) + ".";
+    }
+    if (ref.date) {
+      return prefix + " read as " + formatLong(ref.date) + " under " + formatName(!dayFirst) + ".";
+    }
+    return prefix + " could not be read.";
+  }
+
+  function dateStopMessage(parsed, rowNumber, dayFirst) {
+    var shown = shownDate(parsed.original);
+    if (parsed.reason === "shortYear") {
+      return "Row " + rowNumber + ": " + shown + " uses a 2-digit year. Write the year in full, such as 2026.";
+    }
+    if (parsed.otherDate) {
+      return (
+        "Row " +
+        rowNumber +
+        ": " +
+        shown +
+        " does not fit " +
+        formatName(dayFirst) +
+        ". Switch to " +
+        formatName(!dayFirst) +
+        "."
+      );
+    }
+    return (
+      "Row " +
+      rowNumber +
+      ": " +
+      shown +
+      " is not a real date under " +
+      formatName(dayFirst) +
+      " or " +
+      formatName(!dayFirst) +
+      "."
+    );
+  }
+
+  function usesSemicolons(text) {
+    var source = String(text || "")
+      .replace(/^\uFEFF/, "")
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n");
+    var lines = source.split("\n");
+    for (var i = 0; i < lines.length; i += 1) {
+      if (String(lines[i]).trim() === "") {
+        continue;
+      }
+      var semis = (lines[i].match(/;/g) || []).length;
+      var commas = (lines[i].match(/,/g) || []).length;
+      return semis > 0 && semis > commas;
+    }
+    return false;
   }
 
   function parseQty(raw) {
@@ -269,13 +362,13 @@
     return message;
   }
 
-  function emptyResult(errors, warnings) {
+  function emptyResult(errors, warnings, dateLine) {
     return {
       ok: false,
       errors: errors || [],
       warnings: warnings || [],
       notes: [],
-      dateLine: "",
+      dateLine: dateLine || "",
       locationCount: 0,
       locationNote: "",
       skus: [],
@@ -318,6 +411,9 @@
     });
     if (!table.length) {
       return emptyResult(["The file has no header row. Download the template and match those column names."]);
+    }
+    if (usesSemicolons(text)) {
+      return emptyResult(["This file uses semicolons; save as comma-separated CSV"]);
     }
     var headers = table[0].map(normalizeHeader);
     var missing = REQUIRED.filter(function (name) {
@@ -382,10 +478,11 @@
     var spacedCount = 0;
     var digitSku = false;
     var bySku = new Map();
-    var fileWeeks = Object.create(null);
     var locations = Object.create(null);
     var locationCount = 0;
-    var firstParsed = null;
+    var firstDateRef = null;
+    var earliestWeek = "";
+    var dateStops = [];
     var slashDates = 0;
     var ambiguousDates = 0;
     var parsedDates = 0;
@@ -428,6 +525,17 @@
       }
       var parsed = parseOrderDate(dateRaw, dayFirst);
       if (!parsed.ok) {
+        if (parsed.reason === "impossible" || parsed.reason === "shortYear") {
+          if (!firstDateRef) {
+            firstDateRef = {
+              original: parsed.original,
+              date: parsed.otherDate || null,
+              chosen: false,
+            };
+          }
+          dateStops.push(dateStopMessage(parsed, rowNumber, dayFirst));
+          continue;
+        }
         if (parsed.reason === "excel") {
           noteSkip(skipped.excel, rowNumber);
         } else {
@@ -436,14 +544,18 @@
         continue;
       }
       parsedDates += 1;
+      if (!firstDateRef) {
+        firstDateRef = { original: parsed.original, date: parsed.date, chosen: true };
+      }
+      var parsedWeek = formatISO(mondayOf(parsed.date));
+      if (!earliestWeek || parsedWeek < earliestWeek) {
+        earliestWeek = parsedWeek;
+      }
       if (!parsed.iso) {
         slashDates += 1;
         if (parsed.ambiguous) {
           ambiguousDates += 1;
         }
-      }
-      if (!firstParsed) {
-        firstParsed = parsed;
       }
       var qty = parseQty(cells[col.qty]);
       if (qty == null) {
@@ -456,7 +568,6 @@
         continue;
       }
       var weekKey = formatISO(mondayOf(parsed.date));
-      fileWeeks[weekKey] = true;
       var bucket = skuBucket(sku);
       bucket.weeks[weekKey] = (bucket.weeks[weekKey] || 0) + qty;
       var location = String(cells[col.fulfillment_location] == null ? "" : cells[col.fulfillment_location]).trim();
@@ -505,14 +616,19 @@
       );
     }
 
+    var dateLine = buildDateLine(dayFirst, firstDateRef);
+    if (dateStops.length) {
+      return emptyResult(dateStops, warnings, dateLine);
+    }
     if (!parsedDates && dateCells) {
       return emptyResult(
         [
           "None of the dates fit the " +
-            (dayFirst ? "Day/Month/Year" : "Month/Day/Year") +
+            formatName(dayFirst) +
             " setting. Switch the date setting, or use year-month-day dates, and try again.",
         ],
-        warnings
+        warnings,
+        dateLine
       );
     }
     if (!bySku.size) {
@@ -525,8 +641,11 @@
     }
     var windowStart = windowMondays[0];
     var windowEnd = windowMondays[windowMondays.length - 1];
-    var fileWeekList = Object.keys(fileWeeks).sort();
-    var firstTwo = fileWeekList.slice(0, 2);
+    var firstTwo = [];
+    if (earliestWeek) {
+      firstTwo.push(earliestWeek);
+      firstTwo.push(formatISO(addDays(parseISODate(earliestWeek), 7)));
+    }
     var summaries = [];
     var anyPositive = false;
 
@@ -588,7 +707,7 @@
         flags.push("History may be longer than this file shows");
       }
       if (!positive) {
-        flags.push("No sales in window");
+        flags.push("No sales");
       }
       summaries.push({
         sku: sku,
@@ -663,24 +782,6 @@
       locationCount +
       (locationCount === 1 ? " location are" : " locations are") +
       " added together for each SKU.";
-    var dateLine = "";
-    if (firstParsed) {
-      var original = firstParsed.original;
-      var shown = original;
-      var timeCut = original.search(/[T\s]\d{1,2}:/);
-      if (timeCut !== -1) {
-        shown = original.slice(0, timeCut);
-      }
-      dateLine =
-        "Dates read as " +
-        (dayFirst ? "Day/Month/Year" : "Month/Day/Year") +
-        ": first date " +
-        shown +
-        " read as " +
-        formatLong(firstParsed.date) +
-        ".";
-    }
-
     return {
       ok: true,
       errors: [],

@@ -31,7 +31,7 @@ assert.match(partial, /async><\/script>/);
 assert.doesNotMatch(partial, /api\.js[^>]*defer/);
 assert.match(
   fs.readFileSync(path.join(ROOT, "src", "learn", "safety-stock-simulator.njk"), "utf8"),
-  /sim-results-form\.js\?v=5/
+  /sim-results-form\.js\?v=6/
 );
 
 function Element(spec) {
@@ -132,7 +132,7 @@ function page() {
   });
   root.appendChild(form);
   root.appendChild(sent);
-  return { root: root, form: form, email: email, results: results, status: status, send: send };
+  return { root: root, form: form, email: email, results: results, status: status, send: send, sent: sent };
 }
 
 function load(extra, attach) {
@@ -314,6 +314,10 @@ const starterForm = load(
     onSent: function () {
       starterUnlocked = true;
     },
+    wordingVersion: "starter-forecast-v1",
+    wordingRequired: "Email me to unlock the download.",
+    sentUrl: "/learn/starter-forecast/sent/",
+    sentMessage: "Sent. The download is unlocked on this page. Check your inbox (and spam folder).",
   }
 );
 starterForm.api.show();
@@ -341,6 +345,14 @@ const starterBody = JSON.parse(starterForm.posts[0].body);
 assert.strictEqual(starterBody.formId, "starter-forecast");
 assert.deepStrictEqual(starterBody.summary, { kind: "starter-forecast" });
 assert.strictEqual(starterBody.articlesConsent, false);
+assert.strictEqual(starterBody.wordingVersion, "starter-forecast-v1");
+assert.strictEqual(starterBody.wordingText.required, "Email me to unlock the download.");
+assert.doesNotMatch(starterBody.wordingText.required, /results of the scenario/);
+assert.strictEqual(starterForm.built.sent.textContent, "Sent. The download is unlocked on this page. Check your inbox (and spam folder).");
+const starterFrame = starterForm.built.root.children.find(function (child) {
+  return child.tag === "iframe";
+});
+assert.strictEqual(starterFrame.src, "/learn/starter-forecast/sent/");
 assert.strictEqual(starterUnlocked, true);
 
 console.log("Turnstile form load checks OK.");
