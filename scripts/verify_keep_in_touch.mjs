@@ -96,12 +96,16 @@ function built(rel) {
   return fs.readFileSync(file, "utf8");
 }
 
+const siteData = fs.readFileSync(path.join(ROOT, "src", "_data", "site.js"), "utf8");
+const cssVersion = siteData.match(/cssVersion:\s*"([^"]+)"/);
+assert.ok(cssVersion, "src/_data/site.js is missing cssVersion");
+
 const builtHome = built("index.html");
 assert.match(builtHome, /id="keep-in-touch"/);
 assert.ok(builtHome.includes(KEEP_IN_TOUCH_WORDING));
 assert.ok(builtHome.includes(BETA_WORDING));
-assert.match(builtHome, /styles\.css\?v=36/);
-assert.match(builtHome, /keep-in-touch\.js\?v=36/);
+assert.match(builtHome, new RegExp("styles\\.css\\?v=" + cssVersion[1]));
+assert.match(builtHome, new RegExp("keep-in-touch\\.js\\?v=" + cssVersion[1]));
 assert.ok(builtHome.indexOf('id="keep-in-touch"') < builtHome.indexOf('<footer class="site-footer"'));
 assert.ok(built("privacy/index.html").includes(PRIVACY_SENTENCE));
 assert.ok(!fs.existsSync(path.join(ROOT, "_site", "buy", "index.html")));

@@ -21,4 +21,10 @@ module.exports = [
       "A 12-week average of your sales history, repeated for each week of the plan. The file stays in your browser.",
     href: "/learn/starter-forecast/",
   },
+  {
+    title: "DIFOT Calculator",
+    description:
+      "On time and in full for each purchase order line. The files stay in your browser.",
+    href: "/learn/difot-calculator/",
+  },
 ];

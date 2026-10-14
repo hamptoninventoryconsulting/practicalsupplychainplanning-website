@@ -1,0 +1,551 @@
+/**
+ * DIFOT Calculator checks: line scoring, tolerances, combined rows,
+ * freight, dates, CSV output, and the download gate.
+ */
+const assert = require("node:assert");
+const fs = require("node:fs");
+const path = require("node:path");
+const vm = require("node:vm");
+
+const ROOT = path.resolve(__dirname, "..");
+const SITE = path.join(ROOT, "_site");
+const engine = require(path.join(ROOT, "assets", "difot-engine.js"));
+
+const HEADER =
+  "PO Number,Supplier,SKU,Ordered Qty,Required Date,Receipt Date,Received Qty,Damaged Qty,Damaged Reason,Arrived Date";
+
+function poCsv(rows) {
+  return [HEADER].concat(rows).join("\n");
+}
+
+function run(rows, extra) {
+  const options = Object.assign(
+    {
+      poText: Array.isArray(rows) ? poCsv(rows) : String(rows || ""),
+      poFileName: "lines.csv",
+      asAt: "2026-10-14",
+      dayFirst: true,
+    },
+    extra || {}
+  );
+  return engine.buildDifot(options);
+}
+
+function lineOf(result, sku) {
+  return result.lines.filter(function (line) {
+    return line.sku === sku;
+  })[0];
+}
+
+function warns(result, pattern) {
+  return (result.warnings || []).some(function (warning) {
+    return pattern.test(warning);
+  });
+}
+
+const worked = run([
+  "A,Acme,A,100,10/03/2026,09/03/2026,100,0,,",
+  "B,Acme,B,50,10/03/2026,12/03/2026,50,0,,",
+  "C,Acme,C,100,10/03/2026,10/03/2026,100,10,,",
+  "D,Acme,D,100,10/03/2026,07/03/2026,100,0,,",
+]);
+assert.strictEqual(worked.ok, true, JSON.stringify(worked.errors));
+assert.strictEqual(worked.overall.onTimePct, "50.0");
+assert.strictEqual(worked.overall.inFullPct, "75.0");
+assert.strictEqual(worked.overall.difotPct, "25.0");
+assert.strictEqual(worked.overall.onTimeLines, 2);
+assert.strictEqual(worked.overall.inFullLines, 3);
+assert.strictEqual(worked.overall.difotLines, 1);
+assert.strictEqual(worked.overall.lines, 4);
+assert.strictEqual(lineOf(worked, "A").difot, true);
+assert.strictEqual(lineOf(worked, "B").reason, "Late 2 days");
+assert.match(lineOf(worked, "C").reason, /Short 10 \(10%\)/);
+assert.strictEqual(lineOf(worked, "D").onTime, false);
+assert.strictEqual(lineOf(worked, "D").inFull, true);
+assert.match(worked.summaryLine, /DIFOT 25\.0% \(1 of 4 lines\)/);
+assert.match(worked.summaryLine, /Days early allowed 2/);
+assert.match(worked.summaryLine, /Days late allowed 0/);
+assert.match(worked.dateLine, /First date 10\/03\/2026 read as 10 March 2026/);
+
+const earlyEdge = run(
+  ["1,Acme,PASS,10,2026-03-10,2026-03-08,10,,,", "2,Acme,FAIL,10,2026-03-10,2026-03-07,10,,,"],
+  { daysEarly: 2 }
+);
+assert.strictEqual(lineOf(earlyEdge, "PASS").onTime, true);
+assert.strictEqual(lineOf(earlyEdge, "FAIL").onTime, false);
+assert.match(lineOf(earlyEdge, "FAIL").reason, /Early 3 days/);
+
+const lateEdge = run(["1,Acme,A,10,2026-03-10,2026-03-11,10,,,"], { daysLate: 1 });
+assert.strictEqual(lateEdge.lines[0].onTime, true);
+assert.strictEqual(lateEdge.lines[0].difot, true);
+
+const shortfall = run(
+  ["1,Acme,PASS,100,2026-03-10,2026-03-10,95,,,", "2,Acme,FAIL,100,2026-03-10,2026-03-10,94,,,"],
+  { shortfallPct: 5 }
+);
+assert.strictEqual(lineOf(shortfall, "PASS").inFull, true);
+assert.strictEqual(lineOf(shortfall, "FAIL").inFull, false);
+assert.match(lineOf(shortfall, "FAIL").reason, /Short 6 \(6%\)/);
+
+const overNo = run(["1,Acme,A,100,2026-03-10,2026-03-10,110,,,"], { overDeliveryInFull: false });
+assert.strictEqual(overNo.lines[0].inFull, false);
+assert.strictEqual(overNo.lines[0].reason, "Over 10");
+const overYes = run(["1,Acme,A,100,2026-03-10,2026-03-10,110,,,"], { overDeliveryInFull: true });
+assert.strictEqual(overYes.lines[0].inFull, true);
+assert.strictEqual(overYes.lines[0].difot, true);
+
+const damaged = run(["1,Acme,A,100,2026-03-10,2026-03-10,100,10,Crushed,"]);
+assert.strictEqual(damaged.lines[0].accepted, 90);
+assert.strictEqual(damaged.lines[0].inFull, false);
+assert.match(damaged.lines[0].reason, /Short 10 \(10%\)/);
+assert.match(damaged.lines[0].reason, /Damaged 10 \(Crushed\)/);
+const damagedOver = run(["1,Acme,A,100,2026-03-10,2026-03-10,10,11,,"]);
+assert.strictEqual(damagedOver.ok, false);
+assert.match(damagedOver.errors.join(" "), /No usable purchase order lines/);
+assert.ok(warns(damagedOver, /Row 2 was left out because the damaged quantity is greater than the received quantity/));
+
+const notDue = run(["1,Acme,LATE,10,2026-03-01,,,,", "2,Acme,WAIT,10,2026-03-20,,,,"], { asAt: "2026-03-10" });
+assert.strictEqual(notDue.ok, true, JSON.stringify(notDue.errors));
+assert.strictEqual(notDue.overall.lines, 1);
+assert.strictEqual(lineOf(notDue, "LATE").countedText, "Y");
+assert.strictEqual(lineOf(notDue, "LATE").onTime, false);
+assert.strictEqual(lineOf(notDue, "LATE").inFull, false);
+assert.strictEqual(lineOf(notDue, "LATE").reason, "Not received");
+assert.strictEqual(lineOf(notDue, "WAIT").countedText, "N: not due yet");
+assert.match(notDue.notes.join(" "), /1 line not due yet/);
+const nowDue = run(["1,Acme,WAIT,10,2026-03-20,,,,"], { asAt: "2026-03-21" });
+assert.strictEqual(nowDue.overall.lines, 1);
+assert.strictEqual(nowDue.lines[0].reason, "Not received");
+const stillInside = run(["1,Acme,WAIT,10,2026-03-10,,,,"], { asAt: "2026-03-11", daysLate: 1 });
+assert.strictEqual(stillInside.ok, false);
+assert.match(stillInside.errors[0], /No lines are measured/);
+assert.match(stillInside.errors[0], /1 line not due yet/);
+
+const repeated = run([
+  "1001,Acme,00123,100,2026-03-10,2026-03-09,40,,,",
+  "1001,Acme,00123,80,2026-03-10,,,,",
+  "1001,Acme,00123,100,2026-03-10,2026-03-12,60,,,",
+]);
+assert.strictEqual(repeated.lines.length, 1);
+assert.strictEqual(repeated.lines[0].ordered, 100);
+assert.strictEqual(repeated.lines[0].received, 100);
+assert.strictEqual(repeated.lines[0].rowsCombined, 3);
+assert.strictEqual(engine.formatISO(repeated.lines[0].receipt), "2026-03-12");
+assert.strictEqual(repeated.lines[0].onTime, false);
+assert.ok(warns(repeated, /PO 1001, SKU 00123 appears 3 times/));
+assert.ok(warns(repeated, /Rows were combined/));
+assert.ok(warns(repeated, /different ordered quantities \(80 and 100\)/));
+assert.ok(warns(repeated, /The largest, 100, was used/));
+assert.match(repeated.linesCsv, /Rows Combined/);
+assert.match(repeated.linesCsv, /,3,/);
+
+const pooled = run([
+  "1,Alpha,A,10,2026-03-10,2026-03-10,10,,,",
+  "2,Alpha,B,10,2026-03-10,2026-03-10,10,,,",
+  "3,Alpha,C,10,2026-03-10,2026-03-10,10,,,",
+  "4,Beta,D,10,2026-03-10,2026-03-20,10,,,",
+]);
+assert.strictEqual(pooled.overall.difotPct, "75.0");
+assert.strictEqual(pooled.overall.difotLines, 3);
+assert.strictEqual(pooled.overall.lines, 4);
+assert.notStrictEqual((100 + 0) / 2, 75);
+assert.strictEqual(pooled.suppliers[0].supplier, "Beta");
+assert.strictEqual(pooled.suppliers[0].difotPct, "0.0");
+assert.strictEqual(pooled.suppliers[1].supplier, "Alpha");
+assert.strictEqual(pooled.suppliers[1].difotPct, "100.0");
+assert.deepStrictEqual(
+  pooled.allMonths.map(function (month) {
+    return month.month;
+  }),
+  ["2026-03"]
+);
+const months = run([
+  "1,Alpha,A,10,2026-03-10,2026-03-10,10,,,",
+  "2,Alpha,B,10,2026-04-02,2026-04-02,10,,,",
+]);
+assert.deepStrictEqual(
+  months.allMonths.map(function (month) {
+    return month.month + ":" + month.lines;
+  }),
+  ["2026-03:1", "2026-04:1"]
+);
+const ranged = run(
+  ["1,Alpha,IN,10,2026-03-10,2026-03-10,10,,,", "2,Alpha,OUT,10,2026-01-10,2026-01-10,10,,,"],
+  { measureFrom: "2026-03-01", measureTo: "2026-03-31" }
+);
+assert.strictEqual(ranged.overall.lines, 1);
+assert.strictEqual(lineOf(ranged, "OUT").countedText, "N: outside the measure range");
+assert.match(ranged.summaryLine, /Measured 2026-03-01 to 2026-03-31/);
+
+const suppliers = [
+  "Supplier,Freight arranged by,Expected transit days",
+  "Shenzhen Widgets,Me,35",
+  "Acme Packaging,Supplier,",
+].join("\n");
+const freight = run(
+  [
+    "1,Shenzhen Widgets,ON,10,2026-03-10,2026-03-10,10,,,2026-04-10",
+    "2,Shenzhen Widgets,LATEF,10,2026-03-10,2026-03-10,10,,,2026-06-01",
+    "3,Shenzhen Widgets,NONE,10,2026-03-10,2026-03-10,10,,,",
+  ],
+  { supplierText: suppliers, supplierFileName: "suppliers.csv" }
+);
+assert.strictEqual(freight.ok, true, JSON.stringify(freight.errors));
+assert.strictEqual(freight.suppliers.length, 1);
+assert.strictEqual(freight.suppliers[0].difotPct, "100.0");
+assert.strictEqual(freight.suppliers[0].freight, "I arrange freight");
+assert.strictEqual(lineOf(freight, "LATEF").difot, true);
+assert.strictEqual(lineOf(freight, "LATEF").freightOnTime, "N");
+assert.strictEqual(lineOf(freight, "ON").freightOnTime, "Y");
+assert.strictEqual(freight.freight[0].measurable, 2);
+assert.strictEqual(freight.freight[0].onTimePct, "50.0");
+assert.match(freight.freight[0].note, /1 line not measurable/);
+assert.match(freight.notes.join(" "), /does not change a supplier's DIFOT/);
+assert.match(freight.summaryCsv, /Freight,Shenzhen Widgets/);
+assert.match(freight.notes.join(" "), /1 supplier in the supplier list is not in the PO file/);
+
+const noTransit = run(["1,Shenzhen Widgets,A,10,2026-03-10,2026-03-10,10,,,2026-04-01"], {
+  supplierText: "Supplier,Freight arranged by,Expected transit days\nShenzhen Widgets,Me,\n",
+  supplierFileName: "suppliers.csv",
+});
+assert.strictEqual(noTransit.freight[0].note, "not measurable");
+assert.ok(warns(noTransit, /expected transit days is blank, so freight is not measurable/));
+assert.strictEqual(noTransit.lines[0].difot, true);
+
+const missingMaster = run(["1,Mystery Co,A,10,2026-03-10,2026-03-10,10,,,"], {
+  supplierText: suppliers,
+  supplierFileName: "suppliers.csv",
+});
+assert.strictEqual(missingMaster.suppliers[0].freight, "Supplier delivers");
+assert.ok(warns(missingMaster, /Mystery Co/));
+assert.ok(warns(missingMaster, /Supplier delivers/));
+assert.strictEqual(missingMaster.freight.length, 0);
+
+const noMaster = run(["1,Mystery Co,A,10,2026-03-10,2026-03-10,10,,,"]);
+assert.match(noMaster.notes.join(" "), /No supplier list was loaded/);
+assert.strictEqual(noMaster.suppliers[0].freight, "Supplier delivers");
+assert.strictEqual(noMaster.freight.length, 0);
+assert.strictEqual(warns(noMaster, /not in the supplier list/), false);
+
+const duplicateSuppliers = run(["1,Acme,A,10,2026-03-10,2026-03-10,10,,,"], {
+  supplierText: "Supplier,Freight arranged by,Expected transit days\nAcme,Supplier,\nacme,Me,10\n",
+  supplierFileName: "suppliers.csv",
+});
+assert.strictEqual(duplicateSuppliers.ok, false);
+assert.match(duplicateSuppliers.errors[0], /Acme is on rows 2 and 3/);
+assert.match(duplicateSuppliers.errors[0], /only once/);
+
+const monthDay = run(["1,Acme,A,10,03/04/2026,03/04/2026,10,,,"], { dayFirst: false });
+assert.strictEqual(engine.formatISO(monthDay.lines[0].required), "2026-03-04");
+assert.match(monthDay.dateLine, /First date 03\/04\/2026 read as 4 March 2026/);
+const dayMonth = run(["1,Acme,A,10,03/04/2026,03/04/2026,10,,,"], { dayFirst: true });
+assert.strictEqual(engine.formatISO(dayMonth.lines[0].required), "2026-04-03");
+assert.match(dayMonth.dateLine, /First date 03\/04\/2026 read as 3 April 2026/);
+
+const isoTime = run(["1,Acme,A,10,2026-03-10T14:30:00,2026-03-10 09:00,10,,,"]);
+assert.strictEqual(isoTime.ok, true, JSON.stringify(isoTime.errors));
+assert.strictEqual(isoTime.lines[0].daysLate, 0);
+assert.strictEqual(warns(isoTime, /other way/), false);
+
+const impossible = run(["1,Acme,A,10,2026-03-10,2026-03-10,10,,,", "2,Acme,B,10,10/13/2026,2026-03-10,10,,,"]);
+assert.strictEqual(impossible.ok, false);
+assert.strictEqual(
+  impossible.errors[0],
+  "Row 3: 10/13/2026 does not fit Day/Month/Year. Switch to Month/Day/Year."
+);
+assert.match(impossible.dateLine, /First date 2026-03-10 read as 10 March 2026/);
+assert.strictEqual(warns(impossible, /other way/), false);
+assert.strictEqual(impossible.summaryCsv, "");
+
+const notReal = run(["1,Acme,A,10,31/02/2026,01/03/2026,10,,,"]);
+assert.match(notReal.errors[0], /Row 2: 31\/02\/2026 is not a real date under Day\/Month\/Year or Month\/Day\/Year/);
+
+const shortYear = run(["1,Acme,A,10,10/03/26,09/03/2026,10,,,"]);
+assert.match(shortYear.errors[0], /Row 2: 10\/03\/26 uses a 2-digit year/);
+assert.match(shortYear.errors[0], /2026/);
+
+const excel = run(["1,Acme,A,10,45931,2026-03-10,10,,,", "2,Acme,B,10,2026-03-10,2026-03-10,10,,,"]);
+assert.strictEqual(excel.ok, true, JSON.stringify(excel.errors));
+assert.strictEqual(excel.lines.length, 1);
+assert.ok(warns(excel, /Excel date number/));
+assert.ok(warns(excel, /Save dates as dates/));
+
+const ambiguousIso = run(["1,Acme,A,10,2026-03-10,2026-03-10,10,,,", "2,Acme,B,10,03/04/2026,03/04/2026,10,,,"]);
+assert.strictEqual(ambiguousIso.ok, true, JSON.stringify(ambiguousIso.errors));
+assert.ok(warns(ambiguousIso, /other way/));
+const clearSlash = run(["1,Acme,A,10,2026-03-10,2026-03-10,10,,,", "2,Acme,B,10,13/04/2026,13/04/2026,10,,,"]);
+assert.strictEqual(warns(clearSlash, /other way/), false);
+const stopAmbiguous = run(["1,Acme,A,10,03/04/2026,03/04/2026,10,,,", "2,Acme,B,10,10/13/2026,03/04/2026,10,,,"]);
+assert.strictEqual(stopAmbiguous.ok, false);
+assert.strictEqual(warns(stopAmbiguous, /other way/), false);
+assert.match(stopAmbiguous.dateLine, /First date 03\/04\/2026 read as 3 April 2026/);
+
+const manyStops = [];
+for (let i = 0; i < 12; i += 1) {
+  manyStops.push(i + ",Acme,S" + i + ",1,10/13/2026,01/03/2026,1,,,");
+}
+const listedStops = run(manyStops);
+assert.strictEqual(listedStops.errors.length, 11);
+assert.match(listedStops.errors[0], /Row 2:/);
+assert.strictEqual(listedStops.errors[10], "and 2 more");
+
+const semicolons = run("PO Number;Supplier;SKU\n1;Acme;A\n");
+assert.deepStrictEqual(semicolons.errors, [
+  "This file uses semicolons. Save it as a comma-separated CSV and try again.",
+]);
+const xlsx = run(["1,Acme,A,1,2026-03-10,2026-03-10,1,,,"], { poFileName: "lines.xlsx" });
+assert.deepStrictEqual(xlsx.errors, ["Save it as CSV UTF-8 and try again."]);
+const missingHeader = run("PO Number,Supplier,SKU,Required Date,Receipt Date,Received Qty\n1,Acme,A,2026-03-10,2026-03-10,1\n");
+assert.match(missingHeader.errors[0], /Ordered Qty/);
+assert.match(missingHeader.errors[0], /Download the template/);
+
+const bom = run("\uFEFF" + HEADER + "\n1,Acme,A,10,2026-03-10,2026-03-10,10,,,\n");
+assert.strictEqual(bom.ok, true, JSON.stringify(bom.errors));
+const quoted = run(HEADER + '\n1,"Acme, Inc",A,10,2026-03-10,2026-03-10,10,,,\n');
+assert.strictEqual(quoted.ok, true, JSON.stringify(quoted.errors));
+assert.strictEqual(quoted.lines[0].supplier, "Acme, Inc");
+assert.match(quoted.linesCsv, /"Acme, Inc"/);
+
+const renamed = run(
+  "po-number,SUPPLIER,sku,ordered-qty,REQUIRED-DATE,receipt_date,received qty\n1,Acme,A,10,2026-03-10,2026-03-10,10\n"
+);
+assert.strictEqual(renamed.ok, true, JSON.stringify(renamed.errors));
+
+const skus = run([
+  "1,Acme,00123,10,2026-03-10,2026-03-10,10,,,",
+  "2,Acme,123,10,2026-03-10,2026-03-10,10,,,",
+  "1, Acme , 00123 ,10,2026-03-10,2026-03-10,10,,,",
+]);
+assert.strictEqual(skus.lines.length, 2);
+assert.ok(lineOf(skus, "00123"));
+assert.ok(lineOf(skus, "123"));
+assert.strictEqual(lineOf(skus, "00123").rowsCombined, 2);
+assert.ok(warns(skus, /space/));
+assert.ok(warns(skus, /00123 can become 123/));
+assert.strictEqual(lineOf(skus, "00123").supplier, "Acme");
+
+const summary = worked.summaryCsv;
+assert.strictEqual(summary.charCodeAt(0), 0xfeff);
+assert.match(summary, /Setting,Value\nDate format,Day\/Month\/Year/);
+assert.match(summary, /Days early allowed,2/);
+assert.match(summary, /Days late allowed,0/);
+assert.match(summary, /Shortfall allowed,0%/);
+assert.match(summary, /Over-delivery counts as in full,Yes/);
+assert.match(summary, /As at date,2026-10-14/);
+const summaryTable = summary.slice(summary.indexOf("Level,"));
+assert.ok(summaryTable.startsWith(engine.SUMMARY_HEADER.join(",")));
+assert.match(summaryTable, /Overall,,,4,2,3,1,50\.0,75\.0,25\.0/);
+assert.match(worked.linesCsv, /2026-03-09/);
+assert.ok(worked.linesCsv.includes(engine.LINES_HEADER.join(",")));
+assert.strictEqual(worked.summaryFileName, "DIFOT_summary_2026-10-14.csv");
+assert.strictEqual(worked.linesFileName, "DIFOT_lines_2026-10-14.csv");
+assert.doesNotMatch(worked.summaryCsv, /\d,\d{3}/);
+
+const help = fs.readFileSync(path.join(ROOT, "assets", "template_DIFOT_PO_Lines.csv"), "utf8");
+assert.match(help, /Missing dates\? Add them from your forwarder's bill of lading or tracking before you upload\./);
+const templateRun = run(help, {
+  poFileName: "template_DIFOT_PO_Lines.csv",
+  supplierText: fs.readFileSync(path.join(ROOT, "assets", "template_DIFOT_Suppliers.csv"), "utf8"),
+  supplierFileName: "template_DIFOT_Suppliers.csv",
+});
+assert.strictEqual(templateRun.ok, true, JSON.stringify(templateRun.errors) + JSON.stringify(templateRun.warnings));
+assert.strictEqual(templateRun.overall.lines, 4);
+assert.strictEqual(warns(templateRun, /left out/), false);
+
+const big = ["PO Number,Supplier,SKU,Ordered Qty,Required Date,Receipt Date,Received Qty"];
+for (let i = 0; i < 200000; i += 1) {
+  big.push("PO" + i + ",Acme,SKU" + (i % 1000) + ",10,2026-03-10,2026-03-10,10");
+}
+const bigText = big.join("\n");
+const started = Date.now();
+const bigResult = engine.buildDifot({
+  poText: bigText,
+  poFileName: "big.csv",
+  poByteLength: Buffer.byteLength(bigText),
+  asAt: "2026-10-14",
+});
+const elapsed = Date.now() - started;
+assert.strictEqual(bigResult.ok, true, JSON.stringify(bigResult.errors));
+assert.strictEqual(bigResult.overall.lines, 200000);
+assert.ok(elapsed < 2000, "200,000 rows took " + elapsed + "ms");
+
+if (!fs.existsSync(path.join(SITE, "learn", "difot-calculator", "index.html"))) {
+  console.error("Built DIFOT Calculator page is missing. Run `npm run build` first.");
+  process.exit(1);
+}
+
+const page = fs.readFileSync(path.join(SITE, "learn", "difot-calculator", "index.html"), "utf8");
+const sourcePage = fs.readFileSync(path.join(ROOT, "src", "learn", "difot-calculator.njk"), "utf8");
+const ui = fs.readFileSync(path.join(ROOT, "assets", "difot-calculator.js"), "utf8");
+const article = fs.readFileSync(
+  path.join(ROOT, "src", "blog", "posts", "supplier-difot-measure-the-delivery-that-actually-matters.html"),
+  "utf8"
+);
+assert.match(page, /<h1 class="page-title">DIFOT Calculator<\/h1>/);
+assert.match(page, /id="df-days-early"[^>]*value="2"/);
+assert.match(page, /id="df-days-late"[^>]*value="0"/);
+assert.match(page, /id="df-shortfall"/);
+assert.match(page, /id="df-over"/);
+assert.match(page, /id="df-measure-from"/);
+assert.match(page, /id="df-measure-to"/);
+assert.match(page, /id="df-as-at"/);
+assert.match(page, /Day\/Month\/Year/);
+assert.match(page, /your accounting or purchasing system/);
+assert.match(page, /Missing dates\? Add them from your forwarder's bill of lading or tracking before you upload\./);
+assert.match(page, /supplier bill date/);
+assert.match(page, /does not change the supplier's DIFOT/);
+assert.match(page, /id="df-downloads" hidden/);
+assert.match(page, /id="df-results" hidden/);
+assert.match(page, /Email me to unlock the download/);
+assert.match(page, /name="articles"/);
+assert.doesNotMatch(page, /name="articles"[^>]*checked/);
+assert.doesNotMatch(page, /Xero|ERP|Stock Planner|Demand Planner|coming soon/i);
+assert.doesNotMatch(sourcePage, /Xero|ERP|Stock Planner|Demand Planner|coming soon/i);
+assert.doesNotMatch(ui, /Xero|ERP|Stock Planner|Demand Planner|coming soon/i);
+assert.match(ui, /formId:\s*"difot-calculator"/);
+assert.match(ui, /return \{ kind: "difot-calculator" \}/);
+assert.doesNotMatch(ui, /buildSummary:[\s\S]*?return \{[^}]*supplier/);
+assert.match(article, /<a href="\/learn\/difot-calculator\/">Calculate your suppliers' DIFOT free<\/a>/);
+assert.doesNotMatch(article, /Stock Planner|Xero/);
+const sentPage = fs.readFileSync(path.join(SITE, "learn", "difot-calculator", "sent", "index.html"), "utf8");
+assert.match(sentPage, /noindex/);
+assert.match(sentPage, /The download is unlocked on the DIFOT Calculator page/);
+assert.ok(!fs.readFileSync(path.join(SITE, "sitemap.xml"), "utf8").includes("/learn/difot-calculator/sent/"));
+assert.match(fs.readFileSync(path.join(SITE, "sitemap.xml"), "utf8"), /\/learn\/difot-calculator\//);
+assert.match(fs.readFileSync(path.join(ROOT, "src", "_data", "learnTools.js"), "utf8"), /\/learn\/difot-calculator\//);
+
+function element(value) {
+  return {
+    hidden: false,
+    textContent: "",
+    innerHTML: "",
+    value: value == null ? "" : value,
+    files: [],
+    listeners: {},
+    addEventListener: function (type, fn) {
+      this.listeners[type] = fn;
+    },
+  };
+}
+
+function settingsKeepDownload() {
+  const uiSource = fs.readFileSync(path.join(ROOT, "assets", "difot-calculator.js"), "utf8");
+  const ids = {};
+  [
+    "df-errors",
+    "df-warnings",
+    "df-date-line",
+    "df-po-name",
+    "df-supplier-name",
+    "df-output",
+    "df-summary-line",
+    "df-difot",
+    "df-on-time",
+    "df-in-full",
+    "df-lines",
+    "df-settings",
+    "df-notes",
+    "df-supplier-body",
+    "df-month-body",
+    "df-month-note",
+    "df-freight-wrap",
+    "df-freight-note",
+    "df-freight-body",
+    "df-gate",
+    "df-downloads",
+    "df-download-summary",
+    "df-download-lines",
+  ].forEach(function (id) {
+    ids[id] = element("");
+  });
+  ids["df-date-order"] = element("dmy");
+  ids["df-days-early"] = element("2");
+  ids["df-days-late"] = element("0");
+  ids["df-shortfall"] = element("0");
+  ids["df-over"] = element("yes");
+  ids["df-as-at"] = element("");
+  ids["df-measure-from"] = element("");
+  ids["df-measure-to"] = element("");
+  ids["df-po-file"] = element("");
+  ids["df-supplier-file"] = element("");
+  const csv = HEADER + "\n1,Acme,A,10,2026-03-10,2026-03-10,10,,,\n";
+  let shows = 0;
+  let attached = null;
+  const RealDate = Date;
+  function FixedDate() {
+    return new RealDate(2026, 9, 14, 12, 0, 0);
+  }
+  FixedDate.prototype = RealDate.prototype;
+  FixedDate.now = function () {
+    return new RealDate(2026, 9, 14, 12, 0, 0).getTime();
+  };
+  FixedDate.parse = RealDate.parse;
+  FixedDate.UTC = RealDate.UTC;
+  function FileReader() {}
+  FileReader.prototype.readAsText = function () {
+    this.result = csv;
+    this.onload();
+  };
+  const sandbox = {
+    document: {
+      getElementById: function (id) {
+        return ids[id] || null;
+      },
+      createElement: function () {
+        return element("");
+      },
+      body: { appendChild: function () {}, removeChild: function () {} },
+    },
+    TextEncoder: TextEncoder,
+    Date: FixedDate,
+    FileReader: FileReader,
+    URL: { createObjectURL: function () { return "blob:test"; }, revokeObjectURL: function () {} },
+    Blob: function Blob() {},
+    console: console,
+  };
+  sandbox.window = sandbox;
+  sandbox.window.DifotCalculator = engine;
+  sandbox.window.SimResultsForm = {
+    attach: function (options) {
+      attached = options;
+      return {
+        show: function () {
+          shows += 1;
+        },
+        hide: function () {},
+      };
+    },
+  };
+  vm.runInNewContext(uiSource, sandbox, { filename: "difot-calculator.js" });
+  assert.strictEqual(attached.formId, "difot-calculator");
+  assert.strictEqual(attached.wordingVersion, "difot-calculator-v1");
+  assert.strictEqual(attached.wordingRequired, "Email me to unlock the download.");
+  assert.strictEqual(attached.sentUrl, "/learn/difot-calculator/sent/");
+  assert.strictEqual(ids["df-as-at"].value, "2026-10-14");
+  ids["df-po-file"].files = [{ name: "lines.csv", size: csv.length }];
+  ids["df-po-file"].listeners.change();
+  assert.strictEqual(shows, 1);
+  assert.strictEqual(ids["df-downloads"].hidden, true);
+  const sentSummary = attached.buildSummary();
+  assert.strictEqual(sentSummary.kind, "difot-calculator");
+  assert.deepStrictEqual(Object.keys(sentSummary), ["kind"]);
+  attached.onSent();
+  assert.strictEqual(ids["df-downloads"].hidden, false);
+  ids["df-days-early"].value = "5";
+  ids["df-days-early"].listeners.change();
+  assert.strictEqual(ids["df-downloads"].hidden, false);
+  assert.strictEqual(shows, 1);
+  ids["df-days-late"].value = "1";
+  ids["df-days-late"].listeners.change();
+  assert.strictEqual(ids["df-downloads"].hidden, false);
+  attached.buildSummary();
+  ids["df-po-file"].listeners.change();
+  assert.strictEqual(ids["df-downloads"].hidden, true);
+  attached.onSent();
+  assert.strictEqual(ids["df-downloads"].hidden, true);
+  assert.ok(shows > 1);
+}
+
+settingsKeepDownload();
+
+console.log("DIFOT Calculator checks passed.");

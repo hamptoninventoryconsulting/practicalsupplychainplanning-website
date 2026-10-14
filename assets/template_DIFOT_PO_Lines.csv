@@ -1,0 +1,6 @@
+PO Number,Supplier,SKU,Ordered Qty,Required Date,Receipt Date,Received Qty,Damaged Qty,Damaged Reason,Arrived Date
+PO1001,Acme Packaging,BOX-100,100,2026-03-10,2026-03-09,100,,,
+PO1002,Acme Packaging,BOX-200,50,2026-03-10,2026-03-12,50,,,
+PO1003,Shenzhen Widgets,WDG-010,80,2026-03-15,2026-03-15,70,,,
+PO1004,Shenzhen Widgets,WDG-020,40,2026-03-20,2026-03-20,40,4,Crushed,2026-04-20
+Missing dates? Add them from your forwarder's bill of lading or tracking before you upload.

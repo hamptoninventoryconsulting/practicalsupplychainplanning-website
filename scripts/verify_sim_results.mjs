@@ -14,6 +14,10 @@ import {
   IP_LIMIT,
   SCHEMA_SQL,
   OPTIONAL_WORDING,
+  DIFOT_FORM_ID,
+  DIFOT_REQUIRED_WORDING,
+  DIFOT_SUBJECT,
+  DIFOT_WORDING_VERSION,
   STARTER_FORM_ID,
   STARTER_REQUIRED_WORDING,
   STARTER_SUBJECT,
@@ -186,6 +190,24 @@ function post(body, headers) {
     headers: merged,
     body: JSON.stringify(body),
   });
+}
+
+function difotBody(overrides) {
+  return payload(
+    Object.assign(
+      {
+        wordingVersion: DIFOT_WORDING_VERSION,
+        wordingText: {
+          required: DIFOT_REQUIRED_WORDING,
+          optional: OPTIONAL_WORDING,
+        },
+        formId: DIFOT_FORM_ID,
+        pageUrl: "https://practicalsupplychainplanning.com/learn/difot-calculator/",
+        summary: { kind: "difot-calculator" },
+      },
+      overrides || {}
+    )
+  );
 }
 
 function starterBody(overrides) {
@@ -461,6 +483,95 @@ const starterOldWording = await send(
   })
 );
 assert.strictEqual(starterOldWording.status, 400);
+
+const difotDb = openDb();
+const difot = await send(
+  difotDb.db,
+  difotBody({
+    email: "difot@example.com",
+    articlesConsent: false,
+    pageUrl: "https://practicalsupplychainplanning.com/learn/difot-calculator/?utm_source=newsletter",
+  })
+);
+assert.strictEqual(difot.status, 200, JSON.stringify(difot.json));
+const difotMail = JSON.parse(
+  difot.calls.find(function (call) {
+    return call.url.includes("/emails");
+  }).body
+);
+assert.strictEqual(difotMail.subject, DIFOT_SUBJECT);
+assert.match(difotMail.text, /https:\/\/practicalsupplychainplanning\.com\/learn\/difot-calculator\//);
+assert.match(
+  difotMail.text,
+  /Your files were read in your browser\. They were not sent to us\. This email does not include your suppliers or orders\./
+);
+assert.match(difotMail.text, /Unsubscribe:/);
+assert.doesNotMatch(difotMail.text, /Practical Stock Planner|25\.0%|Acme|PO1001/);
+assert.doesNotMatch(difotMail.html, /Practical Stock Planner|25\.0%|Acme|PO1001/);
+assert.ok(!difotMail.attachments || difotMail.attachments.length === 0);
+assert.doesNotMatch(difotMail.text, /your business should|\brecommended\b/i);
+const difotRow = difotDb.sqlite.prepare("SELECT * FROM consent").get();
+assert.strictEqual(difotRow.form_id, "difot-calculator");
+assert.strictEqual(difotRow.page_url, "/learn/difot-calculator/?utm_source=newsletter");
+assert.strictEqual(difotRow.wording_version, DIFOT_WORDING_VERSION);
+assert.strictEqual(difotRow.wording_text, DIFOT_REQUIRED_WORDING + "\n" + OPTIONAL_WORDING);
+assert.strictEqual(difotRow.articles_box, 0);
+assert.strictEqual(
+  difot.calls.some(function (call) {
+    return call.url.includes("/contacts");
+  }),
+  false
+);
+
+const difotArticles = await send(
+  openDb().db,
+  difotBody({
+    email: "difot-articles@example.com",
+    articlesConsent: true,
+  })
+);
+assert.strictEqual(difotArticles.status, 200, JSON.stringify(difotArticles.json));
+const difotArticlesMail = JSON.parse(
+  difotArticles.calls.find(function (call) {
+    return call.url.includes("/emails");
+  }).body
+);
+assert.match(difotArticlesMail.text, /new articles/);
+assert.doesNotMatch(difotArticlesMail.text, /Acme|PO1001|25\.0/);
+assert.ok(
+  difotArticles.calls.some(function (call) {
+    return call.url.includes("/contacts");
+  })
+);
+
+const difotLeak = await send(
+  openDb().db,
+  difotBody({
+    email: "difot-leak@example.com",
+    summary: { kind: "difot-calculator", supplier: "Acme", difot: "25.0" },
+  })
+);
+assert.strictEqual(difotLeak.status, 400);
+
+const difotOldWording = await send(
+  openDb().db,
+  payload({
+    email: "difot-old-wording@example.com",
+    formId: "difot-calculator",
+    pageUrl: "https://practicalsupplychainplanning.com/learn/difot-calculator/",
+    summary: { kind: "difot-calculator" },
+  })
+);
+assert.strictEqual(difotOldWording.status, 400);
+
+const difotWrongPage = await send(
+  openDb().db,
+  difotBody({
+    email: "difot-page@example.com",
+    pageUrl: "https://practicalsupplychainplanning.com/learn/starter-forecast/",
+  })
+);
+assert.strictEqual(difotWrongPage.status, 400);
 
 const failContact = okFetch();
 const original = failContact;
