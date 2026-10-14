@@ -36,7 +36,7 @@
             </p>
             <p>The average uses these rules:</p>
             <ul>
-              <li>Each sale moves back to the Monday of its week. Sales from every location are added together.</li>
+              <li>Each sale moves back to the Monday of its week. Sales from every location are added together, so there is one forecast per SKU.</li>
               <li>The history window is the 12 complete weeks before the plan start week. Sales in the plan start week or later are left out.</li>
               <li>A SKU's first sale week is the first week with net sales above zero. Weeks before that are left out. Zero weeks after that are counted. Weeks used is that count, capped at 12.</li>
               <li>The average is the total of those weeks divided by weeks used. A negative average is set to 0 and flagged. The result is rounded to 2 decimals.</li>
@@ -53,7 +53,6 @@
               <li>A week when you were out of stock still shows only what was sold.</li>
               <li>A new SKU uses the weeks since its first sale, so a short run of sales can move the average a lot.</li>
               <li>One unusual week stays in the average until it falls out of the 12 weeks.</li>
-              <li>Locations are added together. There is one forecast per SKU.</li>
             </ul>
           </div>
         </section>
