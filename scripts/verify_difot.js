@@ -368,6 +368,89 @@ assert.strictEqual(splitDates.lines[0].onTime, false);
 assert.strictEqual(splitDates.lines[0].transit, 14);
 assert.strictEqual(splitDates.lines[0].freightOnTime, "Y");
 
+const splitRemainder = run(
+  [
+    "1,Shenzhen Widgets,PART,10,2026-04-05,2026-04-11,4,,,2026-04-01",
+    "1,Shenzhen Widgets,PART,10,2026-04-05,,,,,2026-04-05",
+  ],
+  {
+    supplierText: "Supplier,Freight arranged by,Expected transit days\nShenzhen Widgets,I arrange freight,21\n",
+    supplierFileName: "suppliers.csv",
+    asAt: "2026-04-30",
+  }
+);
+assert.strictEqual(splitRemainder.ok, true, JSON.stringify(splitRemainder.errors) + JSON.stringify(splitRemainder.warnings));
+assert.strictEqual(splitRemainder.lines.length, 1);
+assert.strictEqual(splitRemainder.lines[0].received, 10);
+assert.strictEqual(splitRemainder.lines[0].inFull, true);
+assert.strictEqual(splitRemainder.lines[0].onTime, true);
+assert.strictEqual(splitRemainder.lines[0].difot, true);
+assert.strictEqual(splitRemainder.lines[0].transit, 10);
+assert.strictEqual(splitRemainder.lines[0].freightOnTime, "Y");
+assert.strictEqual(engine.formatISO(splitRemainder.lines[0].handed), "2026-04-05");
+assert.strictEqual(engine.formatISO(splitRemainder.lines[0].onTimeDate), "2026-04-05");
+assert.match(splitRemainder.lines[0].reason, /rest of the ordered quantity/);
+assert.match(splitRemainder.notes.join(" "), /another handover with no quantity yet/);
+assert.match(splitRemainder.notes.join(" "), /Freight days use only the rows that have arrived/);
+assert.strictEqual(warns(splitRemainder, /Handed to Freight Date is after/), false);
+
+const splitRemainderLate = run(
+  [
+    "1,Shenzhen Widgets,PARTL,10,2026-04-05,2026-04-11,4,,,2026-04-01",
+    "1,Shenzhen Widgets,PARTL,10,2026-04-05,,,,,2026-04-15",
+  ],
+  {
+    supplierText: "Supplier,Freight arranged by,Expected transit days\nShenzhen Widgets,I arrange freight,21\n",
+    supplierFileName: "suppliers.csv",
+    asAt: "2026-04-30",
+  }
+);
+assert.strictEqual(splitRemainderLate.ok, true, JSON.stringify(splitRemainderLate.errors) + JSON.stringify(splitRemainderLate.warnings));
+assert.strictEqual(splitRemainderLate.lines[0].received, 10);
+assert.strictEqual(splitRemainderLate.lines[0].inFull, true);
+assert.strictEqual(splitRemainderLate.lines[0].onTime, false);
+assert.strictEqual(splitRemainderLate.lines[0].daysLate, 10);
+assert.strictEqual(splitRemainderLate.lines[0].transit, 10);
+assert.strictEqual(splitRemainderLate.lines[0].freightOnTime, "Y");
+assert.strictEqual(warns(splitRemainderLate, /Handed to Freight Date is after/), false);
+
+const splitFilledOpen = run(
+  [
+    "1,Shenzhen Widgets,PARTF,10,2026-04-05,2026-04-11,6,,,2026-04-01",
+    "1,Shenzhen Widgets,PARTF,10,2026-04-05,,4,,,2026-04-08",
+  ],
+  {
+    supplierText: "Supplier,Freight arranged by,Expected transit days\nShenzhen Widgets,I arrange freight,21\n",
+    supplierFileName: "suppliers.csv",
+    asAt: "2026-04-30",
+  }
+);
+assert.strictEqual(splitFilledOpen.lines[0].received, 10);
+assert.strictEqual(splitFilledOpen.lines[0].transit, 10);
+assert.strictEqual(engine.formatISO(splitFilledOpen.lines[0].handed), "2026-04-08");
+assert.strictEqual(splitFilledOpen.notes.length === 0 || !/rest of the ordered quantity/.test(splitFilledOpen.notes.join(" ")), true);
+
+const damagedOrdered = run(["1,Shenzhen Widgets,DMG,10,2026-04-10,,,12,,2026-04-10"], {
+  supplierText: "Supplier,Freight arranged by,Expected transit days\nShenzhen Widgets,I arrange freight,21\n",
+  supplierFileName: "suppliers.csv",
+  asAt: "2026-04-30",
+});
+assert.strictEqual(damagedOrdered.ok, false);
+assert.ok(warns(damagedOrdered, /Row 2 was left out because the damaged quantity is greater than the ordered quantity/));
+assert.strictEqual(warns(damagedOrdered, /received quantity/), false);
+
+const damagedWithinOrder = run(["1,Shenzhen Widgets,DMGOK,10,2026-04-10,,,2,,2026-04-10"], {
+  supplierText: "Supplier,Freight arranged by,Expected transit days\nShenzhen Widgets,I arrange freight,21\n",
+  supplierFileName: "suppliers.csv",
+  asAt: "2026-04-30",
+});
+assert.strictEqual(damagedWithinOrder.ok, true, JSON.stringify(damagedWithinOrder.errors) + JSON.stringify(damagedWithinOrder.warnings));
+assert.strictEqual(damagedWithinOrder.lines[0].received, 10);
+assert.strictEqual(damagedWithinOrder.lines[0].accepted, 8);
+assert.strictEqual(damagedWithinOrder.lines[0].inFull, false);
+assert.match(damagedWithinOrder.lines[0].reason, /Damaged 2/);
+assert.match(damagedWithinOrder.lines[0].reason, /Short 2 \(20%\)/);
+
 const splitSite = run([
   "9,Acme,SPLIT,100,2026-03-10,2026-03-08,60,,,2026-03-01",
   "9,Acme,SPLIT,100,2026-03-10,2026-03-10,40,,,2026-02-01",
@@ -645,9 +728,11 @@ const sample = run(samplePo, {
   asAt: "2026-10-14",
 });
 assert.strictEqual(sample.ok, true, JSON.stringify(sample.errors) + JSON.stringify(sample.warnings));
-assert.strictEqual(sample.overall.lines, 392);
-assert.strictEqual(sample.overall.difotPct, "81.4");
+assert.strictEqual(sample.overall.lines, 393);
+assert.strictEqual(sample.overall.difotPct, "81.2");
 assert.strictEqual(sample.overall.difotLines, 319);
+assert.strictEqual(sample.overall.onTimePct, "87.3");
+assert.strictEqual(sample.overall.inFullPct, "91.6");
 function samplePct(name) {
   return sample.suppliers.filter(function (row) {
     return row.supplier === name;
@@ -656,7 +741,10 @@ function samplePct(name) {
 assert.strictEqual(samplePct("Brisbane Packaging Co").difotPct, "100.0");
 assert.strictEqual(samplePct("Brisbane Packaging Co").lines, 80);
 assert.strictEqual(samplePct("Coastal Fasteners").difotPct, "97.5");
-assert.strictEqual(samplePct("Southern Cross Hardware").difotPct, "80.0");
+assert.strictEqual(samplePct("Southern Cross Hardware").difotPct, "79.0");
+assert.strictEqual(samplePct("Southern Cross Hardware").lines, 81);
+assert.strictEqual(samplePct("Southern Cross Hardware").onTimePct, "85.2");
+assert.strictEqual(samplePct("Southern Cross Hardware").inFullPct, "91.4");
 assert.strictEqual(samplePct("Harbour Electrical Supplies").difotPct, "77.5");
 assert.strictEqual(samplePct("Outback Tools & Parts").difotPct, "48.6");
 assert.strictEqual(samplePct("Outback Tools & Parts").lines, 72);
@@ -672,6 +760,35 @@ assert.strictEqual(samplePct("Southern Cross Hardware").freight, "I arrange frei
 assert.strictEqual(samplePct("Outback Tools & Parts").freight, "I arrange freight");
 assert.strictEqual(samplePct("Brisbane Packaging Co").freight, "Supplier delivers");
 assert.strictEqual(warns(sample, /Handed to Freight Date is blank/), false);
+const sampleOpen = lineOf(sample, "SKU-9001");
+assert.strictEqual(sampleOpen.supplier, "Southern Cross Hardware");
+assert.strictEqual(sampleOpen.ordered, 24);
+assert.strictEqual(sampleOpen.received, 24);
+assert.strictEqual(sampleOpen.onTime, false);
+assert.strictEqual(sampleOpen.inFull, true);
+assert.strictEqual(sampleOpen.difot, false);
+assert.strictEqual(sampleOpen.daysLate, 2);
+assert.strictEqual(sampleOpen.transit, null);
+assert.match(sampleOpen.reason, /ordered quantity was used/);
+assert.match(sample.notes.join(" "), /handover date and no arrival yet/);
+const sampleFreight = sample.freight.filter(function (row) {
+  return row.supplier === "Southern Cross Hardware";
+})[0];
+assert.strictEqual(sampleFreight.measurable, 78);
+assert.strictEqual(sampleFreight.onTimeLines, 46);
+assert.strictEqual(sampleFreight.onTimePct, "59.0");
+assert.strictEqual(sampleFreight.averageTransit, "21.1");
+assert.strictEqual(sampleFreight.longestTransit, "26");
+assert.strictEqual(sampleFreight.note, "1 line not measurable");
+const outbackFreight = sample.freight.filter(function (row) {
+  return row.supplier === "Outback Tools & Parts";
+})[0];
+assert.strictEqual(outbackFreight.measurable, 67);
+assert.strictEqual(outbackFreight.onTimeLines, 33);
+assert.strictEqual(outbackFreight.onTimePct, "49.3");
+assert.strictEqual(outbackFreight.averageTransit, "28.6");
+assert.strictEqual(outbackFreight.longestTransit, "33");
+assert.strictEqual(outbackFreight.note, "");
 
 const big = ["PO Number,Supplier,SKU,Ordered Qty,Required Date,Arrived at Your Site Date,Received Qty"];
 for (let i = 0; i < 200000; i += 1) {
@@ -722,6 +839,9 @@ assert.match(page, /does not change the supplier's DIFOT/);
 assert.match(page, /handed over but have not arrived yet/);
 assert.match(page, /leave Received Qty blank/);
 assert.match(page, /handover date is after the arrival date/);
+assert.match(page, /Freight days use only the rows that have arrived/);
+assert.match(page, /rest of the ordered quantity/);
+assert.match(page, /difot-engine\.js\?v=8/);
 assert.doesNotMatch(page, /Receipt Date|ship date/i);
 assert.match(page, /id="df-downloads" hidden/);
 assert.match(page, /id="df-results" hidden/);

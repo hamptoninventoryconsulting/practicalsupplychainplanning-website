@@ -92,6 +92,8 @@ sup.forEach(([name, fr, tr, fails], si) => {
     }
   }
 });
+// One handover with no arrival and no quantity. The ordered quantity is used until it is filled in.
+rows.push(["PO-4600", "Southern Cross Hardware", "SKU-9001", 24, "2026-09-01", "", "", "", "", "2026-09-03"].join(","));
 const fs = require("fs");
 const path = require("path");
 const dir = __dirname;
