@@ -7,7 +7,7 @@
   "nav": "learn",
   "permalink": "/learn/difot-calculator/",
   "scripts": [
-    "/assets/difot-engine.js?v=6",
+    "/assets/difot-engine.js?v=7",
     "/assets/sim-results-form.js?v=7",
     "/assets/difot-calculator.js?v=1"
   ]
@@ -43,8 +43,9 @@
               <li>Lines are counted, not whole orders and not quantity.</li>
               <li>An unreceived line that is overdue on the as-at date counts as a miss. A line that is not due yet is left out.</li>
               <li>If the same PO number and SKU appears more than once, the rows are combined. Quantities are added. The latest Arrived at Your Site Date and the latest Handed to Freight Date are kept. The ordered quantity is the largest one in the group.</li>
-              <li>Freight you arrange is measured from Handed to Freight Date to Arrived at Your Site Date, and compared with the expected transit days. It does not change the supplier's DIFOT. If the goods have been handed over but have not arrived yet, the line still counts for DIFOT and is left out of the freight figures.</li>
-              <li>If you arrange the freight and a received line has no Handed to Freight Date, that line is left out and named. If the supplier delivers to you, a Handed to Freight Date on the line is not used.</li>
+              <li>Freight you arrange is measured from Handed to Freight Date to Arrived at Your Site Date, and compared with the expected transit days. It does not change the supplier's DIFOT. If the goods have been handed over but have not arrived yet, the line still counts for DIFOT and is left out of the freight figures. Leave Received Qty blank and the ordered quantity counts as delivered in full until you fill the quantity in.</li>
+              <li>If the handover date is after the arrival date, that line is left out of the freight figures. On time still uses the handover date.</li>
+              <li>If you arrange the freight and a received line has no Handed to Freight Date, that line is left out. If the supplier delivers to you, a Handed to Freight Date on the line is not used.</li>
             </ul>
           </div>
         </section>
@@ -111,9 +112,13 @@
             </p>
             <p>
               The purchase order file needs PO Number, Supplier, SKU, Ordered
-              Qty, Required Date, Arrived at Your Site Date, and Received Qty.
-              Damaged Qty, Damaged Reason, and Handed to Freight Date are optional.
-              Fill in Handed to Freight Date on every received line where you arrange the freight.
+              Qty, Required Date, and Arrived at Your Site Date. Received Qty is
+              needed once the goods are at your site. When you arrange the freight
+              and the goods are not there yet, you can leave Received Qty blank:
+              on time uses the handover date, and the line counts as in full until
+              you fill the quantity in. Damaged Qty, Damaged Reason, and Handed to
+              Freight Date are optional. Fill in Handed to Freight Date on every
+              received line where you arrange the freight.
             </p>
             <p>
               The supplier list is optional. Without it, every supplier is
@@ -124,7 +129,7 @@
               when you arrange the freight.
             </p>
             <p>
-              Missing dates? Add Arrived at Your Site Date from the day the goods arrived. If you arrange the freight add Handed to Freight Date from the freight company's paperwork or tracking before you upload.
+              Missing dates? Add Arrived at Your Site Date from the day the goods arrived. If you arrange the freight add Handed to Freight Date from the freight company's paperwork or tracking before you upload. If those goods are not at your site yet you can leave Received Qty blank and the line counts as in full until you fill it in.
               If the only date you have for a supplier who delivers to you is the supplier's invoice date, you can use that as Arrived at Your Site Date.
             </p>
             <p>

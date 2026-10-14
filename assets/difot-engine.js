@@ -14,9 +14,11 @@
  * When the supplier delivers, on time compares Arrived at Your Site Date
  * with the required date. When you arrange the freight, on time compares
  * Handed to Freight Date with the required date. In full compares the
- * accepted quantity with the ordered quantity. Freight you arrange is
- * reported separately, from Handed to Freight Date to Arrived at Your Site
- * Date, and does not change DIFOT.
+ * accepted quantity with the ordered quantity. If you arrange the freight
+ * and the goods are not at your site yet, a blank received quantity counts
+ * as the full ordered quantity. Freight you arrange is reported separately,
+ * from Handed to Freight Date to Arrived at Your Site Date, and does not
+ * change DIFOT. A handover after the arrival is left out of the freight figures.
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
@@ -31,7 +33,7 @@
   var MAX_SUPPLIERS = 5000;
   var MAX_MONTHS_ON_SCREEN = 24;
   var HELP_LINE =
-    "Missing dates? Add Arrived at Your Site Date from the day the goods arrived. If you arrange the freight add Handed to Freight Date from the freight company's paperwork or tracking before you upload.";
+    "Missing dates? Add Arrived at Your Site Date from the day the goods arrived. If you arrange the freight add Handed to Freight Date from the freight company's paperwork or tracking before you upload. If those goods are not at your site yet you can leave Received Qty blank and the line counts as in full until you fill it in.";
   var PO_FIELDS = [
     ["po_number", "PO Number", true],
     ["supplier", "Supplier", true],
@@ -704,30 +706,6 @@
     return rowPhrase(bucket.rows, bucket.count) + ": " + detail + ".";
   }
 
-  function handedBlankWarning(items) {
-    if (!items.length) {
-      return "";
-    }
-    var shown = items.slice(0, 10).map(function (item) {
-      return "PO " + item.po + ", SKU " + item.sku;
-    });
-    var more = items.length - shown.length;
-    var lead;
-    if (items.length === 1) {
-      lead = shown[0] + " was left out";
-    } else {
-      lead = shown.join("; ");
-      if (more > 0) {
-        lead += "; and " + more + " more";
-      }
-      lead += " were left out";
-    }
-    return (
-      lead +
-      " because Handed to Freight Date is blank. You arrange the freight, so on time is the date the goods were handed to the freight company."
-    );
-  }
-
   function cell(cells, index) {
     if (index == null || index < 0) {
       return "";
@@ -1173,9 +1151,11 @@
       unreadableHanded: skipBucket(),
       siteUnreadKept: skipBucket(),
       futureSiteKept: skipBucket(),
+      handedBlank: skipBucket(),
+      handedAfterSite: skipBucket(),
     };
     var ignoredHanded = Object.create(null);
-    var handedBlank = [];
+    var assumedFullLines = 0;
     var dateStops = [];
     var firstDateRef = null;
     var slashDates = 0;
@@ -1305,7 +1285,7 @@
       }
       var damagedQty = damaged.blank ? 0 : damaged.value;
       var receivedQty = received.blank ? 0 : received.value;
-      if (damagedQty - receivedQty > 1e-9) {
+      if (!received.blank && damagedQty - receivedQty > 1e-9) {
         noteSkip(skipped.damagedOver, rowNumber);
         continue;
       }
@@ -1343,11 +1323,22 @@
             siteDate = null;
           }
         }
-        if (handedDate && (received.blank || receivedQty <= 0)) {
+        if (received.blank && damagedQty > 0) {
+          var canAssumeQty = handedDate && !(siteDate && formatISO(siteDate) <= asAtText);
+          if (!canAssumeQty || damagedQty - ordered.value > 1e-9) {
+            noteSkip(skipped.damagedOver, rowNumber);
+            continue;
+          }
+        }
+        if (handedDate && received.blank && siteDate && formatISO(siteDate) <= asAtText) {
           noteSkip(skipped.judgeHanded, rowNumber);
           continue;
         }
       } else {
+        if (received.blank && damagedQty > 0) {
+          noteSkip(skipped.damagedOver, rowNumber);
+          continue;
+        }
         if (!siteParsed.ok && siteParsed.reason === "unreadable") {
           noteSkip(skipped.unreadableSite, rowNumber);
           continue;
@@ -1431,7 +1422,7 @@
       ),
       skipWarning(
         skipped.judgeHanded,
-        "a received quantity and a Handed to Freight Date are both needed to judge the line"
+        "the goods are at your site and the received quantity is blank"
       ),
       skipWarning(skipped.excel, "the date is an Excel date number. Save dates as dates"),
       skipWarning(skipped.future, "the Arrived at Your Site Date is after the as-at date"),
@@ -1624,8 +1615,19 @@
         );
       }
       if (mode === "me" && !handed && (receivedQty > 0 || arrivedSite)) {
-        handedBlank.push({ po: group.po, sku: group.sku });
+        countedParts.forEach(function (part) {
+          noteSkip(skipped.handedBlank, part.rowNumber);
+        });
         return;
+      }
+      var allReceivedBlank = countedParts.every(function (part) {
+        return part.receivedBlank;
+      });
+      var arrivedInTime = arrivedSite && formatISO(arrivedSite) <= asAtKey;
+      var assumeFull = mode === "me" && handed && allReceivedBlank && !arrivedInTime;
+      if (assumeFull) {
+        receivedQty = orderedQty;
+        assumedFullLines += 1;
       }
 
       var accepted = receivedQty - damagedQty;
@@ -1695,6 +1697,9 @@
       if (counted && damagedQty > 0) {
         reasonParts.push("Damaged " + formatNumber(damagedQty) + (reasons.length ? " (" + reasons.join("; ") + ")" : ""));
       }
+      if (assumeFull) {
+        reasonParts.push("Received quantity not filled in, so the ordered quantity was used");
+      }
       if (onTimeDate && daysLate != null && Math.abs(daysLate) > 365) {
         checkDate = true;
         if (counted) {
@@ -1708,7 +1713,14 @@
 
       var transit = null;
       var freightOnTime = "";
-      if (mode === "me" && handed && arrivedSite && formatISO(arrivedSite) <= asAtKey) {
+      var freightArrival = mode === "me" && handed && arrivedSite && formatISO(arrivedSite) <= asAtKey;
+      if (freightArrival && handed.getTime() > arrivedSite.getTime()) {
+        countedParts.forEach(function (part) {
+          noteSkip(skipped.handedAfterSite, part.rowNumber);
+        });
+        freightArrival = false;
+      }
+      if (freightArrival) {
         transit = daysBetween(arrivedSite, handed);
         if (transitDaysExpected != null) {
           freightOnTime = transit <= transitDaysExpected ? "Y" : "N";
@@ -1734,7 +1746,7 @@
         difot: counted && onTime && inFull,
         late: counted && lateMiss,
         short: counted && shortMiss,
-        reason: counted ? reasonParts.join("; ") : "",
+        reason: reasonParts.length ? reasonParts.join("; ") : "",
         counted: counted,
         countedText: countedText,
         rowsCombined: group.parts.length,
@@ -1765,9 +1777,19 @@
           " more than 365 days from the required date. Check this date."
       );
     }
-    var handedBlankMessage = handedBlankWarning(handedBlank);
+    var handedBlankMessage = skipWarning(
+      skipped.handedBlank,
+      "Handed to Freight Date is blank. You arrange the freight, so on time is the date the goods were handed to the freight company"
+    );
     if (handedBlankMessage) {
       warnings.push(handedBlankMessage);
+    }
+    var handedAfterMessage = rowNote(
+      skipped.handedAfterSite,
+      "Handed to Freight Date is after Arrived at Your Site Date, so the line is not in the freight figures"
+    );
+    if (handedAfterMessage) {
+      warnings.push(handedAfterMessage);
     }
 
     var notes = [];
@@ -1798,6 +1820,13 @@
             " not in the PO file."
         );
       }
+    }
+    if (assumedFullLines) {
+      notes.push(
+        assumedFullLines +
+          (assumedFullLines === 1 ? " line has" : " lines have") +
+          " a handover date and no arrival yet, with no received quantity. The ordered quantity was counted as delivered in full until you fill the received quantity in."
+      );
     }
     if (notDue) {
       notes.push(notDue + (notDue === 1 ? " line not due yet" : " lines not due yet") + ".");

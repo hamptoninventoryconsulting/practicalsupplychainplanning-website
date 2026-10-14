@@ -3,4 +3,5 @@ PO1001,Acme Packaging,BOX-100,100,2026-03-10,2026-03-09,100,,,
 PO1002,Acme Packaging,BOX-200,50,2026-03-10,2026-03-12,50,,,
 PO1003,Shenzhen Widgets,WDG-010,80,2026-03-15,,70,,,2026-03-15
 PO1004,Shenzhen Widgets,WDG-020,40,2026-03-20,2026-04-20,40,4,Crushed,2026-03-20
-Missing dates? Add Arrived at Your Site Date from the day the goods arrived. If you arrange the freight add Handed to Freight Date from the freight company's paperwork or tracking before you upload.
+PO1005,Shenzhen Widgets,WDG-030,20,2026-03-18,,,,,2026-03-18
+Missing dates? Add Arrived at Your Site Date from the day the goods arrived. If you arrange the freight add Handed to Freight Date from the freight company's paperwork or tracking before you upload. If those goods are not at your site yet you can leave Received Qty blank and the line counts as in full until you fill it in.

@@ -43,7 +43,9 @@ sup.forEach(([name, fr, tr, fails], si) => {
   kind[clean[0]] = "edge2early";
   kind[clean[1]] = "edge1early";
   if (si === 3) kind[clean[2]] = "split";
-  for (let p = 0; p < 10; p++) {
+  // Outback has 9 purchase orders so the pooled DIFOT is not the average of the supplier figures.
+  const poCount = si === 4 ? 9 : 10;
+  for (let p = 0; p < poCount; p++) {
     po++;
     // This draw is unused. It stays so the random sequence matches the original sample.
     add(new Date(Date.UTC(2026, 5, 1)), ri(0, 110) + p * 0);
