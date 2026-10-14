@@ -309,30 +309,69 @@ assert.strictEqual(badThousands.lines.length, 1);
 assert.ok(warns(badThousands, /ordered quantity/));
 assert.ok(warns(badThousands, /thousands separator/));
 const unquotedMiddle = run([
-  "1,Acme,A,1,000,2026-03-10,2026-03-10,1000,,,",
+  "1,Acme,A,1,000,2026-03-10,2026-03-10,1000,0,note,2026-04-01",
   "2,Acme,B,10,2026-03-10,2026-03-10,10,,,",
 ]);
 assert.strictEqual(unquotedMiddle.ok, true, JSON.stringify(unquotedMiddle.errors));
 assert.strictEqual(unquotedMiddle.lines.length, 1);
 assert.strictEqual(lineOf(unquotedMiddle, "B").ordered, 10);
-assert.ok(warns(unquotedMiddle, /Row 2/));
-assert.ok(warns(unquotedMiddle, /1,000 must be in quotes/));
+assert.ok(warns(unquotedMiddle, /Row 2 has more columns than the header/));
+assert.ok(warns(unquotedMiddle, /"1,000"/));
 assert.ok(!unquotedMiddle.lines.some(function (line) { return /Short 999/.test(line.reason); }));
 const unquotedReceived = run([
-  "1,Acme,A,1000,2026-03-10,2026-03-10,1,000,,,",
+  "1,Acme,A,1000,2026-03-10,2026-03-10,1,000,0,Crushed,2026-04-01",
   "2,Acme,B,10,2026-03-10,2026-03-10,10,,,",
 ]);
 assert.strictEqual(unquotedReceived.ok, true, JSON.stringify(unquotedReceived.errors));
 assert.strictEqual(unquotedReceived.lines.length, 1);
 assert.strictEqual(lineOf(unquotedReceived, "B").received, 10);
 assert.ok(!unquotedReceived.lines.some(function (line) { return line.sku === "A"; }));
+const acmeSplit = run([
+  "1,Acme, Ltd,A,10,2026-03-10,2026-03-10,10,0,Crushed,2026-04-01",
+  '2,"Acme, Ltd",B,10,2026-03-10,2026-03-10,10,,,',
+]);
+assert.strictEqual(acmeSplit.ok, true, JSON.stringify(acmeSplit.errors) + JSON.stringify(acmeSplit.warnings));
+assert.strictEqual(acmeSplit.lines.length, 1);
+assert.strictEqual(acmeSplit.lines[0].supplier, "Acme, Ltd");
+assert.strictEqual(acmeSplit.lines[0].sku, "B");
+assert.ok(warns(acmeSplit, /Row 2 has more columns than the header/));
+assert.ok(warns(acmeSplit, /"Acme, Ltd"/));
+const shortOptional = run(["1,Acme,A,10,2026-03-10,2026-03-10,10"]);
+assert.strictEqual(shortOptional.ok, true, JSON.stringify(shortOptional.errors) + JSON.stringify(shortOptional.warnings));
+assert.strictEqual(shortOptional.lines.length, 1);
+assert.strictEqual(shortOptional.lines[0].ordered, 10);
+assert.strictEqual(shortOptional.lines[0].received, 10);
+assert.strictEqual(shortOptional.lines[0].damaged, 0);
+assert.strictEqual(warns(shortOptional, /columns than the header/), false);
+const trailingComma = run(["1,Acme,A,10,2026-03-10,2026-03-10,10,,,,"]);
+assert.strictEqual(trailingComma.ok, true, JSON.stringify(trailingComma.warnings));
+assert.strictEqual(trailingComma.lines[0].received, 10);
+assert.strictEqual(warns(trailingComma, /more columns/), false);
+const shortRequired = run([
+  "1,Acme,A,10,2026-03-10",
+  "2,Acme,B,10,2026-03-10,2026-03-10,10,,,",
+]);
+assert.strictEqual(shortRequired.ok, true, JSON.stringify(shortRequired.errors));
+assert.strictEqual(shortRequired.lines.length, 1);
+assert.strictEqual(lineOf(shortRequired, "B").sku, "B");
+assert.ok(
+  shortRequired.warnings.indexOf("Row 2 has fewer columns than the header; Receipt Date is missing.") !== -1
+);
+const supplierShort = run(["1,C,A,10,2026-03-10,2026-03-10,10,,,"], {
+  supplierText: "Supplier,Freight arranged by,Expected transit days\nC,Supplier\n",
+  supplierFileName: "suppliers.csv",
+});
+assert.strictEqual(supplierShort.ok, true, JSON.stringify(supplierShort.errors) + JSON.stringify(supplierShort.warnings));
+assert.strictEqual(supplierShort.suppliers[0].supplier, "C");
+assert.strictEqual(supplierShort.suppliers[0].freight, "Supplier delivers");
+assert.strictEqual(warns(supplierShort, /columns than the header/), false);
 const mostlyUnquoted = run([
-  "1,Acme,A,1,000,2026-03-10,2026-03-10,10,,,",
-  "2,Acme,B,2,000,2026-03-10,2026-03-10,10,,,",
+  "1,Acme,A,1,000,2026-03-10,2026-03-10,10,0,note,extra",
+  "2,Acme,B,2,000,2026-03-10,2026-03-10,10,0,note,extra",
   "3,Acme,C,10,2026-03-10,2026-03-10,10,,,",
 ]);
 assert.strictEqual(mostlyUnquoted.ok, false);
-assert.match(mostlyUnquoted.errors[0], /1,000 must be in quotes/);
+assert.match(mostlyUnquoted.errors[0], /Row 2 has more columns than the header/);
 assert.strictEqual(mostlyUnquoted.summaryCsv, "");
 
 const semicolons = run("PO Number;Supplier;SKU\n1;Acme;A\n");

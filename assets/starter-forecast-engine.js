@@ -365,8 +365,69 @@
     return messages.slice(0, 10).concat(["and " + more + " more"]);
   }
 
-  var QUOTE_HINT = "a number like 1,000 must be in quotes or saved without the comma";
   var THOUSANDS_HINT = "A thousands separator must group digits in threes, such as 1,000";
+
+  function fieldText(value) {
+    return String(value == null ? "" : value).trim();
+  }
+
+  function rowShape(cells, headerCount, normalizedHeaders, requiredLookup, rawHeaders) {
+    var i;
+    if (cells.length > headerCount) {
+      for (i = headerCount; i < cells.length; i += 1) {
+        if (fieldText(cells[i]) !== "") {
+          return { kind: "extra" };
+        }
+      }
+      return { kind: "ok", cells: cells.slice(0, headerCount) };
+    }
+    if (cells.length < headerCount) {
+      for (i = cells.length; i < headerCount; i += 1) {
+        if (requiredLookup[normalizedHeaders[i]]) {
+          var raw = rawHeaders ? fieldText(rawHeaders[i]) : "";
+          return { kind: "short", column: raw || requiredLookup[normalizedHeaders[i]] };
+        }
+      }
+      var padded = cells.slice();
+      while (padded.length < headerCount) {
+        padded.push("");
+      }
+      return { kind: "ok", cells: padded };
+    }
+    return { kind: "ok", cells: cells };
+  }
+
+  function extraColumnMessage(rowNumber) {
+    return (
+      "Row " +
+      rowNumber +
+      ' has more columns than the header. Put any value with a comma in quotes, such as "1,000" or "Acme, Ltd".'
+    );
+  }
+
+  function shortColumnMessage(rowNumber, column) {
+    return "Row " + rowNumber + " has fewer columns than the header; " + column + " is missing.";
+  }
+
+  function shapeRows(dataRows, headerCount, normalizedHeaders, requiredLookup, rawHeaders) {
+    var extras = [];
+    var shorts = [];
+    var skip = Object.create(null);
+    for (var i = 0; i < dataRows.length; i += 1) {
+      var shape = rowShape(dataRows[i], headerCount, normalizedHeaders, requiredLookup, rawHeaders);
+      var rowNumber = i + 2;
+      if (shape.kind === "extra") {
+        extras.push(rowNumber);
+        skip[rowNumber] = true;
+      } else if (shape.kind === "short") {
+        shorts.push({ row: rowNumber, column: shape.column });
+        skip[rowNumber] = true;
+      } else {
+        dataRows[i] = shape.cells;
+      }
+    }
+    return { extras: extras, shorts: shorts, skip: skip };
+  }
 
   function skipWarning(bucket, detail) {
     if (!bucket.count) {
@@ -470,22 +531,19 @@
     if (!dataRows.length) {
       return emptyResult(["The file has no sales rows under the header."]);
     }
-    var headerCount = table[0].length;
-    var wideRows = skipBucket();
-    for (var w = 0; w < dataRows.length; w += 1) {
-      if (dataRows[w].length !== headerCount) {
-        noteSkip(wideRows, w + 2);
-      }
-    }
-    var wideWarning = skipWarning(wideRows, QUOTE_HINT);
-    if (wideRows.count * 2 > dataRows.length) {
-      return emptyResult([wideWarning]);
+    var requiredLookup = Object.create(null);
+    REQUIRED.forEach(function (name) {
+      requiredLookup[name] = name;
+    });
+    var shaped = shapeRows(dataRows, table[0].length, headers, requiredLookup, table[0]);
+    if (shaped.extras.length * 2 > dataRows.length) {
+      return emptyResult(capMessages(shaped.extras.map(extraColumnMessage)));
     }
 
     var seenSkus = new Map();
     var skuCount = 0;
     for (var s = 0; s < dataRows.length; s += 1) {
-      if (dataRows[s].length !== headerCount) {
+      if (shaped.skip[s + 2]) {
         continue;
       }
       var skuCell = dataRows[s][col.sku] == null ? "" : String(dataRows[s][col.sku]);
@@ -542,7 +600,7 @@
     for (var r = 0; r < dataRows.length; r += 1) {
       var cells = dataRows[r];
       var rowNumber = r + 2;
-      if (cells.length !== headerCount) {
+      if (shaped.skip[rowNumber]) {
         continue;
       }
       var sku = cells[col.sku] == null ? "" : String(cells[col.sku]);
@@ -625,9 +683,16 @@
     }
 
     var warnings = [];
-    if (wideWarning) {
-      warnings.push(wideWarning);
-    }
+    capMessages(shaped.extras.map(extraColumnMessage)).forEach(function (message) {
+      warnings.push(message);
+    });
+    capMessages(
+      shaped.shorts.map(function (item) {
+        return shortColumnMessage(item.row, item.column);
+      })
+    ).forEach(function (message) {
+      warnings.push(message);
+    });
     [
       skipWarning(skipped.blankSku, "the SKU was blank"),
       skipWarning(skipped.unreadable, "the date could not be read"),

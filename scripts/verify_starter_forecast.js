@@ -291,15 +291,39 @@ assert.strictEqual(unquotedQty.skus.length, 1);
 assert.strictEqual(skuOf(unquotedQty, "B").sku, "B");
 assert.ok(unquotedQty.skus.every(function (row) { return row.sku !== "A"; }));
 assert.ok(unquotedQty.warnings.some(function (warning) {
-  return warning.indexOf("row 2") !== -1 && warning.indexOf("1,000 must be in quotes") !== -1;
+  return warning.indexOf('Row 2 has more columns than the header.') === 0 && warning.indexOf('"1,000"') !== -1;
 }));
+const acmeSplit = run(["1," + WINDOW[11] + ",Acme, Ltd,4,Main", line(WINDOW[11], "B", 4)]);
+assert.strictEqual(acmeSplit.ok, true, JSON.stringify(acmeSplit.errors));
+assert.strictEqual(acmeSplit.skus.length, 1);
+assert.ok(acmeSplit.warnings.some(function (warning) {
+  return warning.indexOf('Row 2 has more columns than the header.') === 0 && warning.indexOf('"Acme, Ltd"') !== -1;
+}));
+const shortOptional = run([], {
+  text: "order_id,order_datetime,sku,qty,fulfillment_location,note\n1," + WINDOW[11] + ",A,4,Main\n",
+});
+assert.strictEqual(shortOptional.ok, true, JSON.stringify(shortOptional.errors) + JSON.stringify(shortOptional.warnings));
+assertQty(skuOf(shortOptional, "A"), "4.00");
+assert.ok(!shortOptional.warnings.some(function (warning) {
+  return warning.indexOf("columns than the header") !== -1;
+}));
+const trailingComma = run(["1," + WINDOW[11] + ",A,4,Main,"]);
+assert.strictEqual(trailingComma.ok, true, JSON.stringify(trailingComma.warnings));
+assertQty(skuOf(trailingComma, "A"), "4.00");
+assert.ok(!trailingComma.warnings.some(function (warning) {
+  return warning.indexOf("more columns") !== -1;
+}));
+const shortRequired = run(["1," + WINDOW[11] + ",A", line(WINDOW[11], "B", 4)]);
+assert.strictEqual(shortRequired.ok, true, JSON.stringify(shortRequired.errors));
+assert.strictEqual(shortRequired.skus.length, 1);
+assert.ok(shortRequired.warnings.indexOf("Row 2 has fewer columns than the header; qty is missing.") !== -1);
 const mostlyUnquoted = run([
   "1," + WINDOW[11] + ",A,1,000,Main",
   "1," + WINDOW[11] + ",B,2,000,Main",
   line(WINDOW[11], "C", 4),
 ]);
 assert.strictEqual(mostlyUnquoted.ok, false);
-assert.match(mostlyUnquoted.errors[0], /1,000 must be in quotes/);
+assert.match(mostlyUnquoted.errors[0], /Row 2 has more columns than the header/);
 assert.strictEqual(mostlyUnquoted.forecastCsv, "");
 
 const future = run([line("2026-03-30", "A", 99), line(WINDOW[0], "A", 10)], { today: "2026-03-01" });
@@ -488,7 +512,7 @@ assert.match(page, /id="sf-downloads" hidden/);
 assert.match(page, /id="sf-results" hidden/);
 assert.match(page, /name="articles"/);
 assert.doesNotMatch(page, /name="articles"[^>]*checked/);
-assert.match(page, /src="\/assets\/starter-forecast-engine\.js\?v=5"/);
+assert.match(page, /src="\/assets\/starter-forecast-engine\.js\?v=6"/);
 assert.match(page, /A quantity such as "1,000" in quotes is read as 1000/);
 assert.match(page, /A full stop is only for decimals/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);

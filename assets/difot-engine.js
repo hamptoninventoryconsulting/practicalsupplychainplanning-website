@@ -575,8 +575,94 @@
     }
   }
 
-  var QUOTE_HINT = "a number like 1,000 must be in quotes or saved without the comma";
   var THOUSANDS_HINT = "A thousands separator must group digits in threes, such as 1,000";
+
+  function fieldText(value) {
+    return String(value == null ? "" : value).trim();
+  }
+
+  function requiredMap(fields) {
+    var map = Object.create(null);
+    fields.forEach(function (field) {
+      if (field[2]) {
+        map[field[0]] = field[1];
+      }
+    });
+    return map;
+  }
+
+  function rowShape(cells, headerCount, normalizedHeaders, requiredLookup, rawHeaders) {
+    var i;
+    if (cells.length > headerCount) {
+      for (i = headerCount; i < cells.length; i += 1) {
+        if (fieldText(cells[i]) !== "") {
+          return { kind: "extra" };
+        }
+      }
+      return { kind: "ok", cells: cells.slice(0, headerCount) };
+    }
+    if (cells.length < headerCount) {
+      for (i = cells.length; i < headerCount; i += 1) {
+        if (requiredLookup[normalizedHeaders[i]]) {
+          var raw = rawHeaders ? fieldText(rawHeaders[i]) : "";
+          return { kind: "short", column: raw || requiredLookup[normalizedHeaders[i]] };
+        }
+      }
+      var padded = cells.slice();
+      while (padded.length < headerCount) {
+        padded.push("");
+      }
+      return { kind: "ok", cells: padded };
+    }
+    return { kind: "ok", cells: cells };
+  }
+
+  function extraColumnMessage(rowNumber) {
+    return (
+      "Row " +
+      rowNumber +
+      ' has more columns than the header. Put any value with a comma in quotes, such as "1,000" or "Acme, Ltd".'
+    );
+  }
+
+  function shortColumnMessage(rowNumber, column) {
+    return "Row " + rowNumber + " has fewer columns than the header; " + column + " is missing.";
+  }
+
+  function shapeRows(dataRows, headerCount, normalizedHeaders, requiredLookup, rawHeaders) {
+    var extras = [];
+    var shorts = [];
+    var skip = Object.create(null);
+    for (var i = 0; i < dataRows.length; i += 1) {
+      var shape = rowShape(dataRows[i], headerCount, normalizedHeaders, requiredLookup, rawHeaders);
+      var rowNumber = i + 2;
+      if (shape.kind === "extra") {
+        extras.push(rowNumber);
+        skip[rowNumber] = true;
+      } else if (shape.kind === "short") {
+        shorts.push({ row: rowNumber, column: shape.column });
+        skip[rowNumber] = true;
+      } else {
+        dataRows[i] = shape.cells;
+      }
+    }
+    return { extras: extras, shorts: shorts, skip: skip };
+  }
+
+  function columnWarnings(prefix, extras, shorts) {
+    var messages = capMessages(
+      extras.map(function (rowNumber) {
+        return prefix + extraColumnMessage(rowNumber);
+      })
+    ).concat(
+      capMessages(
+        shorts.map(function (item) {
+          return prefix + shortColumnMessage(item.row, item.column);
+        })
+      )
+    );
+    return messages;
+  }
 
   function skipWarning(bucket, detail) {
     if (!bucket.count) {
@@ -590,10 +676,6 @@
       detail +
       "."
     );
-  }
-
-  function mostRowsMismatch(bucket, total) {
-    return bucket.count * 2 > total;
   }
 
   function cell(cells, index) {
@@ -885,25 +967,30 @@
         freight: columnIndex(supplierLoaded.headers, "freight_arranged_by"),
         transit: columnIndex(supplierLoaded.headers, "expected_transit_days"),
       };
-      var supplierHeaderCount = supplierLoaded.headers.length;
-      var supplierWide = skipBucket();
-      for (var sw = 0; sw < supplierLoaded.dataRows.length; sw += 1) {
-        if (supplierLoaded.dataRows[sw].length !== supplierHeaderCount) {
-          noteSkip(supplierWide, sw + 2);
-        }
+      var supplierShape = shapeRows(
+        supplierLoaded.dataRows,
+        supplierLoaded.headers.length,
+        supplierLoaded.headers,
+        requiredMap(SUPPLIER_FIELDS),
+        supplierLoaded.table[0]
+      );
+      if (supplierShape.extras.length * 2 > supplierLoaded.dataRows.length) {
+        return emptyResult(
+          capMessages(
+            supplierShape.extras.map(function (rowNumber) {
+              return "Supplier list: " + extraColumnMessage(rowNumber);
+            })
+          )
+        );
       }
-      var supplierWideWarning = skipWarning(supplierWide, QUOTE_HINT);
-      if (mostRowsMismatch(supplierWide, supplierLoaded.dataRows.length)) {
-        return emptyResult(["Supplier list: " + supplierWideWarning]);
-      }
-      if (supplierWideWarning) {
-        supplierWarnings.push("Supplier list: " + supplierWideWarning);
-      }
+      columnWarnings("Supplier list: ", supplierShape.extras, supplierShape.shorts).forEach(function (message) {
+        supplierWarnings.push(message);
+      });
       master = new Map();
       for (var s = 0; s < supplierLoaded.dataRows.length; s += 1) {
         var supplierCells = supplierLoaded.dataRows[s];
         var supplierRow = s + 2;
-        if (supplierCells.length !== supplierHeaderCount) {
+        if (supplierShape.skip[supplierRow]) {
           continue;
         }
         var supplierRaw = String(cell(supplierCells, supplierCols.supplier));
@@ -1012,16 +1099,15 @@
     if (!poLoaded.dataRows.length) {
       return emptyResult(["The file has no purchase order lines under the header."]);
     }
-    var poHeaderCount = poLoaded.headers.length;
-    var wideRows = skipBucket();
-    for (var w = 0; w < poLoaded.dataRows.length; w += 1) {
-      if (poLoaded.dataRows[w].length !== poHeaderCount) {
-        noteSkip(wideRows, w + 2);
-      }
-    }
-    var wideWarning = skipWarning(wideRows, QUOTE_HINT);
-    if (mostRowsMismatch(wideRows, poLoaded.dataRows.length)) {
-      return emptyResult([wideWarning]);
+    var poShape = shapeRows(
+      poLoaded.dataRows,
+      poLoaded.headers.length,
+      poLoaded.headers,
+      requiredMap(PO_FIELDS),
+      poLoaded.table[0]
+    );
+    if (poShape.extras.length * 2 > poLoaded.dataRows.length) {
+      return emptyResult(capMessages(poShape.extras.map(extraColumnMessage)));
     }
 
     var skipped = {
@@ -1078,7 +1164,7 @@
     for (var r = 0; r < poLoaded.dataRows.length; r += 1) {
       var cells = poLoaded.dataRows[r];
       var rowNumber = r + 2;
-      if (cells.length !== poHeaderCount) {
+      if (poShape.skip[rowNumber]) {
         continue;
       }
       var poRaw = String(cell(cells, cols.po_number));
@@ -1227,9 +1313,9 @@
     }
 
     var warnings = supplierWarnings.slice();
-    if (wideWarning) {
-      warnings.push(wideWarning);
-    }
+    columnWarnings("", poShape.extras, poShape.shorts).forEach(function (message) {
+      warnings.push(message);
+    });
     [
       skipWarning(skipped.identity, "the PO number, supplier or SKU is blank"),
       skipWarning(skipped.required, "the required date is blank or could not be read"),
