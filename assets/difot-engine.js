@@ -7,13 +7,18 @@
  *
  * A line is PO Number + SKU + supplier. Repeated rows are combined: the
  * largest ordered quantity, the sum of the received and damaged quantities,
- * and the latest receipt date. An unreceived row is ignored when another
- * row in the group was received. Ordered quantities that disagree are kept
- * as the largest and warned.
+ * and the latest date of each date field. An unreceived row is ignored when
+ * another row in the group was received. Ordered quantities that disagree
+ * are kept as the largest and warned.
  *
- * On time compares the receipt date with the required date. In full
- * compares the accepted quantity with the ordered quantity. Freight the
- * buyer arranges is reported separately and does not change DIFOT.
+ * When the supplier delivers, on time compares Arrived at Your Site Date
+ * with the required date. When you arrange the freight, on time compares
+ * Handed to Freight Date with the required date. In full compares the
+ * accepted quantity with the ordered quantity. If you arrange the freight
+ * and the goods are not at your site yet, a blank received quantity counts
+ * as the full ordered quantity. Freight you arrange is reported separately,
+ * from Handed to Freight Date to Arrived at Your Site Date, and does not
+ * change DIFOT. A handover after the arrival is left out of the freight figures.
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
@@ -28,18 +33,18 @@
   var MAX_SUPPLIERS = 5000;
   var MAX_MONTHS_ON_SCREEN = 24;
   var HELP_LINE =
-    "Missing dates? Add them from your forwarder's bill of lading or tracking before you upload.";
+    "Missing dates? Add Arrived at Your Site Date from the day the goods arrived. If you arrange the freight add Handed to Freight Date from the freight company's paperwork or tracking before you upload. If those goods are not at your site yet you can leave Received Qty blank and the line counts as in full until you fill it in.";
   var PO_FIELDS = [
     ["po_number", "PO Number", true],
     ["supplier", "Supplier", true],
     ["sku", "SKU", true],
     ["ordered_qty", "Ordered Qty", true],
     ["required_date", "Required Date", true],
-    ["receipt_date", "Receipt Date", true, false],
+    ["arrived_at_your_site_date", "Arrived at Your Site Date", true, false],
     ["received_qty", "Received Qty", true, false],
     ["damaged_qty", "Damaged Qty", false],
     ["damaged_reason", "Damaged Reason", false],
-    ["arrived_date", "Arrived Date", false],
+    ["handed_to_freight_date", "Handed to Freight Date", false],
   ];
   var SUPPLIER_FIELDS = [
     ["supplier", "Supplier", true],
@@ -73,7 +78,8 @@
     "Damaged Qty",
     "Accepted Qty",
     "Required Date",
-    "Receipt Date",
+    "Arrived at Your Site Date",
+    "Handed to Freight Date",
     "Days Late",
     "On Time",
     "In Full",
@@ -81,7 +87,6 @@
     "Reason",
     "Counted",
     "Rows Combined",
-    "Arrived Date",
     "Transit Days",
     "Freight On Time",
   ];
@@ -694,6 +699,13 @@
     );
   }
 
+  function rowNote(bucket, detail) {
+    if (!bucket.count) {
+      return "";
+    }
+    return rowPhrase(bucket.rows, bucket.count) + ": " + detail + ".";
+  }
+
   function cell(cells, index) {
     if (index == null || index < 0) {
       return "";
@@ -1131,10 +1143,19 @@
       damagedComma: skipBucket(),
       damagedOver: skipBucket(),
       judge: skipBucket(),
+      judgeHanded: skipBucket(),
       excel: skipBucket(),
       future: skipBucket(),
-      arrived: skipBucket(),
+      futureHanded: skipBucket(),
+      unreadableSite: skipBucket(),
+      unreadableHanded: skipBucket(),
+      siteUnreadKept: skipBucket(),
+      futureSiteKept: skipBucket(),
+      handedBlank: skipBucket(),
+      handedAfterSite: skipBucket(),
     };
+    var ignoredHanded = Object.create(null);
+    var assumedFullLines = 0;
     var dateStops = [];
     var firstDateRef = null;
     var slashDates = 0;
@@ -1169,6 +1190,40 @@
 
     function stopDate(parsed, rowNumber) {
       dateStops.push(dateStopMessage(parsed, rowNumber, dayFirst));
+    }
+
+    function modeFor(supplierName) {
+      if (!master) {
+        return "supplier";
+      }
+      var entry = master.get(String(supplierName || "").trim().toLowerCase());
+      return entry ? entry.mode : "supplier";
+    }
+
+    function takeDate(raw) {
+      var parsed = parseDate(raw, dayFirst);
+      if (String(raw == null ? "" : raw).trim() !== "") {
+        noteFirst(parsed);
+      }
+      if (parsed.ok) {
+        countAmbiguity(parsed);
+      }
+      return parsed;
+    }
+
+    function blockingDate(parsed, rowNumber) {
+      if (parsed.ok || parsed.reason === "blank") {
+        return false;
+      }
+      if (parsed.reason === "excel") {
+        noteSkip(skipped.excel, rowNumber);
+        return true;
+      }
+      if (parsed.reason === "impossible" || parsed.reason === "shortYear") {
+        stopDate(parsed, rowNumber);
+        return true;
+      }
+      return false;
     }
 
     for (var r = 0; r < poLoaded.dataRows.length; r += 1) {
@@ -1230,59 +1285,75 @@
       }
       var damagedQty = damaged.blank ? 0 : damaged.value;
       var receivedQty = received.blank ? 0 : received.value;
-      if (damagedQty - receivedQty > 1e-9) {
+      if (!received.blank && damagedQty - receivedQty > 1e-9) {
         noteSkip(skipped.damagedOver, rowNumber);
         continue;
       }
 
-      var receiptRaw = cell(cells, cols.receipt_date);
-      var receiptParsed = parseDate(receiptRaw, dayFirst);
-      if (String(receiptRaw == null ? "" : receiptRaw).trim() !== "") {
-        noteFirst(receiptParsed);
+      var siteParsed = takeDate(cell(cells, cols.arrived_at_your_site_date));
+      if (blockingDate(siteParsed, rowNumber)) {
+        continue;
       }
-      var arrivedRaw = cell(cells, cols.arrived_date);
-      var arrivedParsed = parseDate(arrivedRaw, dayFirst);
-      if (String(arrivedRaw == null ? "" : arrivedRaw).trim() !== "") {
-        noteFirst(arrivedParsed);
+      var handedParsed = takeDate(cell(cells, cols.handed_to_freight_date));
+      if (blockingDate(handedParsed, rowNumber)) {
+        continue;
       }
 
-      if (!receiptParsed.ok && receiptParsed.reason !== "blank") {
-        if (receiptParsed.reason === "excel") {
-          noteSkip(skipped.excel, rowNumber);
-        } else if (receiptParsed.reason === "impossible" || receiptParsed.reason === "shortYear") {
-          stopDate(receiptParsed, rowNumber);
-        } else {
+      var mode = modeFor(supplierTrim);
+      var siteDate = siteParsed.ok ? siteParsed.date : null;
+      var handedDate = handedParsed.ok ? handedParsed.date : null;
+      var asAtText = formatISO(asAt);
+      if (mode === "me") {
+        if (!handedParsed.ok && handedParsed.reason === "unreadable") {
+          noteSkip(skipped.unreadableHanded, rowNumber);
+          continue;
+        }
+        if (!siteParsed.ok && siteParsed.reason === "unreadable") {
+          noteSkip(skipped.siteUnreadKept, rowNumber);
+          siteDate = null;
+        }
+        if (handedDate && formatISO(handedDate) > asAtText) {
+          noteSkip(skipped.futureHanded, rowNumber);
+          continue;
+        }
+        if (siteDate && formatISO(siteDate) > asAtText) {
+          if (handedDate) {
+            noteSkip(skipped.futureSiteKept, rowNumber);
+          } else {
+            siteDate = null;
+          }
+        }
+        if (received.blank && damagedQty > 0) {
+          var canAssumeQty = handedDate && !(siteDate && formatISO(siteDate) <= asAtText);
+          if (!canAssumeQty || damagedQty - ordered.value > 1e-9) {
+            noteSkip(skipped.damagedOver, rowNumber);
+            continue;
+          }
+        }
+        if (handedDate && received.blank && siteDate && formatISO(siteDate) <= asAtText) {
+          noteSkip(skipped.judgeHanded, rowNumber);
+          continue;
+        }
+      } else {
+        if (received.blank && damagedQty > 0) {
+          noteSkip(skipped.damagedOver, rowNumber);
+          continue;
+        }
+        if (!siteParsed.ok && siteParsed.reason === "unreadable") {
+          noteSkip(skipped.unreadableSite, rowNumber);
+          continue;
+        }
+        if (String(cell(cells, cols.handed_to_freight_date)).trim() !== "") {
+          ignoredHanded[supplierTrim] = true;
+        }
+        if ((receivedQty > 0 && !siteDate) || (siteDate && (received.blank || receivedQty <= 0))) {
           noteSkip(skipped.judge, rowNumber);
-        }
-        continue;
-      }
-      if (receiptParsed.ok) {
-        countAmbiguity(receiptParsed);
-      }
-      if (!arrivedParsed.ok && arrivedParsed.reason !== "blank") {
-        if (arrivedParsed.reason === "excel") {
-          noteSkip(skipped.excel, rowNumber);
           continue;
         }
-        if (arrivedParsed.reason === "impossible" || arrivedParsed.reason === "shortYear") {
-          stopDate(arrivedParsed, rowNumber);
+        if (siteDate && formatISO(siteDate) > asAtText) {
+          noteSkip(skipped.future, rowNumber);
           continue;
         }
-        noteSkip(skipped.arrived, rowNumber);
-        arrivedParsed = { ok: false, reason: "blank" };
-      }
-      if (arrivedParsed.ok) {
-        countAmbiguity(arrivedParsed);
-      }
-
-      var hasReceipt = receiptParsed.ok;
-      if ((receivedQty > 0 && !hasReceipt) || (hasReceipt && (received.blank || receivedQty <= 0))) {
-        noteSkip(skipped.judge, rowNumber);
-        continue;
-      }
-      if (hasReceipt && formatISO(receiptParsed.date) > formatISO(asAt)) {
-        noteSkip(skipped.future, rowNumber);
-        continue;
       }
 
       var spaced = supplierRaw !== supplierTrim || skuRaw !== sku;
@@ -1316,8 +1387,8 @@
         damaged: damagedQty,
         reason: String(cell(cells, cols.damaged_reason)).trim(),
         required: requiredParsed.date,
-        receipt: hasReceipt ? receiptParsed.date : null,
-        arrived: arrivedParsed.ok ? arrivedParsed.date : null,
+        arrivedSite: siteDate,
+        handed: handedDate,
         spaced: spaced,
       });
     }
@@ -1345,10 +1416,24 @@
         "the damaged quantity is not a number. " + THOUSANDS_HINT
       ),
       skipWarning(skipped.damagedOver, "the damaged quantity is greater than the received quantity"),
-      skipWarning(skipped.judge, "a received quantity and a receipt date are both needed to judge the line"),
+      skipWarning(
+        skipped.judge,
+        "a received quantity and an Arrived at Your Site Date are both needed to judge the line"
+      ),
+      skipWarning(
+        skipped.judgeHanded,
+        "the goods are at your site and the received quantity is blank"
+      ),
       skipWarning(skipped.excel, "the date is an Excel date number. Save dates as dates"),
-      skipWarning(skipped.future, "the receipt date is after the as-at date"),
-      skipWarning(skipped.arrived, "the arrived date could not be read"),
+      skipWarning(skipped.future, "the Arrived at Your Site Date is after the as-at date"),
+      skipWarning(skipped.futureHanded, "the Handed to Freight Date is after the as-at date"),
+      skipWarning(skipped.unreadableSite, "Arrived at Your Site Date could not be read"),
+      skipWarning(skipped.unreadableHanded, "Handed to Freight Date could not be read"),
+      rowNote(skipped.siteUnreadKept, "Arrived at Your Site Date could not be read and was not used"),
+      rowNote(
+        skipped.futureSiteKept,
+        "Arrived at Your Site Date is after the as-at date and was not used for the freight figures"
+      ),
     ].forEach(function (message) {
       if (message) {
         warnings.push(message);
@@ -1420,8 +1505,23 @@
     var checkDateTotal = 0;
 
     groupOrder.forEach(function (group) {
+      var masterEntry = master ? master.get(group.supplierKey) : null;
+      var supplierName = masterEntry ? masterEntry.name : group.supplierName;
+      var mode = masterEntry ? masterEntry.mode : "supplier";
+      var transitDaysExpected = masterEntry ? masterEntry.transit : null;
+      if (masterEntry) {
+        masterEntry.used = true;
+      }
+      if (master && !masterEntry && !missingSeen[group.supplierKey]) {
+        missingSeen[group.supplierKey] = true;
+        missingSuppliers.push(supplierName);
+      }
+
       var receivedParts = group.parts.filter(function (part) {
-        return part.receipt;
+        if (mode === "me") {
+          return part.handed || part.arrivedSite || part.received > 0;
+        }
+        return part.arrivedSite;
       });
       var ignoredUnreceived = receivedParts.length > 0;
       var countedParts = ignoredUnreceived ? receivedParts : group.parts;
@@ -1450,24 +1550,29 @@
       var receivedQty = 0;
       var damagedQty = 0;
       var reasons = [];
-      var receipt = null;
-      var receiptRow = null;
-      var arrived = null;
+      var arrivedSite = null;
+      var handed = null;
+      var onTimeRow = countedParts[0].rowNumber;
       countedParts.forEach(function (part) {
         receivedQty += part.received;
         damagedQty += part.damaged;
         if (part.reason && reasons.indexOf(part.reason) === -1) {
           reasons.push(part.reason);
         }
-        if (part.receipt && (!receipt || part.receipt.getTime() > receipt.getTime())) {
-          receipt = part.receipt;
-          receiptRow = part.rowNumber;
-          arrived = part.arrived;
-        } else if (part.receipt && receipt && part.receipt.getTime() === receipt.getTime() && part.arrived && !arrived) {
-          arrived = part.arrived;
-          receiptRow = part.rowNumber;
+        if (part.arrivedSite && (!arrivedSite || part.arrivedSite.getTime() > arrivedSite.getTime())) {
+          arrivedSite = part.arrivedSite;
+          if (mode !== "me") {
+            onTimeRow = part.rowNumber;
+          }
+        }
+        if (part.handed && (!handed || part.handed.getTime() > handed.getTime())) {
+          handed = part.handed;
+          if (mode === "me") {
+            onTimeRow = part.rowNumber;
+          }
         }
       });
+      var onTimeDate = mode === "me" ? handed : arrivedSite;
       if (group.parts.length > 1) {
         var appearRows = group.parts.map(function (part) {
           return part.rowNumber;
@@ -1509,17 +1614,20 @@
             ", was used."
         );
       }
-
-      var masterEntry = master ? master.get(group.supplierKey) : null;
-      var supplierName = masterEntry ? masterEntry.name : group.supplierName;
-      var mode = masterEntry ? masterEntry.mode : "supplier";
-      var transitDaysExpected = masterEntry ? masterEntry.transit : null;
-      if (masterEntry) {
-        masterEntry.used = true;
+      if (mode === "me" && !handed && (receivedQty > 0 || arrivedSite)) {
+        countedParts.forEach(function (part) {
+          noteSkip(skipped.handedBlank, part.rowNumber);
+        });
+        return;
       }
-      if (master && !masterEntry && !missingSeen[group.supplierKey]) {
-        missingSeen[group.supplierKey] = true;
-        missingSuppliers.push(supplierName);
+      var allReceivedBlank = countedParts.every(function (part) {
+        return part.receivedBlank;
+      });
+      var arrivedInTime = arrivedSite && formatISO(arrivedSite) <= asAtKey;
+      var assumeFull = mode === "me" && handed && allReceivedBlank && !arrivedInTime;
+      if (assumeFull) {
+        receivedQty = orderedQty;
+        assumedFullLines += 1;
       }
 
       var accepted = receivedQty - damagedQty;
@@ -1528,9 +1636,9 @@
       }
       var requiredKey = formatISO(required);
       var inRange = requiredKey >= fromKey && requiredKey <= toKey;
-      var daysLate = receipt ? daysBetween(receipt, required) : null;
+      var daysLate = onTimeDate ? daysBetween(onTimeDate, required) : null;
       var overdue = false;
-      if (!receipt) {
+      if (!onTimeDate) {
         overdue = formatISO(addDays(required, late.value)) < asAtKey;
       }
       var counted = false;
@@ -1538,7 +1646,7 @@
       if (!inRange) {
         outside += 1;
         countedText = "N: outside the measure range";
-      } else if (!receipt && !overdue) {
+      } else if (!onTimeDate && !overdue) {
         notDue += 1;
         countedText = "N: not due yet";
       } else {
@@ -1554,10 +1662,10 @@
       var overMiss = false;
       var checkDate = false;
       var reasonParts = [];
-      if (counted && !receipt) {
+      if (counted && !onTimeDate) {
         reasonParts.push("Not received");
       }
-      if (counted && receipt) {
+      if (counted && onTimeDate) {
         onTime = daysLate >= -early.value && daysLate <= late.value;
         earlyMiss = daysLate < -early.value;
         lateMiss = daysLate > late.value;
@@ -1589,21 +1697,31 @@
       if (counted && damagedQty > 0) {
         reasonParts.push("Damaged " + formatNumber(damagedQty) + (reasons.length ? " (" + reasons.join("; ") + ")" : ""));
       }
-      if (receipt && daysLate != null && Math.abs(daysLate) > 365) {
+      if (assumeFull) {
+        reasonParts.push("Received quantity not filled in, so the ordered quantity was used");
+      }
+      if (onTimeDate && daysLate != null && Math.abs(daysLate) > 365) {
         checkDate = true;
         if (counted) {
           reasonParts.push("Check this date");
         }
         checkDateTotal += 1;
         if (checkDateRows.length < 10) {
-          checkDateRows.push(receiptRow || group.parts[0].rowNumber);
+          checkDateRows.push(onTimeRow);
         }
       }
 
       var transit = null;
       var freightOnTime = "";
-      if (mode === "me" && receipt && arrived) {
-        transit = daysBetween(arrived, receipt);
+      var freightArrival = mode === "me" && handed && arrivedSite && formatISO(arrivedSite) <= asAtKey;
+      if (freightArrival && handed.getTime() > arrivedSite.getTime()) {
+        countedParts.forEach(function (part) {
+          noteSkip(skipped.handedAfterSite, part.rowNumber);
+        });
+        freightArrival = false;
+      }
+      if (freightArrival) {
+        transit = daysBetween(arrivedSite, handed);
         if (transitDaysExpected != null) {
           freightOnTime = transit <= transitDaysExpected ? "Y" : "N";
         }
@@ -1621,18 +1739,19 @@
         required: required,
         requiredKey: requiredKey,
         month: monthKey(required),
-        receipt: receipt,
+        onTimeDate: onTimeDate,
         daysLate: daysLate,
         onTime: onTime,
         inFull: inFull,
         difot: counted && onTime && inFull,
         late: counted && lateMiss,
         short: counted && shortMiss,
-        reason: counted ? reasonParts.join("; ") : "",
+        reason: reasonParts.length ? reasonParts.join("; ") : "",
         counted: counted,
         countedText: countedText,
         rowsCombined: group.parts.length,
-        arrived: arrived,
+        arrivedSite: arrivedSite,
+        handed: handed,
         transit: transit,
         freightOnTime: freightOnTime,
         mode: mode,
@@ -1654,12 +1773,37 @@
     if (checkDateTotal) {
       warnings.push(
         rowPhrase(checkDateRows, checkDateTotal) +
-          (checkDateTotal === 1 ? ": the receipt is" : ": the receipts are") +
+          (checkDateTotal === 1 ? ": the on-time date is" : ": the on-time dates are") +
           " more than 365 days from the required date. Check this date."
       );
     }
+    var handedBlankMessage = skipWarning(
+      skipped.handedBlank,
+      "Handed to Freight Date is blank. You arrange the freight, so on time is the date the goods were handed to the freight company"
+    );
+    if (handedBlankMessage) {
+      warnings.push(handedBlankMessage);
+    }
+    var handedAfterMessage = rowNote(
+      skipped.handedAfterSite,
+      "Handed to Freight Date is after Arrived at Your Site Date, so the line is not in the freight figures"
+    );
+    if (handedAfterMessage) {
+      warnings.push(handedAfterMessage);
+    }
 
     var notes = [];
+    var ignoredNames = Object.keys(ignoredHanded);
+    if (ignoredNames.length) {
+      notes.push(
+        "Handed to Freight Date was filled in for " +
+          listAnd(ignoredNames.slice(0, 10)) +
+          (ignoredNames.length > 10 ? ", and " + (ignoredNames.length - 10) + " more" : "") +
+          ". " +
+          (ignoredNames.length === 1 ? "That supplier delivers" : "Those suppliers deliver") +
+          " to you, so that date was not used. On time uses Arrived at Your Site Date."
+      );
+    }
     if (!master) {
       notes.push("No supplier list was loaded. Every supplier is treated as Supplier delivers.");
     } else {
@@ -1676,6 +1820,13 @@
             " not in the PO file."
         );
       }
+    }
+    if (assumedFullLines) {
+      notes.push(
+        assumedFullLines +
+          (assumedFullLines === 1 ? " line has" : " lines have") +
+          " a handover date and no arrival yet, with no received quantity. The ordered quantity was counted as delivered in full until you fill the received quantity in."
+      );
     }
     if (notDue) {
       notes.push(notDue + (notDue === 1 ? " line not due yet" : " lines not due yet") + ".");
@@ -1786,7 +1937,7 @@
         return;
       }
       var receivedLines = measured.filter(function (line) {
-        return line.supplierKey === supplier.supplier.toLowerCase() && line.receipt;
+        return line.supplierKey === supplier.supplier.toLowerCase() && line.handed;
       });
       var expected = null;
       var masterEntry = master ? master.get(supplier.supplier.toLowerCase()) : null;
@@ -1948,7 +2099,8 @@
           formatNumber(line.damaged),
           formatNumber(line.accepted),
           formatISO(line.required),
-          line.receipt ? formatISO(line.receipt) : "",
+          line.arrivedSite ? formatISO(line.arrivedSite) : "",
+          line.handed ? formatISO(line.handed) : "",
           line.daysLate == null ? "" : String(line.daysLate),
           line.counted ? yn(line.onTime) : "",
           line.counted ? yn(line.inFull) : "",
@@ -1956,7 +2108,6 @@
           line.reason,
           line.countedText,
           String(line.rowsCombined),
-          line.arrived ? formatISO(line.arrived) : "",
           line.transit == null ? "" : String(line.transit),
           line.freightOnTime,
         ])
