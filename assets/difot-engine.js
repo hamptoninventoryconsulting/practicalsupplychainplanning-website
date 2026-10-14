@@ -482,7 +482,7 @@
     }
     if (text.indexOf(",") !== -1) {
       if (!/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(text)) {
-        return { blank: false, value: null };
+        return { blank: false, value: null, thousands: true };
       }
       text = text.replace(/,/g, "");
     }
@@ -575,6 +575,9 @@
     }
   }
 
+  var QUOTE_HINT = "a number like 1,000 must be in quotes or saved without the comma";
+  var THOUSANDS_HINT = "A thousands separator must group digits in threes, such as 1,000";
+
   function skipWarning(bucket, detail) {
     if (!bucket.count) {
       return "";
@@ -587,6 +590,10 @@
       detail +
       "."
     );
+  }
+
+  function mostRowsMismatch(bucket, total) {
+    return bucket.count * 2 > total;
   }
 
   function cell(cells, index) {
@@ -878,10 +885,27 @@
         freight: columnIndex(supplierLoaded.headers, "freight_arranged_by"),
         transit: columnIndex(supplierLoaded.headers, "expected_transit_days"),
       };
+      var supplierHeaderCount = supplierLoaded.headers.length;
+      var supplierWide = skipBucket();
+      for (var sw = 0; sw < supplierLoaded.dataRows.length; sw += 1) {
+        if (supplierLoaded.dataRows[sw].length !== supplierHeaderCount) {
+          noteSkip(supplierWide, sw + 2);
+        }
+      }
+      var supplierWideWarning = skipWarning(supplierWide, QUOTE_HINT);
+      if (mostRowsMismatch(supplierWide, supplierLoaded.dataRows.length)) {
+        return emptyResult(["Supplier list: " + supplierWideWarning]);
+      }
+      if (supplierWideWarning) {
+        supplierWarnings.push("Supplier list: " + supplierWideWarning);
+      }
       master = new Map();
       for (var s = 0; s < supplierLoaded.dataRows.length; s += 1) {
         var supplierCells = supplierLoaded.dataRows[s];
         var supplierRow = s + 2;
+        if (supplierCells.length !== supplierHeaderCount) {
+          continue;
+        }
         var supplierRaw = String(cell(supplierCells, supplierCols.supplier));
         var supplierName = supplierRaw.trim();
         if (!supplierName) {
@@ -988,13 +1012,27 @@
     if (!poLoaded.dataRows.length) {
       return emptyResult(["The file has no purchase order lines under the header."]);
     }
+    var poHeaderCount = poLoaded.headers.length;
+    var wideRows = skipBucket();
+    for (var w = 0; w < poLoaded.dataRows.length; w += 1) {
+      if (poLoaded.dataRows[w].length !== poHeaderCount) {
+        noteSkip(wideRows, w + 2);
+      }
+    }
+    var wideWarning = skipWarning(wideRows, QUOTE_HINT);
+    if (mostRowsMismatch(wideRows, poLoaded.dataRows.length)) {
+      return emptyResult([wideWarning]);
+    }
 
     var skipped = {
       identity: skipBucket(),
       required: skipBucket(),
       ordered: skipBucket(),
+      orderedComma: skipBucket(),
       received: skipBucket(),
+      receivedComma: skipBucket(),
       damaged: skipBucket(),
+      damagedComma: skipBucket(),
       damagedOver: skipBucket(),
       judge: skipBucket(),
       excel: skipBucket(),
@@ -1040,6 +1078,9 @@
     for (var r = 0; r < poLoaded.dataRows.length; r += 1) {
       var cells = poLoaded.dataRows[r];
       var rowNumber = r + 2;
+      if (cells.length !== poHeaderCount) {
+        continue;
+      }
       var poRaw = String(cell(cells, cols.po_number));
       var supplierRaw = String(cell(cells, cols.supplier));
       var skuRaw = String(cell(cells, cols.sku));
@@ -1065,16 +1106,28 @@
       countAmbiguity(requiredParsed);
 
       var ordered = parseNumber(cell(cells, cols.ordered_qty));
+      if (ordered.thousands) {
+        noteSkip(skipped.orderedComma, rowNumber);
+        continue;
+      }
       if (ordered.blank || ordered.value == null || ordered.value <= 0) {
         noteSkip(skipped.ordered, rowNumber);
         continue;
       }
       var received = parseNumber(cell(cells, cols.received_qty));
+      if (received.thousands) {
+        noteSkip(skipped.receivedComma, rowNumber);
+        continue;
+      }
       if (!received.blank && (received.value == null || received.value < 0)) {
         noteSkip(skipped.received, rowNumber);
         continue;
       }
       var damaged = parseNumber(cell(cells, cols.damaged_qty));
+      if (damaged.thousands) {
+        noteSkip(skipped.damagedComma, rowNumber);
+        continue;
+      }
       if (!damaged.blank && (damaged.value == null || damaged.value < 0)) {
         noteSkip(skipped.damaged, rowNumber);
         continue;
@@ -1174,12 +1227,27 @@
     }
 
     var warnings = supplierWarnings.slice();
+    if (wideWarning) {
+      warnings.push(wideWarning);
+    }
     [
       skipWarning(skipped.identity, "the PO number, supplier or SKU is blank"),
       skipWarning(skipped.required, "the required date is blank or could not be read"),
       skipWarning(skipped.ordered, "the ordered quantity must be a number above 0"),
+      skipWarning(
+        skipped.orderedComma,
+        "the ordered quantity is not a number. " + THOUSANDS_HINT
+      ),
       skipWarning(skipped.received, "the received quantity is not a number or is negative"),
+      skipWarning(
+        skipped.receivedComma,
+        "the received quantity is not a number. " + THOUSANDS_HINT
+      ),
       skipWarning(skipped.damaged, "the damaged quantity is not a number or is negative"),
+      skipWarning(
+        skipped.damagedComma,
+        "the damaged quantity is not a number. " + THOUSANDS_HINT
+      ),
       skipWarning(skipped.damagedOver, "the damaged quantity is greater than the received quantity"),
       skipWarning(skipped.judge, "a received quantity and a receipt date are both needed to judge the line"),
       skipWarning(skipped.excel, "the date is an Excel date number. Save dates as dates"),

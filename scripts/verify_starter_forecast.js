@@ -281,8 +281,26 @@ assertQty(skuOf(thousands, "A"), "1200.00");
 assertQty(skuOf(thousands, "B"), "2500.50");
 const badThousands = run(["1," + WINDOW[11] + ',A,"1,00",Main', line(WINDOW[11], "B", 4)]);
 assert.strictEqual(badThousands.ok, true);
-assert.ok(badThousands.warnings.some(function (warning) { return warning.indexOf("not a number") !== -1; }));
+assert.ok(badThousands.warnings.some(function (warning) {
+  return warning.indexOf("not a number") !== -1 && warning.indexOf("thousands separator") !== -1;
+}));
 assert.strictEqual(badThousands.skus.length, 1);
+const unquotedQty = run(["1," + WINDOW[11] + ",A,1,000,Main", line(WINDOW[11], "B", 4)]);
+assert.strictEqual(unquotedQty.ok, true, JSON.stringify(unquotedQty.errors));
+assert.strictEqual(unquotedQty.skus.length, 1);
+assert.strictEqual(skuOf(unquotedQty, "B").sku, "B");
+assert.ok(unquotedQty.skus.every(function (row) { return row.sku !== "A"; }));
+assert.ok(unquotedQty.warnings.some(function (warning) {
+  return warning.indexOf("row 2") !== -1 && warning.indexOf("1,000 must be in quotes") !== -1;
+}));
+const mostlyUnquoted = run([
+  "1," + WINDOW[11] + ",A,1,000,Main",
+  "1," + WINDOW[11] + ",B,2,000,Main",
+  line(WINDOW[11], "C", 4),
+]);
+assert.strictEqual(mostlyUnquoted.ok, false);
+assert.match(mostlyUnquoted.errors[0], /1,000 must be in quotes/);
+assert.strictEqual(mostlyUnquoted.forecastCsv, "");
 
 const future = run([line("2026-03-30", "A", 99), line(WINDOW[0], "A", 10)], { today: "2026-03-01" });
 assert.strictEqual(future.ok, true);
@@ -470,8 +488,9 @@ assert.match(page, /id="sf-downloads" hidden/);
 assert.match(page, /id="sf-results" hidden/);
 assert.match(page, /name="articles"/);
 assert.doesNotMatch(page, /name="articles"[^>]*checked/);
-assert.match(page, /src="\/assets\/starter-forecast-engine\.js\?v=4"/);
-assert.match(page, /A quantity such as 1,000 is read as 1000/);
+assert.match(page, /src="\/assets\/starter-forecast-engine\.js\?v=5"/);
+assert.match(page, /A quantity such as "1,000" in quotes is read as 1000/);
+assert.match(page, /A full stop is only for decimals/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
 assert.match(page, /src="\/assets\/starter-forecast\.js\?v=3"/);
 assert.match(page, /Email me to unlock the download/);

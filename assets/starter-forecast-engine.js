@@ -301,6 +301,11 @@
     return false;
   }
 
+  function brokenThousands(raw) {
+    var text = String(raw == null ? "" : raw).trim();
+    return text.indexOf(",") !== -1 && !/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(text);
+  }
+
   function parseQty(raw) {
     var text = String(raw == null ? "" : raw).trim();
     if (text.indexOf(",") !== -1) {
@@ -359,6 +364,9 @@
     var more = messages.length - 10;
     return messages.slice(0, 10).concat(["and " + more + " more"]);
   }
+
+  var QUOTE_HINT = "a number like 1,000 must be in quotes or saved without the comma";
+  var THOUSANDS_HINT = "A thousands separator must group digits in threes, such as 1,000";
 
   function skipWarning(bucket, detail) {
     if (!bucket.count) {
@@ -462,10 +470,24 @@
     if (!dataRows.length) {
       return emptyResult(["The file has no sales rows under the header."]);
     }
+    var headerCount = table[0].length;
+    var wideRows = skipBucket();
+    for (var w = 0; w < dataRows.length; w += 1) {
+      if (dataRows[w].length !== headerCount) {
+        noteSkip(wideRows, w + 2);
+      }
+    }
+    var wideWarning = skipWarning(wideRows, QUOTE_HINT);
+    if (wideRows.count * 2 > dataRows.length) {
+      return emptyResult([wideWarning]);
+    }
 
     var seenSkus = new Map();
     var skuCount = 0;
     for (var s = 0; s < dataRows.length; s += 1) {
+      if (dataRows[s].length !== headerCount) {
+        continue;
+      }
       var skuCell = dataRows[s][col.sku] == null ? "" : String(dataRows[s][col.sku]);
       if (String(skuCell).trim() === "") {
         continue;
@@ -486,6 +508,7 @@
       unreadable: skipBucket(),
       excel: skipBucket(),
       qty: skipBucket(),
+      qtyComma: skipBucket(),
       future: skipBucket(),
     };
     var spaced = Object.create(null);
@@ -519,6 +542,9 @@
     for (var r = 0; r < dataRows.length; r += 1) {
       var cells = dataRows[r];
       var rowNumber = r + 2;
+      if (cells.length !== headerCount) {
+        continue;
+      }
       var sku = cells[col.sku] == null ? "" : String(cells[col.sku]);
       if (String(sku).trim() === "") {
         noteSkip(skipped.blankSku, rowNumber);
@@ -573,7 +599,7 @@
       }
       var qty = parseQty(cells[col.qty]);
       if (qty == null) {
-        noteSkip(skipped.qty, rowNumber);
+        noteSkip(brokenThousands(cells[col.qty]) ? skipped.qtyComma : skipped.qty, rowNumber);
         continue;
       }
       var dayKey = formatISO(parsed.date);
@@ -599,11 +625,18 @@
     }
 
     var warnings = [];
+    if (wideWarning) {
+      warnings.push(wideWarning);
+    }
     [
       skipWarning(skipped.blankSku, "the SKU was blank"),
       skipWarning(skipped.unreadable, "the date could not be read"),
       skipWarning(skipped.excel, "the date is an Excel date number. Save the file with real dates, not date numbers"),
       skipWarning(skipped.qty, "the quantity is not a number"),
+      skipWarning(
+        skipped.qtyComma,
+        "the quantity is not a number. " + THOUSANDS_HINT
+      ),
       skipWarning(skipped.future, "the date is after today"),
     ].forEach(function (message) {
       if (message) {
