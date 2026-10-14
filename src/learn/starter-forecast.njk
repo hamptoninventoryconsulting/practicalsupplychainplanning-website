@@ -7,7 +7,7 @@
   "nav": "learn",
   "permalink": "/learn/starter-forecast/",
   "scripts": [
-    "/assets/starter-forecast-engine.js?v=3",
+    "/assets/starter-forecast-engine.js?v=4",
     "/assets/sim-results-form.js?v=7",
     "/assets/starter-forecast.js?v=3"
   ]
@@ -90,7 +90,7 @@
             <p>
               Use a CSV with these columns: order_id, order_datetime, sku, qty,
               fulfillment_location. Extra columns are ignored. SKUs are kept
-              exactly as written.
+              exactly as written. A quantity such as 1,000 is read as 1000.
             </p>
             <p>
               Limits: CSV only, 10 MB, 200,000 rows, 5,000 SKUs.

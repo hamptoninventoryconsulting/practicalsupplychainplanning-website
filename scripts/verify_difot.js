@@ -289,6 +289,25 @@ assert.strictEqual(listedStops.errors.length, 11);
 assert.match(listedStops.errors[0], /Row 2:/);
 assert.strictEqual(listedStops.errors[10], "and 2 more");
 
+const thousands = run([
+  '1,Acme,A,"1,000",2026-03-10,2026-03-10,"1,000",,,',
+  '2,Acme,B,"1,200.5",2026-03-10,2026-03-10,"1,000.25","200.25",,',
+]);
+assert.strictEqual(thousands.ok, true, JSON.stringify(thousands.errors) + JSON.stringify(thousands.warnings));
+assert.strictEqual(lineOf(thousands, "A").ordered, 1000);
+assert.strictEqual(lineOf(thousands, "A").received, 1000);
+assert.strictEqual(lineOf(thousands, "A").inFull, true);
+assert.strictEqual(lineOf(thousands, "B").ordered, 1200.5);
+assert.strictEqual(lineOf(thousands, "B").received, 1000.25);
+assert.strictEqual(lineOf(thousands, "B").damaged, 200.25);
+const badThousands = run([
+  '1,Acme,A,"1,00",2026-03-10,2026-03-10,10,,,',
+  "2,Acme,B,10,2026-03-10,2026-03-10,10,,,",
+]);
+assert.strictEqual(badThousands.ok, true, JSON.stringify(badThousands.errors));
+assert.strictEqual(badThousands.lines.length, 1);
+assert.ok(warns(badThousands, /ordered quantity/));
+
 const semicolons = run("PO Number;Supplier;SKU\n1;Acme;A\n");
 assert.deepStrictEqual(semicolons.errors, [
   "This file uses semicolons. Save it as a comma-separated CSV and try again.",
@@ -391,6 +410,7 @@ assert.match(page, /id="df-measure-to"/);
 assert.match(page, /id="df-as-at"/);
 assert.match(page, /Day\/Month\/Year/);
 assert.match(page, /your accounting or purchasing system/);
+assert.match(page, /A quantity such as 1,000 is read as 1000/);
 assert.match(page, /Missing dates\? Add them from your forwarder's bill of lading or tracking before you upload\./);
 assert.match(page, /supplier bill date/);
 assert.match(page, /does not change the supplier's DIFOT/);

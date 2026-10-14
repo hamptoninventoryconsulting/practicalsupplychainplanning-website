@@ -121,6 +121,20 @@
       .replace(/^\uFEFF/, "")
       .replace(/\r\n/g, "\n")
       .replace(/\r/g, "\n");
+    if (source.indexOf('"') === -1) {
+      if (!source) {
+        return [];
+      }
+      var plain = source.split("\n");
+      var plainRows = [];
+      for (var p = 0; p < plain.length; p += 1) {
+        if (plain[p] === "" && p === plain.length - 1) {
+          continue;
+        }
+        plainRows.push(plain[p].split(","));
+      }
+      return plainRows;
+    }
     var rows = [];
     var row = [];
     var field = "";
@@ -174,24 +188,43 @@
 
   function csvField(value) {
     var text = String(value == null ? "" : value);
-    if (/[",\n\r]/.test(text) || text !== text.trim()) {
-      return '"' + text.replace(/"/g, '""') + '"';
+    var quote = false;
+    for (var i = 0; i < text.length; i += 1) {
+      var code = text.charCodeAt(i);
+      if (code === 34 || code === 44 || code === 10 || code === 13) {
+        quote = true;
+        break;
+      }
     }
-    return text;
+    if (!quote && text !== text.trim()) {
+      quote = true;
+    }
+    if (!quote) {
+      return text;
+    }
+    return '"' + text.replace(/"/g, '""') + '"';
   }
 
   function csvLine(cells) {
     return cells.map(csvField).join(",");
   }
 
+  var datesByKey = Object.create(null);
+  var isoTextByDate = typeof WeakMap === "function" ? new WeakMap() : null;
+
   function utcDate(year, month, day) {
-    if (month < 1 || month > 12 || day < 1 || day > 31) {
-      return null;
+    var key = (year * 100 + month) * 100 + day;
+    if (Object.prototype.hasOwnProperty.call(datesByKey, key)) {
+      return datesByKey[key];
     }
-    var dt = new Date(Date.UTC(year, month - 1, day));
-    if (dt.getUTCFullYear() !== year || dt.getUTCMonth() !== month - 1 || dt.getUTCDate() !== day) {
-      return null;
+    var dt = null;
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      dt = new Date(Date.UTC(year, month - 1, day));
+      if (dt.getUTCFullYear() !== year || dt.getUTCMonth() !== month - 1 || dt.getUTCDate() !== day) {
+        dt = null;
+      }
     }
+    datesByKey[key] = dt;
     return dt;
   }
 
@@ -202,6 +235,12 @@
   }
 
   function formatISO(date) {
+    if (isoTextByDate) {
+      var cached = isoTextByDate.get(date);
+      if (cached) {
+        return cached;
+      }
+    }
     var month = String(date.getUTCMonth() + 1);
     var day = String(date.getUTCDate());
     if (month.length < 2) {
@@ -210,7 +249,11 @@
     if (day.length < 2) {
       day = "0" + day;
     }
-    return date.getUTCFullYear() + "-" + month + "-" + day;
+    var text = date.getUTCFullYear() + "-" + month + "-" + day;
+    if (isoTextByDate) {
+      isoTextByDate.set(date, text);
+    }
+    return text;
   }
 
   function formatLong(date) {
@@ -250,10 +293,49 @@
     return utcDate(year, month, day);
   }
 
+  function fastIso(text) {
+    for (var i = 0; i < 10; i += 1) {
+      if (i === 4 || i === 7) {
+        continue;
+      }
+      var code = text.charCodeAt(i);
+      if (code < 48 || code > 57) {
+        return null;
+      }
+    }
+    if (text.length > 10) {
+      var sep = text.charCodeAt(10);
+      if (sep !== 84 && sep !== 32) {
+        return null;
+      }
+    }
+    var year =
+      (text.charCodeAt(0) - 48) * 1000 +
+      (text.charCodeAt(1) - 48) * 100 +
+      (text.charCodeAt(2) - 48) * 10 +
+      (text.charCodeAt(3) - 48);
+    var month = (text.charCodeAt(5) - 48) * 10 + (text.charCodeAt(6) - 48);
+    var day = (text.charCodeAt(8) - 48) * 10 + (text.charCodeAt(9) - 48);
+    var isoDate = utcDate(year, month, day);
+    if (!isoDate) {
+      return { ok: false, reason: "unreadable", original: text };
+    }
+    return { ok: true, date: isoDate, iso: true, ambiguous: false, original: text };
+  }
+
   function parseDate(raw, dayFirst) {
-    var text = String(raw == null ? "" : raw).trim();
+    var text = raw == null ? "" : typeof raw === "string" ? raw : String(raw);
+    if (text.charCodeAt(0) <= 32 || text.charCodeAt(text.length - 1) <= 32) {
+      text = text.trim();
+    }
     if (!text) {
       return { ok: false, reason: "blank" };
+    }
+    if (text.length >= 10 && text.charCodeAt(4) === 45 && text.charCodeAt(7) === 45) {
+      var fast = fastIso(text);
+      if (fast) {
+        return fast;
+      }
     }
     if (/^\d+(\.\d+)?$/.test(text)) {
       return { ok: false, reason: "excel", original: text };
@@ -369,9 +451,40 @@
   }
 
   function parseNumber(raw) {
-    var text = String(raw == null ? "" : raw).trim();
+    if (raw == null) {
+      return { blank: true, value: null };
+    }
+    var text = typeof raw === "string" ? raw : String(raw);
+    if (text.charCodeAt(0) <= 32 || text.charCodeAt(text.length - 1) <= 32) {
+      text = text.trim();
+    }
     if (text === "") {
       return { blank: true, value: null };
+    }
+    var sign = 1;
+    var start = 0;
+    if (text.charCodeAt(0) === 45) {
+      sign = -1;
+      start = 1;
+    }
+    var digits = start < text.length;
+    var whole = 0;
+    for (var i = start; i < text.length; i += 1) {
+      var code = text.charCodeAt(i);
+      if (code < 48 || code > 57) {
+        digits = false;
+        break;
+      }
+      whole = whole * 10 + (code - 48);
+    }
+    if (digits) {
+      return { blank: false, value: sign * whole };
+    }
+    if (text.indexOf(",") !== -1) {
+      if (!/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(text)) {
+        return { blank: false, value: null };
+      }
+      text = text.replace(/,/g, "");
     }
     if (!/^-?\d+(\.\d+)?$/.test(text)) {
       return { blank: false, value: null };

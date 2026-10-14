@@ -303,6 +303,12 @@
 
   function parseQty(raw) {
     var text = String(raw == null ? "" : raw).trim();
+    if (text.indexOf(",") !== -1) {
+      if (!/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(text)) {
+        return null;
+      }
+      text = text.replace(/,/g, "");
+    }
     if (!/^-?\d+(\.\d+)?$/.test(text)) {
       return null;
     }
@@ -344,6 +350,14 @@
     if (bucket.rows.length < 8) {
       bucket.rows.push(rowNumber);
     }
+  }
+
+  function capMessages(messages) {
+    if (messages.length <= 10) {
+      return messages.slice();
+    }
+    var more = messages.length - 10;
+    return messages.slice(0, 10).concat(["and " + more + " more"]);
   }
 
   function skipWarning(bucket, detail) {
@@ -413,7 +427,7 @@
       return emptyResult(["The file has no header row. Download the template and match those column names."]);
     }
     if (usesSemicolons(text)) {
-      return emptyResult(["This file uses semicolons; save as comma-separated CSV"]);
+      return emptyResult(["This file uses semicolons. Save it as a comma-separated CSV and try again."]);
     }
     var headers = table[0].map(normalizeHeader);
     var missing = REQUIRED.filter(function (name) {
@@ -618,7 +632,7 @@
 
     var dateLine = buildDateLine(dayFirst, firstDateRef);
     if (dateStops.length) {
-      return emptyResult(dateStops, warnings, dateLine);
+      return emptyResult(capMessages(dateStops), warnings, dateLine);
     }
     if (!parsedDates && dateCells) {
       return emptyResult(
