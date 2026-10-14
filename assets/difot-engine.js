@@ -750,9 +750,11 @@
       dateLine: dateLine || "",
       summaryLine: "",
       settings: [],
+      counts: null,
       overall: null,
       suppliers: [],
       months: [],
+      supplierMonths: [],
       monthsHidden: 0,
       freight: [],
       freightNote: "",
@@ -1914,8 +1916,15 @@
     var bySupplier = new Map();
     var byMonth = new Map();
     var bySupplierMonth = new Map();
+    var seenPos = Object.create(null);
+    var purchaseOrders = 0;
     measured.forEach(function (line) {
       addTally(overall, line);
+      var poKey = line.supplierKey + "\n" + line.po;
+      if (!seenPos[poKey]) {
+        seenPos[poKey] = true;
+        purchaseOrders += 1;
+      }
       if (!bySupplier.has(line.supplierKey)) {
         bySupplier.set(line.supplierKey, { name: line.supplier, mode: line.mode, tally: tally() });
       }
@@ -1979,61 +1988,40 @@
         difotPct: fields.difotPct,
       };
     });
-    var monthsHidden = 0;
-    var monthsShown = monthRows;
-    if (monthRows.length > MAX_MONTHS_ON_SCREEN) {
-      monthsHidden = monthRows.length - MAX_MONTHS_ON_SCREEN;
-      monthsShown = monthRows.slice(monthRows.length - MAX_MONTHS_ON_SCREEN);
-      notes.push(
-        monthsHidden +
-          (monthsHidden === 1 ? " older month is" : " older months are") +
-          " in the totals and in the summary CSV."
-      );
-    }
-
-    var freightRows = [];
-    supplierRows.forEach(function (supplier) {
-      if (supplier.mode !== "me") {
-        return;
-      }
-      var receivedLines = measured.filter(function (line) {
-        return line.supplierKey === supplier.supplier.toLowerCase() && line.handed;
+    function freightStats(lineList, expected) {
+      var handedLines = [];
+      lineList.forEach(function (line) {
+        if (line.handed) {
+          handedLines.push(line);
+        }
       });
-      var expected = null;
-      var masterEntry = master ? master.get(supplier.supplier.toLowerCase()) : null;
-      if (masterEntry) {
-        expected = masterEntry.transit;
-      }
       var measurable = [];
       var notMeasurable = 0;
-      receivedLines.forEach(function (line) {
+      handedLines.forEach(function (line) {
         if (expected == null || line.transit == null) {
           notMeasurable += 1;
           return;
         }
         measurable.push(line);
       });
-      if (expected == null) {
-        warnings.push(supplier.supplier + ": expected transit days is blank, so freight is not measurable.");
-      }
-      var onTimeLines = measurable.filter(function (line) {
-        return line.freightOnTime === "Y";
-      }).length;
-      var transitValues = measurable.map(function (line) {
-        return line.transit;
+      var onTimeCount = 0;
+      measurable.forEach(function (line) {
+        if (line.freightOnTime === "Y") {
+          onTimeCount += 1;
+        }
       });
       var average = "";
       var longest = "";
-      if (transitValues.length) {
+      if (measurable.length) {
         var sum = 0;
-        var max = transitValues[0];
-        transitValues.forEach(function (value) {
-          sum += value;
-          if (value > max) {
-            max = value;
+        var max = measurable[0].transit;
+        measurable.forEach(function (line) {
+          sum += line.transit;
+          if (line.transit > max) {
+            max = line.transit;
           }
         });
-        average = formatAvg(sum, transitValues.length);
+        average = formatAvg(sum, measurable.length);
         longest = formatNumber(max);
       }
       var note = "";
@@ -2042,17 +2030,38 @@
       } else if (notMeasurable) {
         note = notMeasurable + (notMeasurable === 1 ? " line not measurable" : " lines not measurable");
       }
-      freightRows.push({
-        supplier: supplier.supplier,
-        lines: measurable.length ? measurable.length : receivedLines.length,
-        population: receivedLines.length,
+      return {
+        lines: measurable.length ? measurable.length : handedLines.length,
+        population: handedLines.length,
         measurable: measurable.length,
-        onTimeLines: measurable.length ? onTimeLines : "",
-        onTimePct: measurable.length ? formatPct(onTimeLines, measurable.length) : "",
+        onTimeLines: measurable.length ? onTimeCount : "",
+        onTimePct: measurable.length ? formatPct(onTimeCount, measurable.length) : "",
         averageTransit: average,
         longestTransit: longest,
         note: note,
+      };
+    }
+
+    var freightRows = [];
+    supplierRows.forEach(function (supplier) {
+      if (supplier.mode !== "me") {
+        return;
+      }
+      var receivedLines = measured.filter(function (line) {
+        return line.supplierKey === supplier.supplier.toLowerCase();
       });
+      var expected = null;
+      var masterEntry = master ? master.get(supplier.supplier.toLowerCase()) : null;
+      if (masterEntry) {
+        expected = masterEntry.transit;
+      }
+      if (expected == null) {
+        warnings.push(supplier.supplier + ": expected transit days is blank, so freight is not measurable.");
+      }
+      var stats = freightStats(receivedLines, expected);
+      stats.supplier = supplier.supplier;
+      supplier.freightStats = stats;
+      freightRows.push(stats);
     });
     if (freightRows.length) {
       notes.push("Freight performance is separate. It does not change a supplier's DIFOT.");
@@ -2069,41 +2078,21 @@
       { label: "Measure to", value: toKey },
       { label: "As at date", value: asAtKey },
     ];
+    var lineWord = overallFields.lines === 1 ? "line" : "lines";
+    var supplierWord = supplierRows.length === 1 ? "supplier" : "suppliers";
+    var poWord = purchaseOrders === 1 ? "purchase order" : "purchase orders";
     var summaryLine =
-      "DIFOT " +
-      overallFields.difotPct +
-      "% (" +
-      overallFields.difotLines +
-      " of " +
       overallFields.lines +
-      " lines). On time " +
-      overallFields.onTimePct +
-      "% (" +
-      overallFields.onTimeLines +
-      " of " +
-      overallFields.lines +
-      "). In full " +
-      overallFields.inFullPct +
-      "% (" +
-      overallFields.inFullLines +
-      " of " +
-      overallFields.lines +
-      "). Days early allowed " +
-      early.value +
-      ". Days late allowed " +
-      late.value +
-      ". Shortfall allowed " +
-      shortfall.value +
-      "%. Over-delivery counts as in full: " +
-      (overOk ? "Yes" : "No") +
-      ". Dates: " +
-      formatName(dayFirst) +
-      ". Measured " +
-      fromKey +
-      " to " +
-      toKey +
-      ". As at " +
-      asAtKey +
+      " " +
+      lineWord +
+      " measured. " +
+      supplierRows.length +
+      " " +
+      supplierWord +
+      ". " +
+      purchaseOrders +
+      " " +
+      poWord +
       ".";
 
     var settingLines = ["Setting,Value"];
@@ -2111,16 +2100,19 @@
       settingLines.push(csvLine([setting.label, setting.value]));
     });
     var summaryBody = [SUMMARY_HEADER.join(",")];
-    summaryBody.push(csvLine(summaryCells("Overall", "", "", overallFields, null, "")));
     supplierRows.forEach(function (supplier) {
       summaryBody.push(
         csvLine(
-          summaryCells("Supplier", supplier.supplier, "", supplier, null, "")
+          summaryCells(
+            "Supplier",
+            supplier.supplier,
+            "",
+            supplier,
+            supplier.freightStats || null,
+            supplier.freightStats ? supplier.freightStats.note : ""
+          )
         )
       );
-    });
-    monthRows.forEach(function (month) {
-      summaryBody.push(csvLine(summaryCells("Month", "", month.month, month, null, "")));
     });
     var supplierOrder = supplierRows.map(function (supplier) {
       return supplier.supplier;
@@ -2140,12 +2132,74 @@
       }
       return 0;
     });
-    pairRows.forEach(function (pair) {
-      summaryBody.push(csvLine(summaryCells("Supplier-Month", pair.name, pair.month, tallyFields(pair.tally), null, "")));
+    var supplierMonths = [];
+    var monthsHidden = 0;
+    supplierRows.forEach(function (supplier) {
+      var months = [];
+      pairRows.forEach(function (pair) {
+        if (pair.name !== supplier.supplier) {
+          return;
+        }
+        var fields = tallyFields(pair.tally);
+        var monthFreight = null;
+        if (supplier.mode === "me") {
+          var monthLines = measured.filter(function (line) {
+            return line.supplierKey === pair.key && line.month === pair.month;
+          });
+          var expected = null;
+          var masterEntry = master ? master.get(pair.key) : null;
+          if (masterEntry) {
+            expected = masterEntry.transit;
+          }
+          monthFreight = freightStats(monthLines, expected);
+        }
+        var monthRow = {
+          month: pair.month,
+          lines: fields.lines,
+          onTimeLines: fields.onTimeLines,
+          inFullLines: fields.inFullLines,
+          difotLines: fields.difotLines,
+          onTimePct: fields.onTimePct,
+          inFullPct: fields.inFullPct,
+          difotPct: fields.difotPct,
+          lateLines: fields.lateLines,
+          shortLines: fields.shortLines,
+          avgDaysLate: fields.avgDaysLate,
+          freightStats: monthFreight,
+        };
+        months.push(monthRow);
+        summaryBody.push(
+          csvLine(
+            summaryCells(
+              "Supplier-Month",
+              pair.name,
+              pair.month,
+              fields,
+              monthFreight,
+              monthFreight ? monthFreight.note : ""
+            )
+          )
+        );
+      });
+      var shown = months;
+      if (months.length > MAX_MONTHS_ON_SCREEN) {
+        monthsHidden += months.length - MAX_MONTHS_ON_SCREEN;
+        shown = months.slice(months.length - MAX_MONTHS_ON_SCREEN);
+      }
+      supplierMonths.push({
+        supplier: supplier.supplier,
+        freight: supplier.freight,
+        mode: supplier.mode,
+        months: shown,
+      });
     });
-    freightRows.forEach(function (freight) {
-      summaryBody.push(csvLine(summaryCells("Freight", freight.supplier, "", null, freight, freight.note)));
-    });
+    if (monthsHidden) {
+      notes.push(
+        monthsHidden +
+          (monthsHidden === 1 ? " older month is" : " older months are") +
+          " in the summary CSV."
+      );
+    }
 
     var lineBody = [LINES_HEADER.join(",")];
     lines.forEach(function (line) {
@@ -2185,6 +2239,11 @@
       dateLine: dateLine,
       summaryLine: summaryLine,
       settings: settings,
+      counts: {
+        lines: overallFields.lines,
+        suppliers: supplierRows.length,
+        purchaseOrders: purchaseOrders,
+      },
       overall: {
         lines: overallFields.lines,
         onTimeLines: overallFields.onTimeLines,
@@ -2198,8 +2257,9 @@
         avgDaysLate: overallFields.avgDaysLate,
       },
       suppliers: supplierRows,
-      months: monthsShown,
+      months: monthRows,
       allMonths: monthRows,
+      supplierMonths: supplierMonths,
       monthsHidden: monthsHidden,
       freight: freightRows,
       freightNote: freightRows.length
