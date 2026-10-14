@@ -7,7 +7,7 @@
   "nav": "learn",
   "permalink": "/learn/difot-calculator/",
   "scripts": [
-    "/assets/difot-engine.js?v=7",
+    "/assets/difot-engine.js?v=8",
     "/assets/sim-results-form.js?v=7",
     "/assets/difot-calculator.js?v=1"
   ]
@@ -43,7 +43,7 @@
               <li>Lines are counted, not whole orders and not quantity.</li>
               <li>An unreceived line that is overdue on the as-at date counts as a miss. A line that is not due yet is left out.</li>
               <li>If the same PO number and SKU appears more than once, the rows are combined. Quantities are added. The latest Arrived at Your Site Date and the latest Handed to Freight Date are kept. The ordered quantity is the largest one in the group.</li>
-              <li>Freight you arrange is measured from Handed to Freight Date to Arrived at Your Site Date, and compared with the expected transit days. It does not change the supplier's DIFOT. If the goods have been handed over but have not arrived yet, the line still counts for DIFOT and is left out of the freight figures. Leave Received Qty blank and the ordered quantity counts as delivered in full until you fill the quantity in.</li>
+              <li>Freight you arrange is measured from Handed to Freight Date to Arrived at Your Site Date, and compared with the expected transit days. It does not change the supplier's DIFOT. Freight days use only the rows that have arrived. If the goods have been handed over but have not arrived yet, the line still counts for DIFOT and is left out of the freight figures. Leave Received Qty blank and the ordered quantity counts as delivered in full until you fill the quantity in. If the same line has goods already at your site and another handover with no quantity yet, that handover counts as the rest of the ordered quantity until you fill it in.</li>
               <li>If the handover date is after the arrival date, that line is left out of the freight figures. On time still uses the handover date.</li>
               <li>If you arrange the freight and a received line has no Handed to Freight Date, that line is left out. If the supplier delivers to you, a Handed to Freight Date on the line is not used.</li>
             </ul>

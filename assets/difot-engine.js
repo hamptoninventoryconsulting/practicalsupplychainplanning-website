@@ -16,9 +16,12 @@
  * Handed to Freight Date with the required date. In full compares the
  * accepted quantity with the ordered quantity. If you arrange the freight
  * and the goods are not at your site yet, a blank received quantity counts
- * as the full ordered quantity. Freight you arrange is reported separately,
- * from Handed to Freight Date to Arrived at Your Site Date, and does not
- * change DIFOT. A handover after the arrival is left out of the freight figures.
+ * as the full ordered quantity. When part of a line has already arrived and
+ * another handover has no quantity yet, that handover counts as the rest of
+ * the ordered quantity. Freight you arrange is reported separately, from
+ * Handed to Freight Date to Arrived at Your Site Date on the rows that have
+ * arrived, and does not change DIFOT. A handover after the arrival is left
+ * out of the freight figures.
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
@@ -1142,6 +1145,7 @@
       damaged: skipBucket(),
       damagedComma: skipBucket(),
       damagedOver: skipBucket(),
+      damagedOverOrdered: skipBucket(),
       judge: skipBucket(),
       judgeHanded: skipBucket(),
       excel: skipBucket(),
@@ -1156,6 +1160,7 @@
     };
     var ignoredHanded = Object.create(null);
     var assumedFullLines = 0;
+    var assumedRemainderLines = 0;
     var dateStops = [];
     var firstDateRef = null;
     var slashDates = 0;
@@ -1325,8 +1330,12 @@
         }
         if (received.blank && damagedQty > 0) {
           var canAssumeQty = handedDate && !(siteDate && formatISO(siteDate) <= asAtText);
-          if (!canAssumeQty || damagedQty - ordered.value > 1e-9) {
+          if (!canAssumeQty) {
             noteSkip(skipped.damagedOver, rowNumber);
+            continue;
+          }
+          if (damagedQty - ordered.value > 1e-9) {
+            noteSkip(skipped.damagedOverOrdered, rowNumber);
             continue;
           }
         }
@@ -1416,6 +1425,7 @@
         "the damaged quantity is not a number. " + THOUSANDS_HINT
       ),
       skipWarning(skipped.damagedOver, "the damaged quantity is greater than the received quantity"),
+      skipWarning(skipped.damagedOverOrdered, "the damaged quantity is greater than the ordered quantity"),
       skipWarning(
         skipped.judge,
         "a received quantity and an Arrived at Your Site Date are both needed to judge the line"
@@ -1625,9 +1635,30 @@
       });
       var arrivedInTime = arrivedSite && formatISO(arrivedSite) <= asAtKey;
       var assumeFull = mode === "me" && handed && allReceivedBlank && !arrivedInTime;
+      var assumeRemainder = false;
       if (assumeFull) {
         receivedQty = orderedQty;
         assumedFullLines += 1;
+      } else if (mode === "me") {
+        var hasArrivedFilled = false;
+        var hasBlankInTransit = false;
+        countedParts.forEach(function (part) {
+          var partArrived = part.arrivedSite && formatISO(part.arrivedSite) <= asAtKey;
+          if (partArrived && !part.receivedBlank) {
+            hasArrivedFilled = true;
+          }
+          if (part.receivedBlank && part.handed && !partArrived) {
+            hasBlankInTransit = true;
+          }
+        });
+        if (hasArrivedFilled && hasBlankInTransit) {
+          var remaining = orderedQty - receivedQty;
+          if (remaining > 1e-9) {
+            receivedQty += remaining;
+          }
+          assumeRemainder = true;
+          assumedRemainderLines += 1;
+        }
       }
 
       var accepted = receivedQty - damagedQty;
@@ -1700,6 +1731,9 @@
       if (assumeFull) {
         reasonParts.push("Received quantity not filled in, so the ordered quantity was used");
       }
+      if (assumeRemainder) {
+        reasonParts.push("A handover with no quantity yet was counted as the rest of the ordered quantity");
+      }
       if (onTimeDate && daysLate != null && Math.abs(daysLate) > 365) {
         checkDate = true;
         if (counted) {
@@ -1713,15 +1747,32 @@
 
       var transit = null;
       var freightOnTime = "";
-      var freightArrival = mode === "me" && handed && arrivedSite && formatISO(arrivedSite) <= asAtKey;
-      if (freightArrival && handed.getTime() > arrivedSite.getTime()) {
+      var freightArrived = null;
+      var freightHanded = null;
+      var arrivedRowNumbers = [];
+      if (mode === "me") {
         countedParts.forEach(function (part) {
-          noteSkip(skipped.handedAfterSite, part.rowNumber);
+          if (!part.arrivedSite || formatISO(part.arrivedSite) > asAtKey) {
+            return;
+          }
+          arrivedRowNumbers.push(part.rowNumber);
+          if (!freightArrived || part.arrivedSite.getTime() > freightArrived.getTime()) {
+            freightArrived = part.arrivedSite;
+          }
+          if (part.handed && (!freightHanded || part.handed.getTime() > freightHanded.getTime())) {
+            freightHanded = part.handed;
+          }
+        });
+      }
+      var freightArrival = Boolean(freightHanded && freightArrived);
+      if (freightArrival && freightHanded.getTime() > freightArrived.getTime()) {
+        arrivedRowNumbers.forEach(function (rowNumber) {
+          noteSkip(skipped.handedAfterSite, rowNumber);
         });
         freightArrival = false;
       }
       if (freightArrival) {
-        transit = daysBetween(arrivedSite, handed);
+        transit = daysBetween(freightArrived, freightHanded);
         if (transitDaysExpected != null) {
           freightOnTime = transit <= transitDaysExpected ? "Y" : "N";
         }
@@ -1826,6 +1877,15 @@
         assumedFullLines +
           (assumedFullLines === 1 ? " line has" : " lines have") +
           " a handover date and no arrival yet, with no received quantity. The ordered quantity was counted as delivered in full until you fill the received quantity in."
+      );
+    }
+    if (assumedRemainderLines) {
+      notes.push(
+        assumedRemainderLines +
+          (assumedRemainderLines === 1
+            ? " line has goods already at your site and another handover with no quantity yet. That handover was counted as the rest of the ordered quantity until you fill it in."
+            : " lines have goods already at your site and another handover with no quantity yet. Those handovers were counted as the rest of the ordered quantity until you fill it in.") +
+          " Freight days use only the rows that have arrived."
       );
     }
     if (notDue) {
