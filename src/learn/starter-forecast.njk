@@ -28,7 +28,7 @@
             <p>
               This page reads a sales history CSV and writes a weekly forecast.
               Each SKU gets one average. Weekly quantities are whole numbers.
-              Slow sellers get 1 unit every few weeks so the total matches the average.
+              Slow sellers get 1 unit every few weeks so the total stays within 1 unit of the average times the number of weeks.
             </p>
             <p>
               The file is processed in this browser and is never sent. The
@@ -40,7 +40,7 @@
               <li>The history window is the 12 complete weeks before the plan start week. Sales in the plan start week or later are left out.</li>
               <li>A SKU's first sale week is the first week with net sales above zero. Weeks before that are left out. Zero weeks after that are counted. Weeks used is that count, capped at 12.</li>
               <li>The average is the total of those weeks divided by weeks used. A negative average is set to 0 and flagged. The result is rounded to 2 decimals.</li>
-              <li>Weekly quantities are whole numbers. Slow sellers get 1 unit every few weeks so the total matches the average. The summary keeps that average, to 2 decimals, next to weeks used, so you can check it with a calculator.</li>
+              <li>Weekly quantities are whole numbers. Slow sellers get 1 unit every few weeks so the total stays within 1 unit of the average times the number of weeks. The summary keeps that average, to 2 decimals, next to weeks used, so you can check it with a calculator.</li>
             </ul>
           </div>
         </section>
@@ -133,7 +133,7 @@
           </div>
 
           <h3 class="sf-subhead">First forecast weeks</h3>
-          <p class="sim-meta">Weekly quantities are whole numbers. Slow sellers get 1 unit every few weeks so the total matches the average.</p>
+          <p class="sim-meta">Weekly quantities are whole numbers. Slow sellers get 1 unit every few weeks so the total stays within 1 unit of the average times the number of weeks.</p>
           <p id="sf-preview-note" class="sim-meta"></p>
           <div class="sim-table-wrap">
             <table class="sim-table">

@@ -624,7 +624,7 @@ assert.match(page, /A full stop is only for decimals/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
 assert.match(page, /src="\/assets\/starter-forecast\.js\?v=4"/);
 assert.match(page, /Weekly quantities are whole numbers/);
-assert.match(page, /Slow sellers get 1 unit every few weeks so the total matches the average/);
+assert.match(page, /Slow sellers get 1 unit every few weeks so the total stays within 1 unit of the average times the number of weeks/);
 assert.match(page, /check it with a calculator/);
 assert.match(page, /The rate does not climb or fall from week to week/);
 assert.doesNotMatch(page, /Every forecast week gets the same number/);
