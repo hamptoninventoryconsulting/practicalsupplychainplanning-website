@@ -64,6 +64,47 @@ function assertQty(row, expected) {
   assert.strictEqual(row.weeklyForecast.toFixed(2), expected, row.sku + " weekly forecast");
 }
 
+function forecastQtySeries(result, sku) {
+  return result.forecastRows
+    .filter(function (row) {
+      return row.sku === sku;
+    })
+    .map(function (row) {
+      return row.qty;
+    });
+}
+
+function forecastCsvQtySeries(result, sku) {
+  return result.forecastCsv
+    .replace(/^\uFEFF/, "")
+    .trim()
+    .split("\n")
+    .slice(1)
+    .filter(function (row) {
+      return row.indexOf(sku + ",") === 0;
+    })
+    .map(function (row) {
+      return row.split(",")[1];
+    });
+}
+
+function assertWholeSeries(result, sku, expected) {
+  assert.deepStrictEqual(forecastQtySeries(result, sku), expected, sku + " forecast quantities");
+  assert.deepStrictEqual(
+    forecastCsvQtySeries(result, sku),
+    expected.map(String),
+    sku + " forecast CSV quantities"
+  );
+  const total = expected.reduce(function (sum, qty) {
+    return sum + qty;
+  }, 0);
+  const floorTotal = Math.floor(expected.length * skuOf(result, sku).weeklyForecast + 1e-9);
+  assert.ok(
+    Math.abs(total - floorTotal) <= 1,
+    sku + " total " + total + " vs floor " + floorTotal
+  );
+}
+
 assert.deepStrictEqual(WINDOW, [
   "2026-01-12",
   "2026-01-19",
@@ -135,10 +176,67 @@ const negativeRow = skuOf(negative, "A");
 assert.strictEqual(negativeRow.weeksUsed, 12);
 assertQty(negativeRow, "0.00");
 assert.deepStrictEqual(negativeRow.flags, ["Negative set to 0"]);
-assert.ok(negative.forecastCsv.includes(",0.00,"));
+assert.ok(negative.forecastCsv.includes(",0,"));
+assert.ok(!negative.forecastCsv.includes("."));
+assert.ok(negative.summaryCsv.includes(",0.00,"));
 
 const rounded = run(anchor.concat([line(WINDOW[0], "A", 5)]));
 assertQty(skuOf(rounded, "A"), "0.42");
+
+const whole = run(
+  [
+    line(WINDOW[0], "Q025", 3),
+    line(WINDOW[0], "Q050", 6),
+    line(WINDOW[0], "Q150", 18),
+    line(WINDOW[0], "Q300", 36),
+    line(WINDOW[0], "Q000", 5),
+    line(WINDOW[1], "Q000", -20),
+  ],
+  { horizon: 8 }
+);
+assert.strictEqual(whole.ok, true, JSON.stringify(whole.errors));
+assertQty(skuOf(whole, "Q025"), "0.25");
+assertQty(skuOf(whole, "Q050"), "0.50");
+assertQty(skuOf(whole, "Q150"), "1.50");
+assertQty(skuOf(whole, "Q300"), "3.00");
+assertQty(skuOf(whole, "Q000"), "0.00");
+assertWholeSeries(whole, "Q025", [0, 0, 0, 1, 0, 0, 0, 1]);
+assertWholeSeries(whole, "Q050", [0, 1, 0, 1, 0, 1, 0, 1]);
+assertWholeSeries(whole, "Q150", [1, 2, 1, 2, 1, 2, 1, 2]);
+assertWholeSeries(whole, "Q300", [3, 3, 3, 3, 3, 3, 3, 3]);
+assertWholeSeries(whole, "Q000", [0, 0, 0, 0, 0, 0, 0, 0]);
+assert.ok(whole.summaryCsv.includes("Q025,0.25,12,"));
+assert.ok(whole.summaryCsv.includes("Q050,0.50,12,"));
+assert.ok(whole.summaryCsv.includes("Q150,1.50,12,"));
+assert.ok(whole.summaryCsv.includes("Q300,3.00,12,"));
+assert.ok(whole.summaryCsv.includes("Q000,0.00,12,"));
+assert.ok(!whole.forecastCsv.includes("."));
+assert.ok(full.forecastRows.every(function (row) {
+  return row.sku !== "A" || row.qty === 10;
+}));
+assertWholeSeries(
+  sameWeek,
+  "A",
+  [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]
+);
+
+const longSlow = run([line(WINDOW[0], "SLOW", 3), line(WINDOW[0], "HALF", 6)], { horizon: 52 });
+assert.strictEqual(longSlow.ok, true, JSON.stringify(longSlow.errors));
+assertQty(skuOf(longSlow, "SLOW"), "0.25");
+assertQty(skuOf(longSlow, "HALF"), "0.50");
+const slowSeries = forecastQtySeries(longSlow, "SLOW");
+const halfSeries = forecastQtySeries(longSlow, "HALF");
+assert.strictEqual(slowSeries.length, 52);
+assert.deepStrictEqual(slowSeries.slice(0, 8), [0, 0, 0, 1, 0, 0, 0, 1]);
+assert.deepStrictEqual(halfSeries.slice(0, 4), [0, 1, 0, 1]);
+const slowTotal = slowSeries.reduce(function (sum, qty) { return sum + qty; }, 0);
+const halfTotal = halfSeries.reduce(function (sum, qty) { return sum + qty; }, 0);
+assert.ok(Math.abs(slowTotal - Math.floor(52 * 0.25)) <= 1, "slow total " + slowTotal);
+assert.ok(Math.abs(halfTotal - Math.floor(52 * 0.5)) <= 1, "half total " + halfTotal);
+const slowRows = longSlow.forecastRows.filter(function (row) { return row.sku === "SLOW"; });
+for (let i = 1; i < slowRows.length; i += 1) {
+  assert.ok(slowRows[i].week > slowRows[i - 1].week, slowRows[i].week);
+}
 
 const early = run(
   anchor.concat([line("2025-06-02", "A", 100)].concat(WINDOW.map(function (date) { return line(date, "A", 10); })))
@@ -198,9 +296,13 @@ assert.strictEqual(header.forecastCsv.charCodeAt(0), 0xfeff);
 const forecastLines = header.forecastCsv.replace(/^\uFEFF/, "").trim().split("\n");
 assert.strictEqual(forecastLines[0], "SKU,Forecast Qty,Week Starting Date");
 forecastLines.slice(1).forEach(function (row) {
-  assert.strictEqual(row.split(",").length, 3, row);
+  const parts = row.split(",");
+  assert.strictEqual(parts.length, 3, row);
+  assert.match(parts[1], /^\d+$/, row);
 });
 assert.ok(!header.forecastCsv.includes("Weeks Used"));
+assert.ok(!header.forecastCsv.includes("."));
+assert.ok(header.summaryCsv.includes(",12.00,"));
 assert.strictEqual(header.summaryCsv.charCodeAt(0), 0xfeff);
 const summaryLines = header.summaryCsv.replace(/^\uFEFF/, "").trim().split("\n");
 assert.strictEqual(
@@ -516,11 +618,17 @@ assert.match(page, /id="sf-downloads" hidden/);
 assert.match(page, /id="sf-results" hidden/);
 assert.match(page, /name="articles"/);
 assert.doesNotMatch(page, /name="articles"[^>]*checked/);
-assert.match(page, /src="\/assets\/starter-forecast-engine\.js\?v=7"/);
+assert.match(page, /src="\/assets\/starter-forecast-engine\.js\?v=8"/);
 assert.match(page, /A quantity such as "1,000" in quotes is read as 1000/);
 assert.match(page, /A full stop is only for decimals/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
-assert.match(page, /src="\/assets\/starter-forecast\.js\?v=3"/);
+assert.match(page, /src="\/assets\/starter-forecast\.js\?v=4"/);
+assert.match(page, /Weekly quantities are whole numbers/);
+assert.match(page, /Slow sellers get 1 unit every few weeks so the total stays within 1 unit of the average times the number of weeks/);
+assert.match(page, /check it with a calculator/);
+assert.match(page, /The rate does not climb or fall from week to week/);
+assert.doesNotMatch(page, /Every forecast week gets the same number/);
+assert.doesNotMatch(page, /repeated for every/);
 assert.match(page, /Email me to unlock the download/);
 assert.doesNotMatch(page, /results of the scenario/);
 assert.match(ui, /Email me to unlock the download/);
@@ -654,6 +762,9 @@ function settingsChangeKeepsDownload() {
   ids["sf-file"].listeners.change();
   assert.strictEqual(shows, 1);
   assert.strictEqual(ids["sf-downloads"].hidden, true);
+  assert.match(ids["sf-summary-body"].innerHTML, />4\.00</);
+  assert.match(ids["sf-preview-body"].innerHTML, />4</);
+  assert.doesNotMatch(ids["sf-preview-body"].innerHTML, /4\.00/);
   assert.strictEqual(ids["sf-date-line"].hidden, false);
   assert.match(ids["sf-date-line"].textContent, /first date 2026-03-30 read as 30 March 2026/);
   const sentSummary = attached.buildSummary();

@@ -8,8 +8,12 @@
  * Weeks Used: weeks from the first sale week (net quantity above 0) through
  * the end of that window, including later zero weeks, excluding earlier
  * weeks, capped at 12. Average = that total / Weeks Used, floored at 0,
- * then rounded to 2 decimals. The same average is written on every
- * forecast week.
+ * then rounded to 2 decimals. That average is unchanged on the summary.
+ * Forecast weeks are whole units. A running remainder starts at 0 and the
+ * weeks are walked in date order: add the average, write the whole units,
+ * and keep the fraction for the next week. Starting the remainder at 0.5
+ * would place the first unit sooner, but a 0.25 average would then read
+ * 0,1,0,0,0,1. Starting at 0 keeps an even gap: 0,0,0,1.
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
@@ -334,6 +338,24 @@
 
   function formatQty(value) {
     return round2(value).toFixed(2);
+  }
+
+  function formatWholeQty(value) {
+    return String(value);
+  }
+
+  // Remainder starts at 0. Each week adds the average, writes floor(r + 1e-9)
+  // whole units, and carries the fraction forward.
+  function wholeForecastQuantities(average, weekCount) {
+    var quantities = [];
+    var remainder = 0;
+    for (var i = 0; i < weekCount; i += 1) {
+      remainder += average;
+      var qty = Math.floor(remainder + EPS);
+      remainder -= qty;
+      quantities.push(qty);
+    }
+    return quantities;
   }
 
   function listAnd(items) {
@@ -884,14 +906,15 @@
     }
     var forecastRows = [];
     summaries.forEach(function (sku) {
-      weekDates.forEach(function (week) {
-        forecastRows.push({ sku: sku.sku, qty: sku.weeklyForecast, week: week });
+      var quantities = wholeForecastQuantities(sku.weeklyForecast, weekDates.length);
+      weekDates.forEach(function (week, index) {
+        forecastRows.push({ sku: sku.sku, qty: quantities[index], week: week });
       });
     });
 
     var forecastLines = ["SKU,Forecast Qty,Week Starting Date"];
     forecastRows.forEach(function (row) {
-      forecastLines.push(csvLine([row.sku, formatQty(row.qty), row.week]));
+      forecastLines.push(csvLine([row.sku, formatWholeQty(row.qty), row.week]));
     });
     var summaryLines = ["SKU,Weekly Forecast,Weeks Used,First Sale Week,Locations,Flags"];
     summaries.forEach(function (sku) {

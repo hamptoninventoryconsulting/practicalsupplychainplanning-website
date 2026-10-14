@@ -18,7 +18,7 @@ module.exports = [
   {
     title: "Starter Forecast",
     description:
-      "A 12-week average of your sales history, repeated for each week of the plan. The file stays in your browser.",
+      "A 12-week average of your sales history, written as whole units for each week of the plan. The file stays in your browser.",
     href: "/learn/starter-forecast/",
   },
   {
