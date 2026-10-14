@@ -1054,6 +1054,123 @@ main {
   color: var(--color-text-muted);
 }
 
+.difot-suppliers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.difot-supplier {
+  border: 1px solid var(--color-border);
+  border-radius: var(--card-radius);
+  background: var(--color-surface);
+}
+
+.difot-supplier__toggle {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "mark name pct"
+    "mark freight lines";
+  align-items: center;
+  gap: 0.15rem 0.75rem;
+  width: 100%;
+  min-height: 2.75rem;
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border: 0;
+  border-radius: inherit;
+  background: var(--color-surface-muted);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.difot-supplier__toggle::before {
+  content: "";
+  grid-area: mark;
+  width: 0.7rem;
+  height: 0.7rem;
+  background: currentColor;
+  clip-path: polygon(28% 18%, 28% 82%, 80% 50%);
+}
+
+.difot-supplier__toggle[aria-expanded="true"]::before {
+  clip-path: polygon(18% 28%, 82% 28%, 50% 80%);
+}
+
+.difot-supplier__toggle:hover {
+  background: #e4e8ec;
+}
+
+.difot-supplier__toggle:focus-visible {
+  outline: 2px solid var(--color-brand-cyan);
+  outline-offset: 2px;
+}
+
+.difot-supplier__name {
+  grid-area: name;
+  font-weight: 600;
+}
+
+.difot-supplier__pct {
+  grid-area: pct;
+  justify-self: end;
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.difot-supplier__lines {
+  grid-area: lines;
+  justify-self: end;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.difot-supplier__freight {
+  grid-area: freight;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.difot-supplier__detail {
+  padding: 0.85rem 1rem 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.difot-supplier__detail[hidden] {
+  display: none;
+}
+
+.difot-supplier__facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem 1rem;
+  margin: 0 0 1rem;
+}
+
+.difot-supplier__facts div {
+  margin: 0;
+}
+
+.difot-supplier__facts dt {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.difot-supplier__facts dd {
+  margin: 0.15rem 0 0;
+  font-weight: 600;
+}
+
+.difot-supplier__detail .sf-subhead {
+  margin-top: 0.25rem;
+}
+
 .sim-note {
   margin: 0 0 1rem;
   font-size: 0.9375rem;
@@ -1347,8 +1464,13 @@ main {
   .sim-grid,
   .sim-metrics,
   .sim-metrics--counts,
-  .sim-mode-choices {
+  .sim-mode-choices,
+  .difot-supplier__facts {
     grid-template-columns: 1fr;
+  }
+
+  .difot-supplier__pct {
+    font-size: 1.5rem;
   }
 }
 

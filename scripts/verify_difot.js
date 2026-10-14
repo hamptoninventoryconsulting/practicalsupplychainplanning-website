@@ -970,7 +970,7 @@ assert.match(page, /handover date is after the arrival date/);
 assert.match(page, /Freight days use only the rows that have arrived/);
 assert.match(page, /rest of the ordered quantity/);
 assert.match(page, /difot-engine\.js\?v=10/);
-assert.match(page, /difot-calculator\.js\?v=3/);
+assert.match(page, /difot-calculator\.js\?v=4/);
 assert.match(page, /<summary>What DIFOT is and why it matters<\/summary>/);
 assert.match(page, /<summary>Your files<\/summary>/);
 assert.match(page, /<summary>How the calculation works<\/summary>/);
@@ -986,7 +986,10 @@ assert.match(page, /There is no overall total/);
 assert.match(page, /id="df-lines"/);
 assert.match(page, /id="df-suppliers"/);
 assert.match(page, /id="df-pos"/);
-assert.match(page, /id="df-supplier-months"/);
+assert.match(page, /id="df-supplier-cards"/);
+assert.match(page, /id="df-month-note"/);
+assert.match(page, /Select a supplier/);
+assert.doesNotMatch(page, /id="df-supplier-body"|id="df-supplier-months"|<h3 class="sf-subhead">By month<\/h3>/);
 assert.doesNotMatch(page, /id="df-difot"|id="df-on-time"|id="df-in-full"|id="df-summary-line"/);
 assert.doesNotMatch(page, /Receipt Date|ship date/i);
 assert.match(page, /id="df-downloads" hidden/);
@@ -1040,8 +1043,7 @@ function settingsKeepDownload() {
     "df-pos",
     "df-settings",
     "df-notes",
-    "df-supplier-body",
-    "df-supplier-months",
+    "df-supplier-cards",
     "df-month-note",
     "df-gate",
     "df-downloads",
@@ -1120,11 +1122,18 @@ function settingsKeepDownload() {
   assert.strictEqual(ids["df-lines"].textContent, "1");
   assert.strictEqual(ids["df-suppliers"].textContent, "1");
   assert.strictEqual(ids["df-pos"].textContent, "1");
-  assert.match(ids["df-supplier-body"].innerHTML, /Acme/);
-  assert.match(ids["df-supplier-body"].innerHTML, /100\.0%/);
-  assert.match(ids["df-supplier-months"].innerHTML, /2026-03/);
-  assert.match(ids["df-supplier-months"].innerHTML, /Acme/);
-  assert.doesNotMatch(ids["df-supplier-months"].innerHTML, /Freight on time/);
+  const cards = ids["df-supplier-cards"].innerHTML;
+  assert.match(cards, /<button type="button"/);
+  assert.match(cards, /aria-expanded="false"/);
+  assert.match(cards, /Acme/);
+  assert.match(cards, /100\.0%/);
+  assert.match(cards, /1 of 1 lines/);
+  assert.match(cards, /Supplier delivers/);
+  assert.match(cards, /hidden/);
+  assert.match(cards, /2026-03/);
+  assert.match(cards, /On time/);
+  assert.match(cards, /In full/);
+  assert.doesNotMatch(cards, /Freight on time/);
   assert.strictEqual(ids["df-downloads"].hidden, true);
   const sentSummary = attached.buildSummary();
   assert.strictEqual(sentSummary.kind, "difot-calculator");

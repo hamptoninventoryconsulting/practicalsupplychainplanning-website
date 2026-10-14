@@ -80,28 +80,19 @@
     return escapeHtml(pct) + "% (" + escapeHtml(String(count)) + " of " + escapeHtml(String(total)) + ")";
   }
 
-  function dash(value) {
-    return value ? escapeHtml(value) : "—";
+  function fact(label, value) {
+    return "<div><dt>" + escapeHtml(label) + "</dt><dd>" + value + "</dd></div>";
   }
 
-  function freightCells(stats) {
-    if (!stats) {
-      return "<td>—</td><td>—</td><td>—</td><td class=\"difot-text\"></td>";
+  function freightOnTimeText(stats) {
+    if (!stats || !stats.onTimePct) {
+      return "Not measurable";
     }
-    var onTime = stats.onTimePct
-      ? stats.onTimePct + "% (" + stats.onTimeLines + " of " + stats.measurable + ")"
-      : "—";
-    return (
-      "<td>" +
-      escapeHtml(onTime) +
-      "</td><td>" +
-      dash(stats.averageTransit) +
-      "</td><td>" +
-      dash(stats.longestTransit) +
-      "</td><td class=\"difot-text\">" +
-      escapeHtml(stats.note) +
-      "</td>"
-    );
+    return escapeHtml(stats.onTimePct) + "% (" + escapeHtml(String(stats.onTimeLines)) + " of " + escapeHtml(String(stats.measurable)) + ")";
+  }
+
+  function plainNumber(value) {
+    return value ? escapeHtml(value) : "None";
   }
 
   function monthTable(group) {
@@ -111,13 +102,24 @@
         "<th scope=\"col\">Freight on time</th>" +
         "<th scope=\"col\">Average transit days</th>" +
         "<th scope=\"col\">Longest transit days</th>" +
-        "<th scope=\"col\" class=\"difot-text\">Freight note</th>";
+        "<th scope=\"col\">Lines not measurable</th>";
     }
-    var body = group.months
+    var body = (group.months || [])
       .map(function (row) {
         var freight = "";
         if (group.mode === "me") {
-          freight = freightCells(row.freightStats);
+          var stats = row.freightStats;
+          var notMeasured = stats ? String(stats.population - stats.measurable) : "0";
+          freight =
+            "<td>" +
+            freightOnTimeText(stats) +
+            "</td><td>" +
+            plainNumber(stats && stats.averageTransit) +
+            "</td><td>" +
+            plainNumber(stats && stats.longestTransit) +
+            "</td><td>" +
+            escapeHtml(notMeasured) +
+            "</td>";
         }
         return (
           "<tr><td>" +
@@ -135,7 +137,7 @@
           "</td><td>" +
           escapeHtml(String(row.shortLines)) +
           "</td><td>" +
-          dash(row.avgDaysLate) +
+          plainNumber(row.avgDaysLate) +
           "</td>" +
           freight +
           "</tr>"
@@ -143,16 +145,83 @@
       })
       .join("");
     return (
-      "<h3 class=\"sf-subhead\">" +
+      "<h3 class=\"sf-subhead\">By month</h3><p class=\"sim-meta\">Month of the required date.</p><div class=\"sim-table-wrap\"><table class=\"sim-table\"><caption class=\"visually-hidden\">DIFOT by month for " +
       escapeHtml(group.supplier) +
-      "</h3><div class=\"sim-table-wrap\"><table class=\"sim-table\"><caption class=\"visually-hidden\">DIFOT by month for " +
-      escapeHtml(group.supplier) +
-      "</caption><thead><tr><th scope=\"col\">Month</th><th scope=\"col\">Lines</th><th scope=\"col\">On time</th><th scope=\"col\">In full</th><th scope=\"col\">DIFOT</th><th scope=\"col\">Late lines</th><th scope=\"col\">Short lines</th><th scope=\"col\">Avg days late</th>" +
+      "</caption><thead><tr><th scope=\"col\">Month</th><th scope=\"col\">Lines</th><th scope=\"col\">On time</th><th scope=\"col\">In full</th><th scope=\"col\">DIFOT</th><th scope=\"col\">Late lines</th><th scope=\"col\">Short lines</th><th scope=\"col\">Average days late</th>" +
       freightHead +
       "</tr></thead><tbody>" +
       body +
       "</tbody></table></div>"
     );
+  }
+
+  function supplierCard(row, group, index) {
+    var detailId = "df-supplier-detail-" + index;
+    var facts =
+      fact("On time", pctCell(row.onTimePct, row.onTimeLines, row.lines)) +
+      fact("In full", pctCell(row.inFullPct, row.inFullLines, row.lines)) +
+      fact("Late lines", escapeHtml(String(row.lateLines))) +
+      fact("Short lines", escapeHtml(String(row.shortLines))) +
+      fact("Average days late", plainNumber(row.avgDaysLate));
+    var freight = "";
+    if (row.mode === "me" && row.freightStats) {
+      var stats = row.freightStats;
+      freight =
+        "<h3 class=\"sf-subhead\">Freight you arrange</h3><dl class=\"difot-supplier__facts\">" +
+        fact("Freight on time", freightOnTimeText(stats)) +
+        fact("Average transit days", plainNumber(stats.averageTransit)) +
+        fact("Longest transit days", plainNumber(stats.longestTransit)) +
+        fact("Lines not measurable", escapeHtml(String(stats.population - stats.measurable))) +
+        "</dl>";
+    }
+    return (
+      "<article class=\"difot-supplier\"><button type=\"button\" class=\"difot-supplier__toggle\" aria-expanded=\"false\" aria-controls=\"" +
+      detailId +
+      "\"><span class=\"difot-supplier__name\">" +
+      escapeHtml(row.supplier) +
+      "</span><span class=\"difot-supplier__pct\">" +
+      escapeHtml(row.difotPct) +
+      "%</span><span class=\"difot-supplier__lines\">" +
+      escapeHtml(String(row.difotLines)) +
+      " of " +
+      escapeHtml(String(row.lines)) +
+      " lines</span><span class=\"difot-supplier__freight\">" +
+      escapeHtml(row.freight) +
+      "</span></button><div class=\"difot-supplier__detail\" id=\"" +
+      detailId +
+      "\" hidden><dl class=\"difot-supplier__facts\">" +
+      facts +
+      "</dl>" +
+      freight +
+      monthTable(group || { supplier: row.supplier, mode: row.mode, months: [] }) +
+      "</div></article>"
+    );
+  }
+
+  function toggleSupplier(button) {
+    var detail = document.getElementById(button.getAttribute("aria-controls"));
+    if (!detail) {
+      return;
+    }
+    var open = button.getAttribute("aria-expanded") === "true";
+    button.setAttribute("aria-expanded", open ? "false" : "true");
+    detail.hidden = open;
+  }
+
+  function wireSupplierCards() {
+    var root = $("df-supplier-cards");
+    if (!root || root.wired) {
+      return;
+    }
+    root.wired = true;
+    root.addEventListener("click", function (event) {
+      var target = event.target;
+      var button = target && target.closest ? target.closest("button.difot-supplier__toggle") : null;
+      if (!button || !root.contains(button)) {
+        return;
+      }
+      toggleSupplier(button);
+    });
   }
 
   function fail(messages, result) {
@@ -193,36 +262,14 @@
       })
       .join("");
 
-    $("df-supplier-body").innerHTML = result.suppliers
-      .map(function (row) {
-        return (
-          "<tr><td class=\"sim-sku\">" +
-          escapeHtml(row.supplier) +
-          "</td><td class=\"difot-text\">" +
-          escapeHtml(row.freight) +
-          "</td><td>" +
-          escapeHtml(String(row.lines)) +
-          "</td><td>" +
-          pctCell(row.onTimePct, row.onTimeLines, row.lines) +
-          "</td><td>" +
-          pctCell(row.inFullPct, row.inFullLines, row.lines) +
-          "</td><td>" +
-          pctCell(row.difotPct, row.difotLines, row.lines) +
-          "</td><td>" +
-          escapeHtml(String(row.lateLines)) +
-          "</td><td>" +
-          escapeHtml(String(row.shortLines)) +
-          "</td><td>" +
-          dash(row.avgDaysLate) +
-          "</td>" +
-          freightCells(row.freightStats) +
-          "</tr>"
-        );
+    var monthsBySupplier = {};
+    (result.supplierMonths || []).forEach(function (group) {
+      monthsBySupplier[group.supplier] = group;
+    });
+    $("df-supplier-cards").innerHTML = result.suppliers
+      .map(function (row, index) {
+        return supplierCard(row, monthsBySupplier[row.supplier], index);
       })
-      .join("");
-
-    $("df-supplier-months").innerHTML = (result.supplierMonths || [])
-      .map(monthTable)
       .join("");
     var monthNote = result.monthNote || "";
     $("df-month-note").hidden = !monthNote;
@@ -306,6 +353,7 @@
       return;
     }
     $("df-as-at").value = localISO(new Date());
+    wireSupplierCards();
     resultsForm = window.SimResultsForm.attach({
       id: "df-results",
       formId: "difot-calculator",
