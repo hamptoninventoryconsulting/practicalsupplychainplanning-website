@@ -20,7 +20,7 @@ module.exports = {
         {
           "@context": "https://schema.org",
           "@type": "Article",
-          headline: data.title,
+          headline: data.seo_title || data.title,
           description: data.summary,
           author: {
             "@type": "Person",
