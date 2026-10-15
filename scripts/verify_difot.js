@@ -1008,7 +1008,11 @@ assert.match(ui, /return \{ kind: "difot-calculator" \}/);
 assert.doesNotMatch(ui, /buildSummary:[\s\S]*?return \{[^}]*supplier/);
 assert.match(ui, /result\.monthNote/);
 assert.doesNotMatch(ui, /older months are/);
-assert.match(article, /<a href="\/learn\/difot-calculator\/">Calculate your suppliers' DIFOT free<\/a>/);
+assert.match(
+  article,
+  /<a href="\/learn\/difot-calculator\/">DIFOT Calculator<\/a>/
+);
+assert.doesNotMatch(article, /Calculate your suppliers' DIFOT free/);
 assert.doesNotMatch(article, /Stock Planner|Xero/);
 const sentPage = fs.readFileSync(path.join(SITE, "learn", "difot-calculator", "sent", "index.html"), "utf8");
 assert.match(sentPage, /noindex/);
