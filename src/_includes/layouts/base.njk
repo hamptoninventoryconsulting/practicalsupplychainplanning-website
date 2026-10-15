@@ -14,13 +14,13 @@
     <meta name="robots" content="{{ robots }}" />
     {%- endif %}
     {%- if og %}
-    <meta property="og:title" content="{{ title }}" />
+    <meta property="og:title" content="{{ seo_title or title }}" />
     <meta property="og:description" content="{{ summary }}" />
     <meta property="og:type" content="article" />
     <meta property="og:url" content="{{ canonical }}" />
     <meta property="og:image" content="{{ site.url }}/images/{{ featured_image }}" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="{{ title }}" />
+    <meta name="twitter:title" content="{{ seo_title or title }}" />
     <meta name="twitter:description" content="{{ summary }}" />
     <meta name="twitter:image" content="{{ site.url }}/images/{{ featured_image }}" />
     {%- endif %}
