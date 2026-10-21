@@ -12,7 +12,7 @@
 
 <section class="card">
   <div class="content">
-    <p class="policy-updated">Last updated: 14 October 2026</p>
+    <p class="policy-updated">Last updated: {% if site.webAnalyticsToken %}21 October 2026{% else %}14 October 2026{% endif %}</p>
     <p>
       This policy explains what personal information we collect, why, and what we do with it. We keep it to the minimum we need to run this website, sell you a licence and support you.
     </p>
@@ -28,7 +28,11 @@
       <li><strong>DIFOT Calculator.</strong> The supplier list and purchase order file are processed in the browser and are never sent.</li>
       <li><strong>Usage tracking.</strong> The app doesn&rsquo;t send usage analytics or telemetry.</li>
       <li><strong>Card details.</strong> Paddle handles payment. We never see or store your card number.</li>
+      {% if site.webAnalyticsToken %}
+      <li><strong>Advertising and tracking cookies.</strong> This website does not use advertising or tracking cookies.</li>
+      {% else %}
       <li><strong>Website tracking.</strong> Our website has no analytics, advertising or tracking cookies.</li>
+      {% endif %}
     </ul>
 
     <h2>2. When you use our free tools or sign up for articles</h2>
@@ -84,6 +88,11 @@
     <p>
       Our website is hosted by Cloudflare. Like any web host, Cloudflare processes technical information such as your IP address and browser type to deliver pages and protect the site from attacks. The Practical Stock Planner page loads Paddle&rsquo;s checkout script (Paddle.js). Paddle may use cookies and device information for the checkout and to prevent fraud.
     </p>
+    {% if site.webAnalyticsToken %}
+    <p>
+      We count page views with Cloudflare Web Analytics. It does not use cookies, and it does not collect your name or email address. It records the page you opened, the site you came from, your country, your browser, and how fast the page loaded.
+    </p>
+    {% endif %}
 
     <h2>6. How we use it</h2>
     <ul>

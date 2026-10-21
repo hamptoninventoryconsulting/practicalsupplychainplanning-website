@@ -67,6 +67,14 @@ Until those dashboard settings change, a build of `main` that still has no build
 
 `_redirects` is copied into `_site`. It does not send `/` to `/about/`. The www → apex redirect stays in `functions/_middleware.js`.
 
+## Cloudflare Web Analytics
+
+`npm run build` inserts the cookie-free Cloudflare Web Analytics beacon just before `</body>` on every HTML page, including the sales layout. The script is omitted unless the build environment variable `CF_WEB_ANALYTICS_TOKEN` is set to the site token from the Web Analytics dashboard.
+
+Set that variable on the Pages project for Production, and make it available to the build, then redeploy. Do not also enable automatic snippet injection (Pages → Metrics → Enable, or Web Analytics automatic setup). Two beacons on one page double-count visits.
+
+This site has no Content-Security-Policy. If one is added later, allow `https://static.cloudflareinsights.com` in `script-src` and `https://cloudflareinsights.com` in `connect-src`.
+
 Add `www.practicalsupplychainplanning.com` as a second custom domain on the same Pages project. Do not CNAME `www` to the apex by hand. A proxied `www` record that is not bound to Pages returns Cloudflare **522**. After the domain is Active, the middleware 301s `www` to `https://practicalsupplychainplanning.com`.
 
 ## Structure
