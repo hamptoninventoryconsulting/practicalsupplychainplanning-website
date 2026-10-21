@@ -151,6 +151,11 @@ function main() {
     const privacy = fs.readFileSync(path.join(SITE, "privacy", "index.html"), "utf8");
     assert.match(privacy, /Cloudflare Web Analytics/);
     assert.match(privacy, /does not use cookies/);
+    assert.match(privacy, /21 October 2026/);
+    assert.match(
+      privacy,
+      /<th scope="row">Cloudflare<\/th>\s*<td>Hosts our website and domain name records, website analytics \(page views\), and stores the free-tool email records<\/td>/
+    );
     assert.doesNotMatch(privacy, /has no analytics, advertising or tracking cookies/);
     console.log(
       `Cloudflare Web Analytics: ${pages.length} HTML pages, each has exactly one beacon.`
@@ -158,7 +163,13 @@ function main() {
   } else {
     const privacy = fs.readFileSync(path.join(SITE, "privacy", "index.html"), "utf8");
     assert.match(privacy, /has no analytics, advertising or tracking cookies/);
+    assert.match(privacy, /14 October 2026/);
+    assert.match(
+      privacy,
+      /<th scope="row">Cloudflare<\/th>\s*<td>Hosts our website and domain name records, and stores the free-tool email records<\/td>/
+    );
     assert.doesNotMatch(privacy, /We count page views with Cloudflare Web Analytics/);
+    assert.doesNotMatch(privacy, /website analytics \(page views\)/);
     console.log(
       `Cloudflare Web Analytics: ${pages.length} HTML pages, token unset, 0 beacons.`
     );
