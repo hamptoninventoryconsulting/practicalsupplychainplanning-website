@@ -1,3 +1,5 @@
+const { injectWebAnalytics, webAnalyticsToken } = require("./scripts/web-analytics");
+
 const MONTHS = [
   "January",
   "February",
@@ -25,6 +27,16 @@ module.exports = function (eleventyConfig) {
       "learn/safety-stock-simulator/scenarios.json",
   });
   eleventyConfig.addWatchTarget("assets");
+
+  // One beacon on every rendered HTML page, including layouts that do not
+  // extend base.njk. Passthrough copies are not HTML pages.
+  eleventyConfig.addTransform("cloudflareWebAnalytics", function (content) {
+    const outputPath = (this.page && this.page.outputPath) || this.outputPath || "";
+    if (!String(outputPath).endsWith(".html")) {
+      return content;
+    }
+    return injectWebAnalytics(content, webAnalyticsToken());
+  });
 
   eleventyConfig.addFilter("withHref", (guides) => {
     if (!Array.isArray(guides)) {

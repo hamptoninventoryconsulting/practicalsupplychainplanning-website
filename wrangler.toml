@@ -4,6 +4,9 @@
 # Secrets stay in the Pages dashboard, not in this file, including
 # RESEND_API_KEY, RESEND_WEBHOOK_SECRET, TURNSTILE_SECRET_KEY,
 # RESEND_ARTICLES_AUDIENCE_ID, and UNSUBSCRIBE_SIGNING_KEY.
+# CF_WEB_ANALYTICS_TOKEN is a Pages build environment variable, not a
+# wrangler [vars] entry. Eleventy writes the beacon only when that build
+# variable is set. Leave automatic Web Analytics injection off.
 # UNSUBSCRIBE_SIGNING_KEY_PREVIOUS is optional and only accepts links signed
 # before a key rotation. Do not change DNS.
 name = "practicalsupplychainplanning-website"
