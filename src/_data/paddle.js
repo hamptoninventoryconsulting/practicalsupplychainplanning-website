@@ -13,7 +13,7 @@
  */
 module.exports = {
   environment: "live",
-  clientToken: "REPLACE_ME_LIVE_TOKEN",
+  clientToken: "live_17000353de961361741fa101825",
   successUrl: "https://practicalsupplychainplanning.com/welcome/",
   campaigns: {
     default: {
