@@ -809,8 +809,8 @@ def verify_buy(errors: list[str]) -> None:
         fail("src/_data/paddle.js is missing", errors)
     else:
         source = PADDLE_DATA_PATH.read_text(encoding="utf-8")
-        if 'environment: "sandbox"' not in source and "environment: 'sandbox'" not in source:
-            fail("src/_data/paddle.js must set environment to sandbox", errors)
+        if 'environment: "live"' not in source and "environment: 'live'" not in source:
+            fail("src/_data/paddle.js must set environment to live", errors)
         if "https://practicalsupplychainplanning.com/welcome/" not in source:
             fail("src/_data/paddle.js must set successUrl to the absolute /welcome/ URL", errors)
 
