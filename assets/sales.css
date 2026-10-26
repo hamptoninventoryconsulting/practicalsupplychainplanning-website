@@ -109,11 +109,14 @@
   background: var(--color-primary);
   color: var(--color-text);
   cursor: pointer;
+  text-decoration: none;
 }
 
 .sales-button--action:not(:disabled):hover,
 .sales-button--action:not(:disabled):focus-visible {
+  color: var(--color-text);
   filter: brightness(0.95);
+  text-decoration: none;
 }
 
 .sales-button--action:focus-visible {
