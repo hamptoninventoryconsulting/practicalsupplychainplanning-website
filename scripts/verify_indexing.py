@@ -618,22 +618,44 @@ def verify_welcome(errors: list[str]) -> None:
             "without reading or storing them",
             errors,
         )
-    if not re.search(r"<button\b[^>]*\bdisabled\b", text, re.I):
-        fail("/welcome/ download control must be a disabled button", errors)
-    if re.search(
-        r"<a\b[^>]*>[^<]*Download Practical Stock Planner",
+    download_url = (
+        "https://downloads.practicalsupplychainplanning.com/"
+        "practical-stock-planner/latest/PracticalStockPlanner-Setup.exe"
+    )
+    download_link = re.search(
+        r'<a\b([^>]*)>\s*Download Practical Stock Planner for Windows\s*</a>',
         text,
         re.I,
-    ):
-        fail("/welcome/ download must not be a link", errors)
-    if re.search(r'href=["\'][^"\']+\.(?:exe|msi|zip)["\']', text, re.I):
-        fail("/welcome/ must not link to a download file", errors)
-    if "Coming soon." not in text:
-        fail("/welcome/ download must say it is coming soon", errors)
-    if "The download will be available here shortly" not in text:
-        fail("/welcome/ must say the download will be available shortly", errors)
-    if "also email you the link" not in text:
-        fail("/welcome/ must say the download link will also be emailed", errors)
+    )
+    if not download_link:
+        fail(
+            "/welcome/ must link Download Practical Stock Planner for Windows "
+            "to the latest installer",
+            errors,
+        )
+    else:
+        attrs = download_link.group(1)
+        if f'href="{download_url}"' not in attrs:
+            fail(
+                "/welcome/ download must use the stable latest installer URL",
+                errors,
+            )
+        if "sales-button" not in attrs or "sales-button--action" not in attrs:
+            fail("/welcome/ download link must use the action button style", errors)
+    if re.search(r"<button\b[^>]*\bdisabled\b", text, re.I):
+        fail("/welcome/ download must not be a disabled placeholder button", errors)
+    if re.search(r"coming soon|available shortly", text, re.I):
+        fail("/welcome/ must not say the installer download is coming soon", errors)
+    if "Windows 10 or 11, 64-bit, about 70 MB." not in text:
+        fail(
+            "/welcome/ must note Windows 10 or 11, 64-bit, about 70 MB",
+            errors,
+        )
+    if "licence key and download link" not in text:
+        fail(
+            "/welcome/ must say the licence email includes the key and download link",
+            errors,
+        )
     if "Placeholder" in text or "not published yet" in text or "not available to download yet" in text:
         fail("/welcome/ still contains draft placeholder text", errors)
     if re.search(r"14[\s-]days", text, re.I):
