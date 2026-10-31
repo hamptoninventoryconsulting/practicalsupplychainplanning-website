@@ -4,9 +4,12 @@
  *
  * Drop files, then set the public path (Eleventy copies assets/ and images/):
  *
- * 1. Daniel's photo. Home uses the same caricature as the About page.
- *    photoUrl: "/assets/brand/daniel-hampton.png"
- *    Do not add a separate image or replace that file.
+ * 1. Daniel's photo for the home slots (40px byline, 104px portrait).
+ *    Those slots use a 312px copy of the caricature, PNG and WebP, with the
+ *    transparent background kept. /about/ keeps the original 3000px file,
+ *    assets/brand/daniel-hampton.png.
+ *    photoUrl: "/assets/brand/daniel-hampton-312.png"
+ *    photoWebpUrl: "/assets/brand/daniel-hampton-312.webp"
  *
  * 2. Company LinkedIn URL (no file)
  *    linkedinUrl: "https://www.linkedin.com/company/practical-supply-chain-planning/"
@@ -29,7 +32,8 @@
  *    Then: simulatorChartUrl: "/images/safety-stock-simulator-chart.png"
  */
 module.exports = {
-  photoUrl: "/assets/brand/daniel-hampton.png",
+  photoUrl: "/assets/brand/daniel-hampton-312.png",
+  photoWebpUrl: "/assets/brand/daniel-hampton-312.webp",
   photoAlt: "Daniel Hampton",
   aboutPhotoAlt: "Daniel Hampton",
   linkedinUrl: "https://www.linkedin.com/company/practical-supply-chain-planning/",

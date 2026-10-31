@@ -1874,6 +1874,11 @@ a.home-button--secondary:is(:link, :visited, :hover, :focus, :focus-visible, :ac
   margin: 0 0 1.5rem;
 }
 
+.home-byline > picture,
+.home-founder > picture {
+  display: contents;
+}
+
 .home-byline__photo {
   width: 2.5rem;
   height: 2.5rem;
