@@ -1,12 +1,15 @@
 /**
- * Home page "Let's keep in touch" form.
+ * "Stay in the loop" / launch-updates form.
  * Posts to /api/keep-in-touch. The articles sentence is the consent.
- * The beta tick is optional and starts unticked.
+ * The beta checkbox is not shown. betaConsent is false unless a checkbox
+ * is present. The API still requires the beta wording string as a version
+ * check, and stores beta_box 0 when the box was not ticked.
  */
 (function () {
   "use strict";
 
-  var SUCCESS = "You're on the list.";
+  var SUCCESS = "You're on the list. Thanks!";
+  var BETA_WORDING = "I'd be happy to beta test.";
   var NEED_EMAIL = "Enter an email address.";
   var CHECK_PENDING = "The check didn't finish. Try again in a moment.";
   var FAILED = "We couldn't add you to the list. Try again in a minute.";
@@ -38,7 +41,7 @@
     return node && node.textContent ? node.textContent.replace(/\s+/g, " ").trim() : "";
   }
 
-  var root = document.getElementById("keep-in-touch");
+  var root = document.getElementById("signup") || document.getElementById("keep-in-touch");
   if (!root) {
     return;
   }
@@ -179,7 +182,7 @@
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         email: String(email.value).trim(),
-        betaConsent: beta.checked === true,
+        betaConsent: beta ? beta.checked === true : false,
         company: company.value,
         turnstileToken: token,
         pageUrl: window.location.origin + window.location.pathname + window.location.search,
@@ -187,7 +190,7 @@
         wordingVersion: "keep-in-touch-v1",
         wordingText: {
           articles: textOf(consent),
-          beta: textOf(betaLabel),
+          beta: betaLabel ? textOf(betaLabel) : BETA_WORDING,
         },
         formId: "keep-in-touch",
       }),

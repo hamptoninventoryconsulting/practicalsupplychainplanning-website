@@ -18,6 +18,33 @@ Colour palette PDFs stay in `assets/brand/` for reference. Update hex values in
 
 The header logo in use is `assets/brand/logo.jpg`.
 
+## Home page photos and charts
+
+`src/_data/home.js` controls the home page photo, LinkedIn link, projected stock chart, social image, and the optional simulator card image. Leave a value as `""` and that image or link is omitted. There is no placeholder text.
+
+| What | Drop the file here | Then set |
+| --- | --- | --- |
+| Daniel's home photo (at least 600×600) | `assets/brand/daniel-hampton-home.jpg` | `photoUrl` |
+| LinkedIn profile | no file | `linkedinUrl` |
+| Projected stock chart | `images/projected-stock-chart.png` | `heroChartUrl` |
+| Social image, 1200×630, chart plus headline | `images/og-projected-stock.png` | `ogImageUrl` |
+| Optional simulator card chart | `images/safety-stock-simulator-chart.png` | `simulatorChartUrl` |
+
+Do not replace `assets/brand/daniel-hampton.png`. That file is the About page photo. If `ogImageUrl` and `heroChartUrl` are both empty, the home social preview uses `assets/brand/logo.jpg`.
+
+## Turn checkout on
+
+Checkout is off until 16 Nov 2026. In `src/_data/paddle.js`, set `checkoutOpen` to `true` and redeploy. That one line:
+
+- loads Paddle and `pricing-checkout.js` on the Practical Stock Planner page
+- restores the "Start your free trial" button
+- shows "Available now" and the trial link on the home page
+- stops redirecting `/welcome/` to the product page
+
+Leave the client token, price id, and `successUrl` as they are. `/welcome/` is still built. While `checkoutOpen` is `false`, `functions/_middleware.js` answers it with a 302 to `/products/practical-stock-planner/`. `npm run dev` does not run that function, so the welcome page is visible on the local server. A Cloudflare Pages deploy applies the redirect.
+
+The launch signup uses the existing keep-in-touch form. It does not send a separate launch tag: `functions/email/logic.mjs` has no source or tag field, and it rejects any extra field. New signups are stored with `beta_box` 0. The articles sentence on the form is the consent the API records.
+
 ## Requirements
 
 Node.js 18 or newer.

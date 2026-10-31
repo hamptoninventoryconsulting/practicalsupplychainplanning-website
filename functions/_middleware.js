@@ -7,7 +7,12 @@
  *
  * www only reaches this code after the hostname is bound as a Pages custom
  * domain. A proxied www record that is not bound still 522s at the edge.
+ *
+ * While src/_data/paddle.js has checkoutOpen: false, /welcome/ 302s to the
+ * product page. Set checkoutOpen to true and redeploy to serve /welcome/ again.
  */
+import paddle from "../src/_data/paddle.js";
+
 export const APEX_HOST = "practicalsupplychainplanning.com";
 
 const PRODUCT_PATH = "/products/practical-stock-planner/";
@@ -23,8 +28,17 @@ function isRetiredCheckoutPath(pathname) {
   );
 }
 
-export function redirectLocation(requestUrl) {
+function isWelcomePath(pathname) {
+  return (
+    pathname === "/welcome" ||
+    pathname === "/welcome/" ||
+    pathname === "/welcome/index.html"
+  );
+}
+
+export function redirectDecision(requestUrl) {
   const url = new URL(requestUrl);
+  let status = 301;
   let redirect = false;
 
   if (url.hostname === `www.${APEX_HOST}`) {
@@ -39,13 +53,28 @@ export function redirectLocation(requestUrl) {
     redirect = true;
   }
 
-  return redirect ? url.href : null;
+  // Pre-launch: the post-checkout page must not be reachable. Temporary, so
+  // flipping checkoutOpen back to true does not need a permanent redirect.
+  if (paddle.checkoutOpen !== true && isWelcomePath(url.pathname)) {
+    url.pathname = PRODUCT_PATH;
+    url.search = "";
+    url.hash = "";
+    status = 302;
+    redirect = true;
+  }
+
+  return redirect ? { location: url.href, status } : null;
+}
+
+export function redirectLocation(requestUrl) {
+  const decision = redirectDecision(requestUrl);
+  return decision ? decision.location : null;
 }
 
 export async function onRequest(context) {
-  const location = redirectLocation(context.request.url);
-  if (location) {
-    return Response.redirect(location, 301);
+  const decision = redirectDecision(context.request.url);
+  if (decision) {
+    return Response.redirect(decision.location, decision.status);
   }
   return context.next();
 }

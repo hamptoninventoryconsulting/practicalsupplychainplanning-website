@@ -20,6 +20,7 @@ module.exports = function (eleventyConfig) {
   // _site). Do not copy that directory into the static output.
   eleventyConfig.addPassthroughCopy("assets");
   eleventyConfig.addPassthroughCopy("images");
+  eleventyConfig.addPassthroughCopy({ "assets/brand/favicon.ico": "favicon.ico" });
   eleventyConfig.addPassthroughCopy("_redirects");
   eleventyConfig.addPassthroughCopy("robots.txt");
   eleventyConfig.addPassthroughCopy({
@@ -36,6 +37,34 @@ module.exports = function (eleventyConfig) {
       return content;
     }
     return injectWebAnalytics(content, webAnalyticsToken());
+  });
+
+  eleventyConfig.addFilter("publicAsset", (value) => {
+    const text = String(value || "").trim();
+    if (!text) {
+      return "";
+    }
+    if (text.startsWith("https://")) {
+      return text;
+    }
+    if (text.startsWith("/") && !text.startsWith("//")) {
+      return text;
+    }
+    return "";
+  });
+
+  eleventyConfig.addFilter("absoluteUrl", (value, siteUrl) => {
+    const text = String(value || "").trim();
+    if (!text) {
+      return "";
+    }
+    if (text.startsWith("https://")) {
+      return text;
+    }
+    if (text.startsWith("/") && !text.startsWith("//")) {
+      return String(siteUrl || "").replace(/\/$/, "") + text;
+    }
+    return "";
   });
 
   eleventyConfig.addFilter("withHref", (guides) => {

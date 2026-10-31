@@ -1,0 +1,29 @@
+{#- Open Graph and Twitter cards for every HTML page. Article pages keep their featured image. -#}
+{%- set socialTitle = ogTitle or seo_title or title -%}
+{%- set socialDescription = ogDescription or description or summary -%}
+{%- if socialTitle %}
+<meta property="og:title" content="{{ socialTitle }}" />
+<meta name="twitter:title" content="{{ socialTitle }}" />
+{%- endif %}
+{%- if socialDescription %}
+<meta property="og:description" content="{{ socialDescription }}" />
+<meta name="twitter:description" content="{{ socialDescription }}" />
+{%- endif %}
+<meta property="og:type" content="{% if og %}article{% else %}website{% endif %}" />
+{%- if canonical %}
+<meta property="og:url" content="{{ canonical }}" />
+{%- endif %}
+{%- if ogImage %}
+<meta property="og:image" content="{{ ogImage | absoluteUrl(site.url) }}" />
+<meta name="twitter:image" content="{{ ogImage | absoluteUrl(site.url) }}" />
+{%- elif page.url == "/" and (home.ogImageUrl or home.heroChartUrl) %}
+<meta property="og:image" content="{{ (home.ogImageUrl or home.heroChartUrl) | absoluteUrl(site.url) }}" />
+<meta name="twitter:image" content="{{ (home.ogImageUrl or home.heroChartUrl) | absoluteUrl(site.url) }}" />
+{%- elif featured_image %}
+<meta property="og:image" content="{{ ("/images/" + featured_image) | absoluteUrl(site.url) }}" />
+<meta name="twitter:image" content="{{ ("/images/" + featured_image) | absoluteUrl(site.url) }}" />
+{%- elif site.defaultOgImage %}
+<meta property="og:image" content="{{ site.defaultOgImage | absoluteUrl(site.url) }}" />
+<meta name="twitter:image" content="{{ site.defaultOgImage | absoluteUrl(site.url) }}" />
+{%- endif %}
+<meta name="twitter:card" content="summary_large_image" />

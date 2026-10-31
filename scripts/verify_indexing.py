@@ -15,7 +15,9 @@ and `/contact/` are public pages: they are in the sitemap and are not noindex.
 
 `/buy/` and `/pricing/` are retired. Each 301s straight to
 `/products/practical-stock-planner/`. Paddle.js loads on that product page
-only. `/welcome/` must stay free of Paddle.js.
+only while `checkoutOpen` is true. While it is false, that page does not load
+Paddle and `/welcome/` 302s to the product page. `/welcome/` must stay free
+of Paddle.js.
 
 Usage:
   npm run build
@@ -286,31 +288,54 @@ HOME_TO_ABOUT_RE = re.compile(
     re.M,
 )
 HOME_COPY = (
-    "Practical stock and supply planning",
-    "Straight-logic planning for product businesses that buy in stock with lead times.",
-    "See pricing and start your free trial",
-    "Try the Safety Stock Simulator",
-    "Read the blog",
-    "Learn by doing",
-    "Free tools that show how stock planning works, using clear numbers instead of jargon.",
-    "See how demand swings and lead times change the stock you need to hold.",
+    "See your stock weeks ahead. No surprises.",
+    "Practical planning tools and plain-English guides from a working supply planner.",
+    "Explore the tools",
+    "Start learning",
+    "Built by Daniel Hampton, supply planner.",
+    "Why plan ahead?",
+    "Most small businesses reorder when stock drops to a set level. That only tells you what to do today.",
+    "It reacts too late.",
+    "With long supplier lead times, by the time stock hits the line, the shortage is already on its way.",
+    "It misses what's ahead.",
+    "Seasonal peaks, promotions and big customer orders don't show up in a fixed level.",
+    "It can't see what's coming in.",
+    "Orders already on their way get ignored, so you order too much or too early.",
+    "Time-phased planning looks ahead instead. It projects your stock week by week from your forecast, open orders and supplier lead times, shows when you'll run short, and plans orders to arrive in time.",
+    "Tools to plan ahead",
+    "Start free, then plan your whole range when you're ready.",
+    "Safety Stock Simulator",
+    "See how demand swings and supplier lead times change the buffer your plan needs.",
     "Open the simulator",
+    "Own-data Safety Stock Simulator",
     "Run the same calculation on up to 10 of your own items and get the results by email.",
     "Try it with your data",
-    "See all learning tools",
-    "Latest articles",
-    "Plain-English articles on planning stock and supply, each built around one idea.",
-    "Read the article",
+    "Practical Stock Planner",
+    "Projects your stock week by week from your stock on hand, open orders and forecast, then tells you what to order and when.",
+    "For Windows.",
+    "Practical Demand Planner",
+    "Builds the forecast your plan looks ahead with, judging each item by its own sales pattern.",
+    "Coming soon",
+    "Get launch updates",
+    "Learn the planning, not just the tool",
+    "Plain-English guides, each built around one idea.",
+    "Reorder Point vs Time-Phased Planning: Two Different Planning Questions",
+    "MRP Is More Than a Stock Calculation: Why Time-Phasing Matters",
+    "Forecast Bias: Finding the Direction Behind Forecast Errors",
+    "All guides",
     "All articles",
-    "Planning software for businesses that have outgrown reorder points and spreadsheets. Practical Stock Planner is time-phased MRP. It projects your stock period by period from your inventory data, open purchase orders and forecast, then tells you what to order and when.",
-    "Plans period by period, not with a single reorder point",
-    "Works from your current stock, open POs and forecast",
-    "Imports from CSV files (save from Excel or Google Sheets)",
-    "Runs on Windows. 14-day free trial, sold worldwide.",
-    "Coming soon.",
     "Built by a working planner",
-    "I'm Daniel Hampton. I've spent my career planning stock and supply for manufacturing, wholesale, retail and distribution businesses. Practical Supply Chain Planning shares the straightforward methods that work, without the complexity of big ERP systems.",
+    "I'm Daniel Hampton. I've spent my career planning stock and supply for manufacturing, wholesale, retail and distribution businesses, and I still do it every day. Every tool here uses the same forward-planning methods I use at work, without the cost and complexity of big ERP systems.",
     "More about me",
+    "Stay in the loop",
+    "Get practical planning articles by email, plus launch updates for Practical Stock Planner and Practical Demand Planner.",
+    "One email now and then.",
+    "You're on the list. Thanks!",
+)
+FEATURED_POSTS = (
+    "/blog/reorder-point-vs-time-phased-planning-two-different-planning-questions/",
+    "/blog/mrp-is-more-than-a-stock-calculation-why-time-phasing-matters/",
+    "/blog/forecast-bias-finding-the-direction-behind-forecast-errors/",
 )
 
 
@@ -329,18 +354,33 @@ def verify_homepage_routing(errors: list[str], posts: list[dict]) -> None:
                 f"index.html canonical must be {SITE_ORIGIN}/, found {found!r}",
                 errors,
             )
-        if "<title>Stock &amp; Supply Planning | Practical Supply Chain Planning</title>" not in text:
+        if (
+            "<title>Practical Supply Chain Planning | See your stock weeks ahead</title>"
+            not in text
+        ):
             fail("index.html title must be the approved home title", errors)
         if (
-            '<meta name="description" content="Practical stock and supply planning for businesses that buy in stock. Free learning tools, plain-English articles and Practical Stock Planner."'
+            '<meta name="description" content="Practical tools and plain-English guides from a working supply planner. Plan your stock week by week against your forecast, incoming orders and supplier lead times."'
             not in text
         ):
             fail("index.html meta description must be the approved home description", errors)
+        if (
+            'property="og:title" content="See your stock weeks ahead. No surprises."'
+            not in text
+        ):
+            fail("index.html og:title must be the approved home social title", errors)
+        if (
+            'property="og:description" content="Planning tools and guides for product businesses with long supplier lead times, built by a working supply planner."'
+            not in text
+        ):
+            fail("index.html og:description must be the approved home social description", errors)
         h1_count = len(H1_RE.findall(text))
         if h1_count != 1:
             fail(f"index.html has {h1_count} h1 elements; expected exactly one", errors)
-        if "<h1 class=\"page-title\">Practical stock and supply planning</h1>" not in text:
-            fail("index.html h1 must be Practical stock and supply planning", errors)
+        if '<h1 class="page-title">See your stock weeks ahead. No surprises.</h1>' not in text:
+            fail("index.html h1 must be See your stock weeks ahead. No surprises.", errors)
+        if "Practical stock and supply planning" in text or "Straight-logic planning" in text:
+            fail("index.html still has the old hero", errors)
         if 'class="site-nav__link site-nav__link--active" href="/" aria-current="page"' not in text:
             fail("index.html must mark the Home nav link as the current page", errors)
         if 'href="/about/" aria-current="page"' in text:
@@ -358,35 +398,51 @@ def verify_homepage_routing(errors: list[str], posts: list[dict]) -> None:
             fail("index.html must link to /blog/", errors)
         if 'href="/about/"' not in text:
             fail("index.html must link to /about/", errors)
-        if 'href="/products/practical-stock-planner/"' not in text:
-            fail("index.html must link to the Practical Stock Planner page", errors)
         if 'href="/pricing/"' in text or 'href="/pricing"' in text:
             fail("index.html must not link to /pricing/", errors)
-        if re.search(r"\bimporters\b", text, re.I) or re.search(r"small businesses", text, re.I):
-            fail("index.html must not say importers or small businesses", errors)
+        if re.search(r"\bimporters\b", text, re.I):
+            fail("index.html must not say importers", errors)
+        if re.search(r"min-max|min/max|minmax", text, re.I):
+            fail("index.html must not describe min-max planning as our method", errors)
         post_links = re.findall(r'href="(/blog/[^"]+/)"', text)
-        expected_posts = [post["path"] for post in posts[:3]]
-        if post_links != expected_posts:
+        if post_links != list(FEATURED_POSTS):
             fail(
-                f"index.html latest articles are {post_links!r}, expected {expected_posts!r}",
+                f"index.html featured articles are {post_links!r}, expected {list(FEATURED_POSTS)!r}",
                 errors,
             )
-        for post in posts[:3]:
-            if post["title"] not in text:
-                fail(f"index.html is missing latest article title: {post['title']}", errors)
-            summary = post["summary"].replace("&", "&amp;")
-            if summary not in text:
-                fail(f"index.html is missing latest article summary: {post['summary']}", errors)
-        if re.search(r"<a\b[^>]*>\s*Coming soon\.", text):
-            fail("Coming soon. on the home page must be plain text, not a link", errors)
+        if re.search(r"<a\b[^>]*>\s*Coming soon\s*</a>", text):
+            fail("Coming soon on the home page must be a label, not a link", errors)
         allowed_button = '<button class="sim-button" type="submit">Keep me posted</button>'
         buttons = re.findall(r"<button\b[^>]*>[\s\S]*?</button>", text, re.I)
-        if buttons != [allowed_button]:
-            fail(
-                "index.html may only include the Let's keep in touch submit button, found "
-                + repr(buttons),
-                errors,
+        if checkout_open():
+            if buttons != [allowed_button]:
+                fail(
+                    "index.html may only include the signup submit button while checkout is open, found "
+                    + repr(buttons),
+                    errors,
+                )
+            if 'href="/products/practical-stock-planner/"' not in text:
+                fail("index.html must link Practical Stock Planner once checkout is open", errors)
+            if "Available now" not in text:
+                fail("index.html must mark Practical Stock Planner available once checkout is open", errors)
+        else:
+            launch_button = (
+                '<button type="button" class="trial-button" disabled>Available 16 Nov</button>'
             )
+            if buttons != [launch_button, allowed_button]:
+                fail(
+                    "index.html buttons must be the closed launch control and the signup submit, found "
+                    + repr(buttons),
+                    errors,
+                )
+            if 'href="/products/practical-stock-planner/"' in text:
+                fail("index.html must not link to checkout or the product page while checkout is closed", errors)
+            if "Start your free trial" in text or "See pricing" in text or "14-day" in text:
+                fail("index.html must not offer a trial or pricing while checkout is closed", errors)
+            if "Launching 16 Nov" not in text or "Available 16 Nov" not in text:
+                fail("index.html must show the 16 Nov launch status while checkout is closed", errors)
+        if 'href="/products/"' not in text:
+            fail("index.html footer must still link to the products list", errors)
         if 'href="/buy/"' in text or 'href="/buy"' in text:
             fail("index.html must not link to /buy/", errors)
         if re.search(
@@ -754,6 +810,19 @@ def verify_welcome(errors: list[str]) -> None:
             fail(f"/welcome/ is missing the SmartScreen note: {phrase}", errors)
 
 
+def checkout_open() -> bool:
+    if not PADDLE_DATA_PATH.is_file():
+        return False
+    text = PADDLE_DATA_PATH.read_text(encoding="utf-8")
+    return bool(re.search(r"checkoutOpen:\s*true\b", text))
+
+
+def launch_date() -> str:
+    text = PADDLE_DATA_PATH.read_text(encoding="utf-8")
+    match = re.search(r'launchDate:\s*["\']([^"\']+)["\']', text)
+    return match.group(1) if match else ""
+
+
 def paddle_placeholders_block_checkout() -> bool:
     if not PADDLE_DATA_PATH.is_file():
         return True
@@ -835,6 +904,10 @@ def verify_buy(errors: list[str]) -> None:
             fail("src/_data/paddle.js must set environment to live", errors)
         if "https://practicalsupplychainplanning.com/welcome/" not in source:
             fail("src/_data/paddle.js must set successUrl to the absolute /welcome/ URL", errors)
+        if not re.search(r"checkoutOpen:\s*(?:true|false)\b", source):
+            fail("src/_data/paddle.js must set checkoutOpen to true or false", errors)
+        if not launch_date():
+            fail("src/_data/paddle.js must set launchDate", errors)
 
     email_logic = ROOT / "functions" / "email" / "logic.mjs"
     if email_logic.is_file():
@@ -936,19 +1009,36 @@ def verify_policy_pages(errors: list[str]) -> None:
     pricing_path = PRODUCT_PAGE
     if pricing_path.is_file():
         pricing = pricing_path.read_text(encoding="utf-8")
-        consent_at = pricing.find("By starting your trial you agree")
-        button_at = pricing.find('id="trial-button"')
-        if consent_at < 0 or button_at < 0 or consent_at > button_at:
-            fail("the trial consent sentence must sit above the trial button", errors)
-        elif re.search(r"<h[1-6]\b", pricing[consent_at:button_at], re.I):
-            fail("nothing but the consent sentence should sit above the trial button", errors)
-        if PADDLE_JS_URL not in pricing:
-            fail("the product page must load Paddle.js v2 from cdn.paddle.com", errors)
-        checkout_src = f"/assets/pricing-checkout.js?v={css_version()}"
-        if checkout_src not in pricing:
-            fail(f"the product page must cache-bust the checkout script as {checkout_src}", errors)
-        if "https://practicalsupplychainplanning.com/welcome/" not in pricing:
-            fail("the product page must set the Paddle success URL to /welcome/", errors)
+        if checkout_open():
+            consent_at = pricing.find("By starting your trial you agree")
+            button_at = pricing.find('id="trial-button"')
+            if consent_at < 0 or button_at < 0 or consent_at > button_at:
+                fail("the trial consent sentence must sit above the trial button", errors)
+            elif re.search(r"<h[1-6]\b", pricing[consent_at:button_at], re.I):
+                fail("nothing but the consent sentence should sit above the trial button", errors)
+            if PADDLE_JS_URL not in pricing:
+                fail("the product page must load Paddle.js v2 from cdn.paddle.com", errors)
+            checkout_src = f"/assets/pricing-checkout.js?v={css_version()}"
+            if checkout_src not in pricing:
+                fail(f"the product page must cache-bust the checkout script as {checkout_src}", errors)
+            if "https://practicalsupplychainplanning.com/welcome/" not in pricing:
+                fail("the product page must set the Paddle success URL to /welcome/", errors)
+            if "Start your free trial" not in pricing:
+                fail("the product page must offer Start your free trial while checkout is open", errors)
+        else:
+            if PADDLE_JS_URL in pricing or "pricing-checkout.js" in pricing or 'id="paddle-config"' in pricing:
+                fail("the product page must not load Paddle while checkout is closed", errors)
+            if "live_" in pricing or "pri_" in pricing:
+                fail("the product page must not embed the Paddle token or price while checkout is closed", errors)
+            available = f"Available {launch_date()}"
+            if available not in pricing:
+                fail(f"the product page must show a disabled {available} control", errors)
+            if "Get launch updates" not in pricing or 'href="#signup"' not in pricing:
+                fail("the product page must offer Get launch updates while checkout is closed", errors)
+            if "From 16 Nov: how buying works" not in pricing:
+                fail("the product page must date the buying steps from 16 Nov while checkout is closed", errors)
+            if re.search(r"<button\b[^>]*>\s*Start your free trial\s*</button>", pricing):
+                fail("the product page must not show the trial button while checkout is closed", errors)
         for phrase in (
             "Practical Stock Planner",
             "US$49 per month, including any applicable tax",
@@ -970,11 +1060,12 @@ def verify_policy_pages(errors: list[str]) -> None:
         for phrase in SMARTSCREEN_COPY:
             if phrase not in pricing:
                 fail(f"the product page is missing the SmartScreen note: {phrase}", errors)
-        if not paddle_placeholders_block_checkout():
-            if not re.search(r'id="trial-note"[^>]*\bhidden\b', pricing):
-                fail("the product page must hide the unconfigured note when Paddle config is set", errors)
-        elif "Checkout is not available on this page yet." not in pricing:
-            fail("the product page must say checkout is not available while placeholders remain", errors)
+        if checkout_open():
+            if not paddle_placeholders_block_checkout():
+                if not re.search(r'id="trial-note"[^>]*\bhidden\b', pricing):
+                    fail("the product page must hide the unconfigured note when Paddle config is set", errors)
+            elif "Checkout is not available on this page yet." not in pricing:
+                fail("the product page must say checkout is not available while placeholders remain", errors)
 
     checkout_js = ROOT / "assets" / "pricing-checkout.js"
     if not checkout_js.is_file():
@@ -998,19 +1089,26 @@ def verify_policy_pages(errors: list[str]) -> None:
     products_home = SITE / "products" / "index.html"
     if products_home.is_file():
         catalog = products_home.read_text(encoding="utf-8")
-        for phrase in (
+        catalog_phrases = [
             "Practical Stock Planner",
             "Plan stock period by period and see what to order and when.",
             "From US$49/month",
-            "14-day free trial",
             'href="/products/practical-stock-planner/"',
             'href="/products/" aria-current="page"',
             'alt="Practical Stock Planner logo"',
             'class="product-card__logo"',
             'src="/assets/brand/favicon.png"',
-        ):
+        ]
+        if checkout_open():
+            catalog_phrases.append("14-day free trial")
+        else:
+            catalog_phrases.append(f"Available {launch_date()}")
+            catalog_phrases.append("Get launch updates")
+        for phrase in catalog_phrases:
             if phrase not in catalog:
                 fail(f"/products/ is missing {phrase}", errors)
+        if not checkout_open() and "14-day free trial" in catalog:
+            fail("/products/ must not offer the free trial while checkout is closed", errors)
         if "cdn.paddle.com" in catalog:
             fail("/products/ must not load Paddle.js", errors)
 
@@ -1157,6 +1255,88 @@ def verify_difot_sent(errors: list[str]) -> None:
         fail("/learn/difot-calculator/sent/ must not appear in sitemap.xml", errors)
 
 
+def home_setting(name: str) -> str:
+    text = (ROOT / "src" / "_data" / "home.js").read_text(encoding="utf-8")
+    match = re.search(rf'(?m)^\s*{name}:\s*"([^"]*)"', text)
+    return match.group(1) if match else ""
+
+
+def verify_home_assets(errors: list[str]) -> None:
+    """Empty home asset slots must not emit images or placeholder copy."""
+    home = SITE / "index.html"
+    if not home.is_file():
+        return
+    text = home.read_text(encoding="utf-8")
+    slots = {
+        "photoUrl": ("home-byline__photo", "home-portrait"),
+        "heroChartUrl": ("home-chart", "home-card__shot"),
+        "simulatorChartUrl": ("Safety Stock Simulator results chart.",),
+        "linkedinUrl": ("LinkedIn", "Connect on LinkedIn"),
+    }
+    for key, markers in slots.items():
+        value = home_setting(key)
+        present = any(marker in text for marker in markers)
+        if value and not present and key != "simulatorChartUrl":
+            fail(f"index.html is missing the {key} asset", errors)
+        if not value and present:
+            fail(f"index.html shows {key} while src/_data/home.js leaves it empty", errors)
+        if not value and key == "linkedinUrl" and ("LinkedIn" in text or "Connect on LinkedIn" in text):
+            fail("index.html must hide LinkedIn until linkedinUrl is set", errors)
+    if re.search(r"""src=["']\s*["']""", text):
+        fail("index.html has an image with an empty src", errors)
+    if "Photo coming" in text or "placeholder" in text.lower() or "[LinkedIn]" in text:
+        fail("index.html shows placeholder copy for a missing asset", errors)
+
+
+def verify_social_and_chrome(errors: list[str]) -> None:
+    favicon = SITE / "favicon.ico"
+    if not favicon.is_file() or favicon.stat().st_size < 16:
+        fail("/favicon.ico was not built", errors)
+    html_files = sorted(SITE.rglob("*.html"))
+    for path in html_files:
+        page = path.read_text(encoding="utf-8")
+        relative = path.relative_to(SITE).as_posix()
+        if "Search powered by Brave" in page or "brave.com/search" in page:
+            fail(f"{relative} still credits Brave search", errors)
+        if 'property="og:title"' not in page or 'name="twitter:card"' not in page:
+            fail(f"{relative} is missing Open Graph or Twitter card tags", errors)
+        if 'property="og:image"' not in page:
+            fail(f"{relative} is missing og:image", errors)
+        if re.search(r"<img\b[^>]*\balt=\"\"", page):
+            fail(f"{relative} has an image with empty alt text", errors)
+        if re.search(r"<img\b(?![^>]*\balt=)[^>]*>", page):
+            fail(f"{relative} has an image without alt text", errors)
+
+
+def resolve_internal(url_path: str) -> Path:
+    relative = url_path.lstrip("/")
+    if not relative:
+        return SITE / "index.html"
+    direct = SITE / relative
+    if Path(relative).suffix:
+        return direct
+    return SITE / relative / "index.html"
+
+
+def verify_internal_links(errors: list[str]) -> None:
+    href_re = re.compile(r"""(?:href|src)\s*=\s*["']([^"']+)["']""", re.I)
+    missing = []
+    for path in sorted(SITE.rglob("*.html")):
+        page = path.read_text(encoding="utf-8")
+        relative = path.relative_to(SITE).as_posix()
+        for raw in href_re.findall(page):
+            if raw.startswith(("#", "mailto:", "tel:", "data:", "http://", "https://", "//")):
+                continue
+            url = raw.split("#", 1)[0].split("?", 1)[0]
+            if not url.startswith("/"):
+                continue
+            target = resolve_internal(url)
+            if not target.is_file():
+                missing.append(f"{relative} -> {raw}")
+    if missing:
+        fail("broken internal links: " + "; ".join(missing[:12]), errors)
+
+
 def verify_simulator_assets(errors: list[str]) -> None:
     scenarios = SITE / "learn" / "safety-stock-simulator" / "scenarios.json"
     if not scenarios.is_file():
@@ -1185,6 +1365,9 @@ def main() -> int:
         verify_canonicals(errors, posts)
         verify_stylesheet_version(errors, version)
         verify_listing_fix(errors, posts)
+        verify_home_assets(errors)
+        verify_social_and_chrome(errors)
+        verify_internal_links(errors)
         verify_simulator_assets(errors)
         verify_difot_sent(errors)
         verify_seller(errors)

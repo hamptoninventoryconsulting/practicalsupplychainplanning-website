@@ -13,6 +13,7 @@
     {%- if robots %}
     <meta name="robots" content="{{ robots }}" />
     {%- endif %}
+    {% include "partials/social-meta.njk" %}
     {%- if stripQuery %}
     <script>
       (function () {
@@ -31,6 +32,7 @@
       })();
     </script>
     {%- endif %}
+    <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" href="/assets/brand/favicon.png" type="image/png" />
     <link rel="stylesheet" href="/assets/styles.css?v={{ site.cssVersion }}" />
     <link rel="stylesheet" href="/assets/sales.css?v={{ site.cssVersion }}" />
