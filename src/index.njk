@@ -1,102 +1,185 @@
 ---json
 {
   "layout": "layouts/page.njk",
-  "title": "Stock & Supply Planning | Practical Supply Chain Planning",
-  "description": "Practical stock and supply planning for businesses that buy in stock. Free learning tools, plain-English articles and Practical Stock Planner.",
+  "title": "Practical Supply Chain Planning | See your stock weeks ahead",
+  "description": "Practical tools and plain-English guides from a working supply planner. Plan your stock week by week against your forecast, incoming orders and supplier lead times.",
+  "ogTitle": "See your stock weeks ahead. No surprises.",
+  "ogDescription": "Planning tools and guides for product businesses with long supplier lead times, built by a working supply planner.",
   "canonical": "https://practicalsupplychainplanning.com/",
   "nav": "home",
   "permalink": "/"
 }
 ---
+{%- set photo = home.photoUrl | publicAsset -%}
+{%- set linkedin = home.linkedinUrl | publicAsset -%}
+{%- set heroChart = home.heroChartUrl | publicAsset -%}
+{%- set simulatorChart = home.simulatorChartUrl | publicAsset -%}
 <section class="home-hero">
-  <h1 class="page-title">Practical stock and supply planning</h1>
-  <p class="tagline">Straight-logic planning for product businesses that buy in stock with lead times.</p>
+  <h1 class="page-title">See your stock weeks ahead. No surprises.</h1>
+  <p class="tagline">Practical planning tools and plain-English guides from a working supply planner.</p>
   <div class="home-actions">
-    {%- for tool in learnTools -%}
-    {%- if tool.title == "Safety Stock Simulator" %}
-    <a class="home-button" href="{{ tool.href }}">Try the Safety Stock Simulator</a>
-    {%- endif -%}
-    {%- endfor %}
-    <a class="home-text-link" href="/blog/">Read the blog</a>
+    <a class="home-button" href="#tools">Explore the tools</a>
+    <a class="home-button home-button--secondary" href="/learn/">Start learning</a>
   </div>
+  <p class="home-byline">
+    {%- if photo %}
+    <img
+      class="home-byline__photo"
+      src="{{ photo }}"
+      alt="{{ home.photoAlt }}"
+      width="64"
+      height="64"
+    />
+    {%- endif %}
+    <span>
+      Built by Daniel Hampton, supply planner.
+      {%- if linkedin %}
+      <a href="{{ linkedin }}" rel="noopener noreferrer" target="_blank">LinkedIn</a>
+      {%- endif %}
+    </span>
+  </p>
+</section>
+
+<section class="card" id="why-plan-ahead" aria-labelledby="why-plan-ahead-heading">
+  <h2 class="card__title" id="why-plan-ahead-heading">Why plan ahead?</h2>
+  <div class="content">
+    <p>Most small businesses reorder when stock drops to a set level. That only tells you what to do today.</p>
+    <ul class="home-points">
+      <li><strong>It reacts too late.</strong> With long supplier lead times, by the time stock hits the line, the shortage is already on its way.</li>
+      <li><strong>It misses what's ahead.</strong> Seasonal peaks, promotions and big customer orders don't show up in a fixed level.</li>
+      <li><strong>It can't see what's coming in.</strong> Orders already on their way get ignored, so you order too much or too early.</li>
+    </ul>
+    <p>Time-phased planning looks ahead instead. It projects your stock week by week from your forecast, open orders and supplier lead times, shows when you'll run short, and plans orders to arrive in time.</p>
+  </div>
+  {%- if heroChart %}
+  <figure class="home-chart">
+    <img src="{{ heroChart }}" alt="{{ home.heroChartAlt }}" width="1200" height="630" />
+  </figure>
+  {%- endif %}
+</section>
+
+<section class="card" id="tools" aria-labelledby="home-tools-heading">
+  <h2 class="card__title" id="home-tools-heading">Tools to plan ahead</h2>
+  <div class="content">
+    <p>Start free, then plan your whole range when you're ready.</p>
+  </div>
+
+  <p class="home-group">Free tools</p>
+  <ul class="learn-list">
+    {%- for tool in learnTools %}
+    {%- if tool.title == "Safety Stock Simulator" %}
+    <li class="learn-list__item">
+      <a class="learn-card" href="{{ tool.href }}">
+        <p class="home-label">Free</p>
+        <h3 class="learn-card__title">Safety Stock Simulator</h3>
+        <p class="learn-card__summary">See how demand swings and supplier lead times change the buffer your plan needs.</p>
+        {%- if simulatorChart %}
+        <img class="home-card__shot" src="{{ simulatorChart }}" alt="{{ home.simulatorChartAlt }}" width="1200" height="630" />
+        {%- endif %}
+        <span class="home-card__cta">Open the simulator</span>
+      </a>
+    </li>
+    {%- elif tool.title == "Own-data Safety Stock Simulator" %}
+    <li class="learn-list__item">
+      <a class="learn-card" href="{{ tool.href }}">
+        <p class="home-label">Free</p>
+        <h3 class="learn-card__title">Own-data Safety Stock Simulator</h3>
+        <p class="learn-card__summary">Run the same calculation on up to 10 of your own items and get the results by email.</p>
+        <span class="home-card__cta">Try it with your data</span>
+      </a>
+    </li>
+    {%- endif %}
+    {%- endfor %}
+  </ul>
+
+  <p class="home-group">Planning apps</p>
+  <ul class="learn-list">
+    <li class="learn-list__item">
+      {%- if paddle.checkoutOpen %}
+      <a class="learn-card" href="/products/practical-stock-planner/">
+        <p class="home-label">Available now</p>
+        <h3 class="learn-card__title">Practical Stock Planner</h3>
+        <p class="learn-card__summary">Projects your stock week by week from your stock on hand, open orders and forecast, then tells you what to order and when.</p>
+        <p class="learn-card__summary">For Windows.</p>
+        {%- if heroChart %}
+        <img class="home-card__shot" src="{{ heroChart }}" alt="{{ home.stockChartAlt }}" width="1200" height="630" />
+        {%- endif %}
+        <span class="home-card__cta">Start your free trial</span>
+      </a>
+      {%- else %}
+      <div class="learn-card">
+        <p class="home-label">Launching 16 Nov</p>
+        <h3 class="learn-card__title">Practical Stock Planner</h3>
+        <p class="learn-card__summary">Projects your stock week by week from your stock on hand, open orders and forecast, then tells you what to order and when.</p>
+        <p class="learn-card__summary">For Windows.</p>
+        {%- if heroChart %}
+        <img class="home-card__shot" src="{{ heroChart }}" alt="{{ home.stockChartAlt }}" width="1200" height="630" />
+        {%- endif %}
+        <p class="home-card__actions">
+          <button type="button" class="trial-button" disabled>Available 16 Nov</button>
+          <a href="#signup">Get launch updates</a>
+        </p>
+      </div>
+      {%- endif %}
+    </li>
+    <li class="learn-list__item">
+      <div class="learn-card">
+        <p class="home-label">Coming soon</p>
+        <h3 class="learn-card__title">Practical Demand Planner</h3>
+        <p class="learn-card__summary">Builds the forecast your plan looks ahead with, judging each item by its own sales pattern.</p>
+        <p class="home-card__actions">
+          <a href="#signup">Get launch updates</a>
+        </p>
+      </div>
+    </li>
+  </ul>
 </section>
 
 <section class="card" aria-labelledby="home-learn-heading">
-  <h2 class="card__title" id="home-learn-heading">Learn by doing</h2>
+  <h2 class="card__title" id="home-learn-heading">Learn the planning, not just the tool</h2>
   <div class="content">
-    <p>Free tools that show how stock planning works, using clear numbers instead of jargon.</p>
+    <p>Plain-English guides, each built around one idea.</p>
   </div>
-  <ul class="learn-list">
-    {%- for card in [
-      {
-        "title": "Safety Stock Simulator",
-        "summary": "See how demand swings and lead times change the stock you need to hold.",
-        "cta": "Open the simulator"
-      },
-      {
-        "title": "Own-data Safety Stock Simulator",
-        "summary": "Run the same calculation on up to 10 of your own items and get the results by email.",
-        "cta": "Try it with your data"
-      }
-    ] -%}
-    {%- for tool in learnTools -%}
-    {%- if tool.title == card.title %}
-    <li class="learn-list__item">
-      <a class="learn-card" href="{{ tool.href }}">
-        <h3 class="learn-card__title">{{ card.title }}</h3>
-        <p class="learn-card__summary">{{ card.summary }}</p>
-        <span class="home-card__cta">{{ card.cta }}</span>
-      </a>
-    </li>
-    {%- endif -%}
-    {%- endfor -%}
+  <ul class="home-links">
+    {%- for slug in [
+      "reorder-point-vs-time-phased-planning-two-different-planning-questions",
+      "mrp-is-more-than-a-stock-calculation-why-time-phasing-matters",
+      "forecast-bias-finding-the-direction-behind-forecast-errors"
+    ] %}
+    {%- for post in collections.postsByDate %}
+    {%- if post.fileSlug == slug %}
+    <li><a href="/blog/{{ post.fileSlug }}/">{{ post.data.title }}</a></li>
+    {%- endif %}
+    {%- endfor %}
     {%- endfor %}
   </ul>
-  <p class="home-more"><a href="/learn/">See all learning tools</a></p>
-</section>
-
-<section class="card" aria-labelledby="home-articles-heading">
-  <h2 class="card__title" id="home-articles-heading">Latest articles</h2>
-  <div class="content">
-    <p>Plain-English articles on planning stock and supply, each built around one idea.</p>
-  </div>
-  <ul class="learn-list learn-list--stack">
-    {%- for post in collections.postsByDate -%}
-    {%- if loop.index0 < 3 %}
-    <li class="learn-list__item">
-      <a class="learn-card" href="/blog/{{ post.fileSlug }}/">
-        <h3 class="learn-card__title">{{ post.data.title }}</h3>
-        <p class="learn-card__summary">{{ post.data.summary or post.data.description }}</p>
-        <span class="home-card__cta">Read the article</span>
-      </a>
-    </li>
-    {%- endif -%}
-    {%- endfor %}
-  </ul>
-  <p class="home-more"><a href="/blog/">All articles</a></p>
-</section>
-
-<section class="card" aria-labelledby="home-planner-heading">
-  <h2 class="card__title" id="home-planner-heading">Practical Stock Planner</h2>
-  <div class="content">
-    <p>Planning software for businesses that have outgrown reorder points and spreadsheets. Practical Stock Planner is time-phased MRP. It projects your stock period by period from your inventory data, open purchase orders and forecast, then tells you what to order and when.</p>
-    <ul class="home-points">
-      <li>Plans period by period, not with a single reorder point</li>
-      <li>Works from your current stock, open POs and forecast</li>
-      <li>Imports from CSV files (save from Excel or Google Sheets)</li>
-      <li>Runs on Windows. 14-day free trial, sold worldwide.</li>
-    </ul>
-    <p>Coming soon.</p>
-    <p class="home-more"><a href="/products/practical-stock-planner/">See pricing and start your free trial</a></p>
-  </div>
+  <p class="home-more"><a href="/learn/">All guides</a> · <a href="/blog/">All articles</a></p>
 </section>
 
 <section class="card" aria-labelledby="home-about-heading">
   <h2 class="card__title" id="home-about-heading">Built by a working planner</h2>
-  <div class="content">
-    <p>I'm Daniel Hampton. I've spent my career planning stock and supply for manufacturing, wholesale, retail and distribution businesses. Practical Supply Chain Planning shares the straightforward methods that work, without the complexity of big ERP systems.</p>
+  <div class="home-founder">
+    {%- if photo %}
+    <img
+      class="home-portrait"
+      src="{{ photo }}"
+      alt="{{ home.aboutPhotoAlt }}"
+      width="240"
+      height="240"
+    />
+    {%- endif %}
+    <div class="content">
+      <p>I'm Daniel Hampton. I've spent my career planning stock and supply for manufacturing, wholesale, retail and distribution businesses, and I still do it every day. Every tool here uses the same forward-planning methods I use at work, without the cost and complexity of big ERP systems.</p>
+      <p class="home-more">
+        <a href="/about/">More about me</a>
+        {%- if linkedin %}
+        · <a href="{{ linkedin }}" rel="noopener noreferrer" target="_blank">Connect on LinkedIn</a>
+        {%- endif %}
+      </p>
+    </div>
   </div>
-  <p class="home-more"><a href="/about/">More about me</a></p>
 </section>
 
+{%- set kitTitle = "Stay in the loop" -%}
+{%- set kitIntro = "Get practical planning articles by email, plus launch updates for Practical Stock Planner and Practical Demand Planner." -%}
 {% include "partials/keep-in-touch.njk" %}

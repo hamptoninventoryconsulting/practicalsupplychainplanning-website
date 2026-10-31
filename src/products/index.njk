@@ -10,9 +10,12 @@
 <h1 class="page-title">Products</h1>
 <p class="tagline">Software for product businesses that buy in stock with lead times.</p>
 
+{%- set kitTitle = "Get launch updates" -%}
+{%- set kitIntro = "Get practical planning articles by email, plus launch updates for Practical Stock Planner and Practical Demand Planner." -%}
 <ul class="learn-list{% if products.length < 2 %} learn-list--stack{% endif %}">
   {% for product in products %}
   <li class="learn-list__item">
+    {%- if paddle.checkoutOpen %}
     <a class="learn-card product-card" href="{{ product.href }}">
       {%- if product.logo %}
       <img
@@ -34,6 +37,35 @@
         {%- endif %}
       </span>
     </a>
+    {%- else %}
+    <div class="learn-card product-card product-card--launch">
+      <a class="product-card__main" href="{{ product.href }}">
+        {%- if product.logo %}
+        <img
+          class="product-card__logo"
+          src="{{ product.logo }}"
+          alt="{{ product.logoAlt or (product.title ~ ' logo') }}"
+          width="48"
+          height="48"
+        />
+        {%- endif %}
+        <span class="product-card__body">
+          <h2 class="learn-card__title">{{ product.title }}</h2>
+          <p class="learn-card__summary">{{ product.description }}</p>
+          {%- if product.price %}
+          <p class="learn-card__summary">{{ product.price }}</p>
+          {%- endif %}
+        </span>
+      </a>
+      <p class="home-card__actions">
+        <button type="button" class="trial-button" disabled>Available {{ paddle.launchDate }}</button>
+        <a href="#signup">Get launch updates</a>
+      </p>
+    </div>
+    {%- endif %}
   </li>
   {% endfor %}
 </ul>
+{%- if not paddle.checkoutOpen %}
+{% include "partials/keep-in-touch.njk" %}
+{%- endif %}

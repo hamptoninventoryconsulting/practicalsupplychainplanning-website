@@ -1,5 +1,15 @@
-<section class="keep-in-touch" id="keep-in-touch" aria-labelledby="keep-in-touch-heading">
-  <h2 class="keep-in-touch__title" id="keep-in-touch-heading">Let's keep in touch</h2>
+{#-
+  The articles sentence is the consent the signup API records. It must stay
+  word for word (functions/email/logic.mjs KEEP_IN_TOUCH_WORDING). There is
+  no launch-tag field on that API, so this form does not send one.
+  The beta checkbox is not offered. The script still sends betaConsent false.
+-#}
+<section class="keep-in-touch" id="signup" aria-labelledby="signup-heading">
+  <h2 class="keep-in-touch__title" id="signup-heading">{{ kitTitle or "Stay in the loop" }}</h2>
+  {%- set signupIntro = kitIntro or "Get practical planning articles by email, plus launch updates for Practical Stock Planner and Practical Demand Planner." %}
+  {%- if signupIntro %}
+  <p class="keep-in-touch__intro">{{ signupIntro }}</p>
+  {%- endif %}
   <form class="keep-in-touch__form" id="keep-in-touch-form" novalidate>
     <p class="keep-in-touch__status" role="status"></p>
     <label class="sim-field" for="keep-in-touch-email">
@@ -7,11 +17,7 @@
       <input id="keep-in-touch-email" name="email" type="email" autocomplete="email" maxlength="254" />
     </label>
     <p class="keep-in-touch__consent">Send me new articles from Practical Supply Chain Planning. Unsubscribe any time.</p>
-    <label class="sim-check" for="keep-in-touch-beta">
-      <input id="keep-in-touch-beta" name="beta" type="checkbox" />
-      <span class="keep-in-touch__beta">I'd be happy to beta test.</span>
-    </label>
-    <p class="sim-meta">We'll use your email only as described above. <a href="/privacy/">Privacy</a></p>
+    <p class="sim-meta">One email now and then. Unsubscribe any time. <a href="/privacy/">Privacy</a></p>
     <div class="sim-turnstile" data-sitekey="{{ site.turnstileSiteKey }}" data-appearance="interaction-only"></div>
     <div class="sim-hp" aria-hidden="true">
       <label for="keep-in-touch-company">Company</label>
@@ -19,7 +25,7 @@
     </div>
     <button class="sim-button" type="submit">Keep me posted</button>
   </form>
-  <p class="keep-in-touch__sent" hidden>You're on the list.</p>
+  <p class="keep-in-touch__sent" hidden>You're on the list. Thanks!</p>
 </section>
 <script>
   (function () {

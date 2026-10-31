@@ -58,14 +58,18 @@ assert.ok(privacy.includes(PRIVACY_SENTENCE));
 const footer = fs.readFileSync(path.join(ROOT, "src", "_includes", "partials", "footer.njk"), "utf8");
 assert.doesNotMatch(footer, /keep-in-touch|Let's keep in touch/);
 const signup = fs.readFileSync(path.join(ROOT, "src", "_includes", "partials", "keep-in-touch.njk"), "utf8");
-assert.match(signup, /Let's keep in touch/);
+assert.match(signup, /Stay in the loop/);
+assert.match(signup, /id="signup"/);
 assert.ok(signup.includes(KEEP_IN_TOUCH_WORDING));
-assert.ok(signup.includes(BETA_WORDING));
+assert.ok(signup.includes("You're on the list. Thanks!"));
 assert.ok(signup.includes(KEEP_IN_TOUCH_SUCCESS));
-assert.match(signup, /name="beta" type="checkbox"/);
-assert.doesNotMatch(signup, /name="beta"[^>]*checked/);
+assert.doesNotMatch(signup, /name="beta"/);
+assert.doesNotMatch(signup, /BETA_WORDING|I'd be happy to beta test/);
 assert.match(signup, /keep-in-touch\.js\?v=\{\{ site\.cssVersion \}\}/);
 assert.match(signup, /data-appearance="interaction-only"/);
+const signupScript = fs.readFileSync(path.join(ROOT, "assets", "keep-in-touch.js"), "utf8");
+assert.match(signupScript, /betaConsent: beta \? beta\.checked === true : false/);
+assert.ok(signupScript.includes(BETA_WORDING));
 
 const sales = fs.readFileSync(path.join(ROOT, "src", "_includes", "layouts", "sales.njk"), "utf8");
 assert.doesNotMatch(sales, /keep-in-touch|Let's keep in touch/);
@@ -77,18 +81,19 @@ assert.match(welcome, /layouts\/sales\.njk/);
 assert.doesNotMatch(welcome, /keep-in-touch/);
 
 const home = fs.readFileSync(path.join(ROOT, "src", "index.njk"), "utf8");
+assert.ok(home.includes("See your stock weeks ahead. No surprises."));
 assert.ok(
   home.includes(
-    "Straight-logic planning for product businesses that buy in stock with lead times."
+    "Practical planning tools and plain-English guides from a working supply planner."
   )
 );
-assert.ok(
-  home.includes(
-    "Practical stock and supply planning for businesses that buy in stock. Free learning tools, plain-English articles and Practical Stock Planner."
-  )
-);
+assert.doesNotMatch(home, /Straight-logic planning/);
+assert.doesNotMatch(home, /Practical stock and supply planning/);
 assert.doesNotMatch(home, /importers/);
+assert.doesNotMatch(home, /min-max|minmax|reorder point/i);
 assert.match(home, /partials\/keep-in-touch\.njk/);
+const paddleSource = fs.readFileSync(path.join(ROOT, "src", "_data", "paddle.js"), "utf8");
+const checkoutOpen = /checkoutOpen:\s*true\b/.test(paddleSource);
 
 function built(rel) {
   const file = path.join(ROOT, "_site", rel);
@@ -101,18 +106,17 @@ const cssVersion = siteData.match(/cssVersion:\s*"([^"]+)"/);
 assert.ok(cssVersion, "src/_data/site.js is missing cssVersion");
 
 const builtHome = built("index.html");
-assert.match(builtHome, /id="keep-in-touch"/);
+assert.match(builtHome, /id="signup"/);
 assert.ok(builtHome.includes(KEEP_IN_TOUCH_WORDING));
-assert.ok(builtHome.includes(BETA_WORDING));
+assert.ok(builtHome.includes("You're on the list. Thanks!"));
+assert.doesNotMatch(builtHome, /name="beta"|I'd be happy to beta test/);
 assert.match(builtHome, new RegExp("styles\\.css\\?v=" + cssVersion[1]));
 assert.match(builtHome, new RegExp("keep-in-touch\\.js\\?v=" + cssVersion[1]));
-assert.ok(builtHome.indexOf('id="keep-in-touch"') < builtHome.indexOf('<footer class="site-footer"'));
+assert.ok(builtHome.indexOf('id="signup"') < builtHome.indexOf('<footer class="site-footer"'));
 assert.ok(built("privacy/index.html").includes(PRIVACY_SENTENCE));
 assert.ok(!fs.existsSync(path.join(ROOT, "_site", "buy", "index.html")));
 for (const rel of [
   "welcome/index.html",
-  "products/index.html",
-  "products/practical-stock-planner/index.html",
   "learn/index.html",
   "blog/index.html",
   "about/index.html",
@@ -121,7 +125,19 @@ for (const rel of [
   "privacy/index.html",
   "contact/index.html",
 ]) {
-  assert.doesNotMatch(built(rel), /id="keep-in-touch"|keep-in-touch\.js/);
+  assert.doesNotMatch(built(rel), /id="signup"|keep-in-touch\.js/);
+}
+for (const rel of ["products/index.html", "products/practical-stock-planner/index.html"]) {
+  const page = built(rel);
+  if (checkoutOpen) {
+    assert.doesNotMatch(page, /id="signup"|keep-in-touch\.js/);
+  } else {
+    assert.match(page, /id="signup"/);
+    assert.match(page, /keep-in-touch\.js/);
+    assert.match(page, /Available 16 Nov 2026/);
+    assert.match(page, /Get launch updates/);
+    assert.doesNotMatch(page, /cdn\.paddle\.com|pricing-checkout\.js|id="paddle-config"/);
+  }
 }
 
 function adapter(sqlite) {

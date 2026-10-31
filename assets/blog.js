@@ -107,7 +107,9 @@
       ? '<div class="blog-post-card__media">' +
         '<img class="blog-post-card__image" src="/images/' +
         escapeHtml(image) +
-        '" alt="" width="240" height="175" loading="lazy" decoding="async" />' +
+        '" alt="' +
+        escapeHtml(title) +
+        '" width="240" height="175" loading="lazy" decoding="async" />' +
         "</div>"
       : "";
 
