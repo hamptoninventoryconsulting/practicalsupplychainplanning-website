@@ -803,8 +803,9 @@ assert.match(css, /\.sim-details\s*\{[^}]*margin:\s*0 0 1\.5rem/);
 assert.match(css, /\.sim-details\[open\] > summary::before/);
 
 const about = fs.readFileSync(path.join(SITE, "about", "index.html"), "utf8");
-assert.match(about, /free educational/);
-assert.match(about, /\/learn\/safety-stock-simulator\//);
+assert.match(about, /Free guides and interactive learning tools are on the/);
+assert.match(about, /<a href="\/learn\/">Learn page<\/a>/);
+assert.doesNotMatch(about, /free educational/);
 assert.match(about, />Learn<\/a>/);
 
 const reopenControls = {

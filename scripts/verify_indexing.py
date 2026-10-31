@@ -289,10 +289,10 @@ HOME_TO_ABOUT_RE = re.compile(
 )
 HOME_COPY = (
     "See your stock weeks ahead. No surprises.",
-    "Practical planning tools and plain-English guides from a working supply planner.",
+    "Practical planning tools and plain-English guides from a working supply chain planner.",
     "Explore the tools",
     "Start learning",
-    "Built by Daniel Hampton, supply planner.",
+    "Built by Daniel Hampton, a working supply chain planner.",
     "Why plan ahead?",
     "Most small businesses reorder when stock drops to a set level. That only tells you what to do today.",
     "It reacts too late.",
@@ -304,11 +304,12 @@ HOME_COPY = (
     "Time-phased planning looks ahead instead. It projects your stock week by week from your forecast, open orders and supplier lead times, shows when you'll run short, and plans orders to arrive in time.",
     "Tools to plan ahead",
     "Start free, then plan your whole range when you're ready.",
+    "Learn by doing",
     "Safety Stock Simulator",
-    "See how demand swings and supplier lead times change the buffer your plan needs.",
-    "Open the simulator",
+    "Confused by safety stock? Explore how demand swings and supplier lead times change the buffer you need.",
+    "Explore the simulator",
     "Own-data Safety Stock Simulator",
-    "Run the same calculation on up to 10 of your own items and get the results by email.",
+    "Then try the same simulator on up to 10 of your own items and get the results by email.",
     "Try it with your data",
     "Practical Stock Planner",
     "Projects your stock week by week from your stock on hand, open orders and forecast, then tells you what to order and when.",
@@ -360,7 +361,7 @@ def verify_homepage_routing(errors: list[str], posts: list[dict]) -> None:
         ):
             fail("index.html title must be the approved home title", errors)
         if (
-            '<meta name="description" content="Practical tools and plain-English guides from a working supply planner. Plan your stock week by week against your forecast, incoming orders and supplier lead times."'
+            '<meta name="description" content="Practical tools and plain-English guides from a working supply chain planner. Plan your stock week by week against your forecast, incoming orders and supplier lead times."'
             not in text
         ):
             fail("index.html meta description must be the approved home description", errors)
@@ -370,7 +371,7 @@ def verify_homepage_routing(errors: list[str], posts: list[dict]) -> None:
         ):
             fail("index.html og:title must be the approved home social title", errors)
         if (
-            'property="og:description" content="Planning tools and guides for product businesses with long supplier lead times, built by a working supply planner."'
+            'property="og:description" content="Planning tools and guides for product businesses with long supplier lead times, built by a working supply chain planner."'
             not in text
         ):
             fail("index.html og:description must be the approved home social description", errors)
