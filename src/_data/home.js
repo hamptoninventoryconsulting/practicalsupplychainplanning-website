@@ -13,7 +13,8 @@
  *    linkedinUrl: "https://www.linkedin.com/in/…"
  *
  * 3. Practical Stock Planner projected stock chart (demo data: stock dips,
- *    a planned order arrives before the shortage). Used in "Why plan ahead?"
+ *    a planned order arrives before the shortage). When set, this image
+ *    replaces the built-in hero sketch. It is also used in "Why plan ahead?"
  *    and on the Stock Planner card.
  *    File: images/projected-stock-chart.png
  *    Then: heroChartUrl: "/images/projected-stock-chart.png"

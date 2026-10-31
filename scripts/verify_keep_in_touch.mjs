@@ -84,7 +84,7 @@ const home = fs.readFileSync(path.join(ROOT, "src", "index.njk"), "utf8");
 assert.ok(home.includes("See your stock weeks ahead. No surprises."));
 assert.ok(
   home.includes(
-    "Practical planning tools and plain-English guides from a working supply planner."
+    "Practical planning tools and plain-English guides from a working supply chain planner."
   )
 );
 assert.doesNotMatch(home, /Straight-logic planning/);

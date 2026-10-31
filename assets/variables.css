@@ -6,6 +6,10 @@
 :root {
   --color-brand-cyan: #21dbf9;
   --color-brand-gray: #999999;
+  /* Logo cyan darkened until link text clears WCAG AA 4.5:1 on white (5.5:1). */
+  --color-link: #117383;
+  /* Secondary copy. Darker than the old grey so subheads and card text stay readable (7.5:1 on white). */
+  --color-text-secondary: #4a5568;
 
   --color-text: #1f2937;
   --color-text-muted: var(--color-brand-gray);

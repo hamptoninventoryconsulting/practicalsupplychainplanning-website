@@ -2,9 +2,9 @@
 {
   "layout": "layouts/page.njk",
   "title": "Practical Supply Chain Planning | See your stock weeks ahead",
-  "description": "Practical tools and plain-English guides from a working supply planner. Plan your stock week by week against your forecast, incoming orders and supplier lead times.",
+  "description": "Practical tools and plain-English guides from a working supply chain planner. Plan your stock week by week against your forecast, incoming orders and supplier lead times.",
   "ogTitle": "See your stock weeks ahead. No surprises.",
-  "ogDescription": "Planning tools and guides for product businesses with long supplier lead times, built by a working supply planner.",
+  "ogDescription": "Planning tools and guides for product businesses with long supplier lead times, built by a working supply chain planner.",
   "canonical": "https://practicalsupplychainplanning.com/",
   "nav": "home",
   "permalink": "/"
@@ -15,29 +15,44 @@
 {%- set heroChart = home.heroChartUrl | publicAsset -%}
 {%- set simulatorChart = home.simulatorChartUrl | publicAsset -%}
 <section class="home-hero">
-  <h1 class="page-title">See your stock weeks ahead. No surprises.</h1>
-  <p class="tagline">Practical planning tools and plain-English guides from a working supply planner.</p>
-  <div class="home-actions">
-    <a class="home-button" href="#tools">Explore the tools</a>
-    <a class="home-button home-button--secondary" href="/learn/">Start learning</a>
-  </div>
-  <p class="home-byline">
-    {%- if photo %}
-    <img
-      class="home-byline__photo"
-      src="{{ photo }}"
-      alt="{{ home.photoAlt }}"
-      width="64"
-      height="64"
-    />
-    {%- endif %}
-    <span>
-      Built by Daniel Hampton, supply planner.
-      {%- if linkedin %}
-      <a href="{{ linkedin }}" rel="noopener noreferrer" target="_blank">LinkedIn</a>
+  <div class="home-hero__copy">
+    <h1 class="page-title">See your stock weeks ahead. No surprises.</h1>
+    <p class="tagline">Practical planning tools and plain-English guides from a working supply chain planner.</p>
+    <div class="home-actions">
+      <a class="home-button" href="#tools">Explore the tools</a>
+      <a class="home-button home-button--secondary" href="/learn/">Start learning</a>
+    </div>
+    <p class="home-byline">
+      {%- if photo %}
+      <img
+        class="home-byline__photo"
+        src="{{ photo }}"
+        alt="{{ home.photoAlt }}"
+        width="64"
+        height="64"
+      />
       {%- endif %}
-    </span>
-  </p>
+      <span>
+        Built by Daniel Hampton, a working supply chain planner.
+        {%- if linkedin %}
+        <a href="{{ linkedin }}" rel="noopener noreferrer" target="_blank">LinkedIn</a>
+        {%- endif %}
+      </span>
+    </p>
+  </div>
+  <div class="home-hero__visual">
+    {%- if heroChart %}
+    <img
+      class="home-hero__shot"
+      src="{{ heroChart }}"
+      alt="{{ home.heroChartAlt }}"
+      width="1200"
+      height="630"
+    />
+    {%- else %}
+    {% include "partials/hero-sketch.njk" %}
+    {%- endif %}
+  </div>
 </section>
 
 <section class="card" id="why-plan-ahead" aria-labelledby="why-plan-ahead-heading">
@@ -64,7 +79,7 @@
     <p>Start free, then plan your whole range when you're ready.</p>
   </div>
 
-  <p class="home-group">Free tools</p>
+  <p class="home-group">Learn by doing</p>
   <ul class="learn-list">
     {%- for tool in learnTools %}
     {%- if tool.title == "Safety Stock Simulator" %}
@@ -72,11 +87,11 @@
       <a class="learn-card" href="{{ tool.href }}">
         <p class="home-label">Free</p>
         <h3 class="learn-card__title">Safety Stock Simulator</h3>
-        <p class="learn-card__summary">See how demand swings and supplier lead times change the buffer your plan needs.</p>
+        <p class="learn-card__summary">Confused by safety stock? Explore how demand swings and supplier lead times change the buffer you need.</p>
         {%- if simulatorChart %}
         <img class="home-card__shot" src="{{ simulatorChart }}" alt="{{ home.simulatorChartAlt }}" width="1200" height="630" />
         {%- endif %}
-        <span class="home-card__cta">Open the simulator</span>
+        <span class="home-card__cta">Explore the simulator</span>
       </a>
     </li>
     {%- elif tool.title == "Own-data Safety Stock Simulator" %}
@@ -84,7 +99,7 @@
       <a class="learn-card" href="{{ tool.href }}">
         <p class="home-label">Free</p>
         <h3 class="learn-card__title">Own-data Safety Stock Simulator</h3>
-        <p class="learn-card__summary">Run the same calculation on up to 10 of your own items and get the results by email.</p>
+        <p class="learn-card__summary">Then try the same simulator on up to 10 of your own items and get the results by email.</p>
         <span class="home-card__cta">Try it with your data</span>
       </a>
     </li>
@@ -140,7 +155,7 @@
   <div class="content">
     <p>Plain-English guides, each built around one idea.</p>
   </div>
-  <ul class="home-links">
+  <ul class="home-reads">
     {%- for slug in [
       "reorder-point-vs-time-phased-planning-two-different-planning-questions",
       "mrp-is-more-than-a-stock-calculation-why-time-phasing-matters",
@@ -148,7 +163,10 @@
     ] %}
     {%- for post in collections.postsByDate %}
     {%- if post.fileSlug == slug %}
-    <li><a href="/blog/{{ post.fileSlug }}/">{{ post.data.title }}</a></li>
+    <li class="home-read">
+      <p class="home-read__title">{{ post.data.title }}</p>
+      <a class="home-read__link" href="/blog/{{ post.fileSlug }}/" aria-label="Read {{ post.data.title }}">Read <span aria-hidden="true">→</span></a>
+    </li>
     {%- endif %}
     {%- endfor %}
     {%- endfor %}

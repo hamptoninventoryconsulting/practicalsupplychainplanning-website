@@ -107,9 +107,13 @@ img {
 }
 
 a {
-  color: var(--color-primary);
+  color: var(--color-link);
   text-decoration-thickness: 1px;
   text-underline-offset: 0.15em;
+}
+
+a:visited {
+  color: var(--color-link);
 }
 
 a:hover {
@@ -137,7 +141,8 @@ main {
 .tagline {
   margin: 0 0 1.75rem;
   font-size: 1.125rem;
-  color: var(--color-text-muted);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
 }
 
 .learn-back {
@@ -201,7 +206,7 @@ main {
   margin: 0;
   font-size: 0.975rem;
   line-height: 1.55;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .product-card__body {
@@ -607,7 +612,7 @@ main {
   margin: 0;
   font-size: 0.975rem;
   line-height: 1.55;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
@@ -636,7 +641,7 @@ main {
   margin-top: 0;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--color-accent);
+  color: var(--color-link);
 }
 
 @media (max-width: 900px) {
@@ -1644,18 +1649,118 @@ main {
 }
 
 .home-hero {
-  margin-bottom: 0.5rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1.22fr) minmax(0, 0.95fr);
+  align-items: center;
+  gap: 1.75rem 2.25rem;
+  margin: 0.35rem 0 2.5rem;
+}
+
+.home-hero__copy,
+.home-hero__visual {
+  min-width: 0;
 }
 
 .home-hero .page-title {
-  max-width: 16ch;
-  font-size: clamp(1.85rem, 4vw, 2.4rem);
-  line-height: 1.15;
+  max-width: none;
+  margin-bottom: 0.85rem;
+  font-size: clamp(1.95rem, 2.45vw, 2.45rem);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
 }
 
 .home-hero .tagline {
-  max-width: 42rem;
-  margin-bottom: 1.25rem;
+  max-width: 36rem;
+  margin-bottom: 1.35rem;
+  font-size: 1.125rem;
+}
+
+.home-hero .home-actions {
+  margin-bottom: 1.15rem;
+}
+
+.home-hero .home-byline {
+  margin-bottom: 0;
+}
+
+.home-hero__shot {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--card-radius);
+  background: var(--color-surface);
+}
+
+.hero-sketch {
+  margin: 0;
+  padding: 0.65rem 0.7rem 0.55rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--card-radius);
+  box-shadow: 0 0.65rem 1.6rem rgba(31, 41, 55, 0.06);
+}
+
+.hero-sketch__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.hero-sketch__band {
+  fill: #e8eef2;
+}
+
+.hero-sketch__fill {
+  fill: var(--color-brand-cyan);
+  fill-opacity: 0.22;
+}
+
+.hero-sketch__safety {
+  stroke: #7d8b99;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+
+.hero-sketch__axis,
+.hero-sketch__ticks line {
+  stroke: #c5d0d8;
+  stroke-width: 1.5;
+}
+
+.hero-sketch__line {
+  fill: none;
+  stroke: var(--color-link);
+  stroke-width: 2.75;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.hero-sketch__order {
+  stroke: var(--color-link);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+
+.hero-sketch__dot {
+  fill: var(--color-brand-cyan);
+  stroke: var(--color-link);
+  stroke-width: 2;
+}
+
+.hero-sketch text {
+  font-family: var(--font-sans);
+  /* Specified size is in the 400-wide viewBox, which scales to about 14px on the desktop hero and on a 390px screen. */
+  font-size: 17.7px;
+  font-weight: 600;
+}
+
+.hero-sketch__name {
+  fill: var(--color-link);
+}
+
+.hero-sketch__name--safety {
+  fill: var(--color-text-secondary);
+  font-weight: 600;
 }
 
 .home-actions {
@@ -1721,7 +1826,7 @@ main {
 .home-card__cta {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--color-primary);
+  color: var(--color-link);
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 0.15em;
@@ -1798,13 +1903,38 @@ main {
   margin: 0.35rem 0 0;
 }
 
-.home-links {
+.home-reads {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   margin: 1.25rem 0 0;
-  padding-left: 1.25rem;
+  padding: 0;
+  list-style: none;
 }
 
-.home-links li + li {
-  margin-top: 0.45rem;
+.home-read {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem 1.25rem;
+  margin: 0;
+  padding: 0.9rem 1rem;
+  background: var(--color-surface-muted);
+  border-radius: var(--card-radius);
+}
+
+.home-read__title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1.02rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.home-read__link {
+  flex: 0 0 auto;
+  font-weight: 650;
+  white-space: nowrap;
 }
 
 .home-founder {
@@ -1827,10 +1957,23 @@ main {
   scroll-margin-top: 1rem;
 }
 
+@media (max-width: 860px) {
+  .home-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+}
+
 @media (max-width: 640px) {
   .home-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .home-read {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
   }
 
   .home-button {
