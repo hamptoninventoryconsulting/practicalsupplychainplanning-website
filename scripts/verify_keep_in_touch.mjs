@@ -105,9 +105,14 @@ const siteData = fs.readFileSync(path.join(ROOT, "src", "_data", "site.js"), "ut
 const cssVersion = siteData.match(/cssVersion:\s*"([^"]+)"/);
 assert.ok(cssVersion, "src/_data/site.js is missing cssVersion");
 
+function countPhrase(text, phrase) {
+  return text.split(phrase).length - 1;
+}
+
 const builtHome = built("index.html");
 assert.match(builtHome, /id="signup"/);
 assert.ok(builtHome.includes(KEEP_IN_TOUCH_WORDING));
+assert.strictEqual(countPhrase(builtHome, "Unsubscribe any time"), 1);
 assert.ok(builtHome.includes("You're on the list. Thanks!"));
 assert.doesNotMatch(builtHome, /name="beta"|I'd be happy to beta test/);
 assert.match(builtHome, new RegExp("styles\\.css\\?v=" + cssVersion[1]));
@@ -136,6 +141,7 @@ for (const rel of ["products/index.html", "products/practical-stock-planner/inde
     assert.match(page, /keep-in-touch\.js/);
     assert.match(page, /Available 16 Nov 2026/);
     assert.match(page, /Get launch updates/);
+    assert.strictEqual(countPhrase(page, "Unsubscribe any time"), 1);
     assert.doesNotMatch(page, /cdn\.paddle\.com|pricing-checkout\.js|id="paddle-config"/);
   }
 }

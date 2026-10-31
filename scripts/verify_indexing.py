@@ -329,7 +329,7 @@ HOME_COPY = (
     "More about me",
     "Stay in the loop",
     "Get practical planning articles by email, plus launch updates for Practical Stock Planner and Practical Demand Planner.",
-    "One email now and then. Unsubscribe any time.",
+    "One email now and then.",
     "You're on the list. Thanks!",
 )
 FEATURED_POSTS = (
