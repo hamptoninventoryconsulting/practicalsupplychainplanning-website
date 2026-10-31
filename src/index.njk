@@ -11,6 +11,7 @@
 }
 ---
 {%- set photo = home.photoUrl | publicAsset -%}
+{%- set photoWebp = home.photoWebpUrl | publicAsset -%}
 {%- set linkedin = home.linkedinUrl | publicAsset -%}
 {%- set heroChart = home.heroChartUrl | publicAsset -%}
 {%- set simulatorChart = home.simulatorChartUrl | publicAsset -%}
@@ -24,13 +25,18 @@
     </div>
     <p class="home-byline">
       {%- if photo %}
-      <img
-        class="home-byline__photo"
-        src="{{ photo }}"
-        alt="{{ home.photoAlt }}"
-        width="64"
-        height="64"
-      />
+      <picture>
+        {%- if photoWebp %}
+        <source srcset="{{ photoWebp }}" type="image/webp" />
+        {%- endif %}
+        <img
+          class="home-byline__photo"
+          src="{{ photo }}"
+          alt="{{ home.photoAlt }}"
+          width="64"
+          height="64"
+        />
+      </picture>
       {%- endif %}
       <span>
         Built by Daniel Hampton, a working supply chain planner.
@@ -178,13 +184,18 @@
   <h2 class="card__title" id="home-about-heading">Built by a working planner</h2>
   <div class="home-founder">
     {%- if photo %}
-    <img
-      class="home-portrait"
-      src="{{ photo }}"
-      alt="{{ home.aboutPhotoAlt }}"
-      width="240"
-      height="240"
-    />
+    <picture>
+      {%- if photoWebp %}
+      <source srcset="{{ photoWebp }}" type="image/webp" />
+      {%- endif %}
+      <img
+        class="home-portrait"
+        src="{{ photo }}"
+        alt="{{ home.aboutPhotoAlt }}"
+        width="240"
+        height="240"
+      />
+    </picture>
     {%- endif %}
     <div class="content">
       <p>I'm Daniel Hampton. I've spent my career planning stock and supply for manufacturing, wholesale, retail and distribution businesses, and I still do it every day. Every tool here uses the same forward-planning methods I use at work, without the cost and complexity of big ERP systems.</p>

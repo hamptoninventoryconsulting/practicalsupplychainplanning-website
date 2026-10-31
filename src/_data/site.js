@@ -8,7 +8,7 @@ module.exports = {
   // without the beacon. Do not also enable Pages automatic injection.
   webAnalyticsToken: webAnalyticsToken(),
   // Bump whenever any versioned CSS or JS asset changes.
-  cssVersion: "45",
+  cssVersion: "46",
   // Fallback social image until the home chart screenshot is set in src/_data/home.js.
   defaultOgImage: "/assets/brand/logo.jpg",
   logoVersion: "2",

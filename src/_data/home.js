@@ -4,13 +4,15 @@
  *
  * Drop files, then set the public path (Eleventy copies assets/ and images/):
  *
- * 1. Daniel's photo (head and shoulders, at least 600×600, plain background)
- *    File: assets/brand/daniel-hampton-home.jpg
- *    Then: photoUrl: "/assets/brand/daniel-hampton-home.jpg"
- *    Do not replace assets/brand/daniel-hampton.png (that is the About page photo).
+ * 1. Daniel's photo for the home slots (40px byline, 104px portrait).
+ *    Those slots use a 312px copy of the caricature, PNG and WebP, with the
+ *    transparent background kept. /about/ keeps the original 3000px file,
+ *    assets/brand/daniel-hampton.png.
+ *    photoUrl: "/assets/brand/daniel-hampton-312.png"
+ *    photoWebpUrl: "/assets/brand/daniel-hampton-312.webp"
  *
- * 2. LinkedIn profile URL (no file)
- *    linkedinUrl: "https://www.linkedin.com/in/…"
+ * 2. Company LinkedIn URL (no file)
+ *    linkedinUrl: "https://www.linkedin.com/company/practical-supply-chain-planning/"
  *
  * 3. Practical Stock Planner projected stock chart (demo data: stock dips,
  *    a planned order arrives before the shortage). When set, this image
@@ -30,10 +32,11 @@
  *    Then: simulatorChartUrl: "/images/safety-stock-simulator-chart.png"
  */
 module.exports = {
-  photoUrl: "",
-  photoAlt: "Daniel Hampton, founder of Practical Supply Chain Planning",
+  photoUrl: "/assets/brand/daniel-hampton-312.png",
+  photoWebpUrl: "/assets/brand/daniel-hampton-312.webp",
+  photoAlt: "Daniel Hampton",
   aboutPhotoAlt: "Daniel Hampton",
-  linkedinUrl: "",
+  linkedinUrl: "https://www.linkedin.com/company/practical-supply-chain-planning/",
   heroChartUrl: "",
   heroChartAlt:
     "Chart of projected stock week by week, with a planned order arriving before stock runs short.",
