@@ -1,7 +1,12 @@
 /**
  * Overlay checkout for /products/practical-stock-planner/.
  * Uses the Paddle config in src/_data/paddle.js.
- * Quantity is fixed at 1. No discount is applied.
+ * Quantity is fixed at 1.
+ * While checkoutOpen is true, pass foundingDiscountCode as discountCode.
+ * Paddle.Checkout.open accepts discountCode. Do not pass a discount entity id.
+ * The page never reads a code from the URL.
+ * A flat discount only applies in its own currency. The configured code is
+ * FOUNDING29 (US dollars). This script does not send FOUNDINGAU.
  */
 (function () {
   var button = document.getElementById("trial-button");
@@ -92,14 +97,21 @@
           customData[key] = String(value).slice(0, 100);
         }
       });
-      window.Paddle.Checkout.open({
+      var checkout = {
         items: [{ priceId: campaign.priceId, quantity: 1 }],
         customData: customData,
         settings: {
           successUrl: config.successUrl,
           displayMode: "overlay",
         },
-      });
+      };
+      if (
+        config.checkoutOpen === true &&
+        !isPlaceholder(config.foundingDiscountCode)
+      ) {
+        checkout.discountCode = config.foundingDiscountCode;
+      }
+      window.Paddle.Checkout.open(checkout);
     } catch (error) {
       showUnconfigured();
     }

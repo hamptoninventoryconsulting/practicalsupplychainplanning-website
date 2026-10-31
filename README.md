@@ -38,10 +38,11 @@ Checkout is off until 16 Nov 2026. In `src/_data/paddle.js`, set `checkoutOpen` 
 
 - loads Paddle and `pricing-checkout.js` on the Practical Stock Planner page
 - restores the "Start your free trial" button
+- applies the founding discount code `FOUNDING29` (`discountCode` on `Paddle.Checkout.open`)
 - shows "Available now" and the trial link on the home page
 - stops redirecting `/welcome/` to the product page
 
-Leave the client token, price id, and `successUrl` as they are. `/welcome/` is still built. While `checkoutOpen` is `false`, `functions/_middleware.js` answers it with a 302 to `/products/practical-stock-planner/`. `npm run dev` does not run that function, so the welcome page is visible on the local server. A Cloudflare Pages deploy applies the redirect.
+Leave the client token, price id, `successUrl`, and `guidedSetupOpen: false` as they are. `guidedSetupOpen` stays false until a Guided setup Paddle product exists. Do not add a buy link for it before then. `FOUNDINGAU` is not sent: a flat Paddle discount has to match the checkout currency, and that Australian code may not exist yet. `/welcome/` is still built. While `checkoutOpen` is `false`, `functions/_middleware.js` answers it with a 302 to `/products/practical-stock-planner/`. `npm run dev` does not run that function, so the welcome page is visible on the local server. A Cloudflare Pages deploy applies the redirect.
 
 The launch signup uses the existing keep-in-touch form. It does not send a separate launch tag: `functions/email/logic.mjs` has no source or tag field, and it rejects any extra field. New signups are stored with `beta_box` 0. The articles sentence on the form is the consent the API records.
 
