@@ -1749,7 +1749,8 @@ main {
 
 .hero-sketch text {
   font-family: var(--font-sans);
-  font-size: 14px;
+  /* Specified size is in the 400-wide viewBox, which scales to about 14px on the desktop hero and on a 390px screen. */
+  font-size: 17.7px;
   font-weight: 600;
 }
 
