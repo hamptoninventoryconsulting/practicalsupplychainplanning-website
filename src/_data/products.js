@@ -8,7 +8,7 @@ module.exports = [
   {
     title: "Practical Stock Planner",
     description: "Plan stock period by period and see what to order and when.",
-    price: "Founding price US$29/month from 16 Nov 2026, then US$49/month",
+    price: "Founding price US$29/month for the first 12 months from 16 Nov 2026, for the first 20 customers or until 31 Jan 2027, then US$49/month",
     trial: "14-day free trial",
     href: "/products/practical-stock-planner/",
     logo: "/assets/brand/favicon.png",

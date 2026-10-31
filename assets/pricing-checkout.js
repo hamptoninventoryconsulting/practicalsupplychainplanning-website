@@ -2,11 +2,11 @@
  * Overlay checkout for /products/practical-stock-planner/.
  * Uses the Paddle config in src/_data/paddle.js.
  * Quantity is fixed at 1.
- * While checkoutOpen is true, pass foundingDiscountCode as discountCode.
+ * While checkoutOpen is true, pass one founding code as discountCode.
  * Paddle.Checkout.open accepts discountCode. Do not pass a discount entity id.
  * The page never reads a code from the URL.
- * A flat discount only applies in its own currency. The configured code is
- * FOUNDING29 (US dollars). This script does not send FOUNDINGAU.
+ * A flat discount only applies in its own currency. AUD checkouts get
+ * FOUNDINGAU. Every other checkout gets FOUNDING29.
  */
 (function () {
   var button = document.getElementById("trial-button");
@@ -86,9 +86,26 @@
     return;
   }
 
-  note.hidden = true;
-  button.disabled = false;
-  button.addEventListener("click", function () {
+  function fallbackCurrency() {
+    try {
+      var zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+      if (zone.indexOf("Australia/") === 0) {
+        return "AUD";
+      }
+    } catch (error) {
+      return "";
+    }
+    return "";
+  }
+
+  function foundingCodeForCurrency(currencyCode) {
+    if (currencyCode === "AUD") {
+      return config.foundingDiscountCodeAud;
+    }
+    return config.foundingDiscountCode;
+  }
+
+  function openCheckout(currencyCode) {
     try {
       var customData = { campaign: "default" };
       var params = new URLSearchParams(window.location.search);
@@ -105,15 +122,43 @@
           displayMode: "overlay",
         },
       };
-      if (
-        config.checkoutOpen === true &&
-        !isPlaceholder(config.foundingDiscountCode)
-      ) {
-        checkout.discountCode = config.foundingDiscountCode;
+      var code = foundingCodeForCurrency(currencyCode);
+      if (config.checkoutOpen === true && !isPlaceholder(code)) {
+        checkout.discountCode = code;
       }
       window.Paddle.Checkout.open(checkout);
     } catch (error) {
       showUnconfigured();
     }
+  }
+
+  function currencyFromPreview(preview) {
+    var data = preview && (preview.data || preview);
+    var currency = data && (data.currencyCode || data.currency_code);
+    return currency || fallbackCurrency();
+  }
+
+  note.hidden = true;
+  button.disabled = false;
+  button.addEventListener("click", function () {
+    if (
+      config.checkoutOpen !== true ||
+      typeof window.Paddle.PricePreview !== "function"
+    ) {
+      openCheckout(fallbackCurrency());
+      return;
+    }
+    button.disabled = true;
+    window.Paddle.PricePreview({
+      items: [{ priceId: campaign.priceId, quantity: 1 }],
+    })
+      .then(function (preview) {
+        button.disabled = false;
+        openCheckout(currencyFromPreview(preview));
+      })
+      .catch(function () {
+        button.disabled = false;
+        openCheckout(fallbackCurrency());
+      });
   });
 })();

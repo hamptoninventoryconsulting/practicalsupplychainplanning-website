@@ -729,6 +729,11 @@ def verify_welcome(errors: list[str]) -> None:
         stylesheet,
     ):
         fail("assets/styles.css must set overflow-wrap: anywhere on .support-email", errors)
+    if not re.search(
+        r"\.site-address\s*\{[^}]*overflow-wrap:\s*anywhere",
+        stylesheet,
+    ):
+        fail("assets/styles.css must set overflow-wrap: anywhere on .site-address", errors)
     for relative in ("welcome/index.html",) + tuple(path for path, _loc in POLICY_PAGES):
         page = (SITE / relative).read_text(encoding="utf-8")
         for match in re.finditer(
@@ -911,9 +916,11 @@ def verify_buy(errors: list[str]) -> None:
             fail("src/_data/paddle.js must set launchDate", errors)
         if 'foundingDiscountCode: "FOUNDING29"' not in source and "foundingDiscountCode: 'FOUNDING29'" not in source:
             fail("src/_data/paddle.js must set foundingDiscountCode to FOUNDING29", errors)
+        if 'foundingDiscountCodeAud: "FOUNDINGAU"' not in source and "foundingDiscountCodeAud: 'FOUNDINGAU'" not in source:
+            fail("src/_data/paddle.js must set foundingDiscountCodeAud to FOUNDINGAU", errors)
         if not re.search(r"guidedSetupOpen:\s*false\b", source):
             fail(
-                "guidedSetupOpen must stay false until a Guided setup Paddle product exists",
+                "guidedSetupOpen must stay false so the page has no Guided setup buy link yet",
                 errors,
             )
 
@@ -1051,7 +1058,9 @@ def verify_policy_pages(errors: list[str]) -> None:
             "Practical Stock Planner",
             "US$49 per month, including any applicable tax",
             "A$75 per month including GST",
-            "US$29 per month for the first 12 months",
+            "US$29 per month",
+            "A$45 per month including GST in Australia",
+            "for the first 12 months",
             "first 20 customers",
             "31 Jan 2027",
             "20-minute feedback call",
@@ -1069,6 +1078,8 @@ def verify_policy_pages(errors: list[str]) -> None:
             "Lot Size (Weeks Cover)",
             "deleted within 30 days of the call",
             "within 14 days of the Guided setup payment",
+            "A Guided setup booked later still has its 14-day refund counted from that payment.",
+            "The founding price is not withdrawn if you can&rsquo;t make the call.",
             "buy button for it yet",
             "Windows 10 or 11, 64-bit",
             "7 days from the first failed payment",
@@ -1078,6 +1089,8 @@ def verify_policy_pages(errors: list[str]) -> None:
         ):
             if phrase not in pricing:
                 fail(f"the product page is missing approved copy: {phrase}", errors)
+        if "may not be created" in pricing or "may not apply" in pricing:
+            fail("the product page must not say the Australian founding code may be missing", errors)
         if "buy.paddle" in pricing or "checkout.paddle" in pricing:
             fail("the product page must not link to a Paddle buy URL", errors)
         if re.search(r"<a\b[^>]*href=[\"'][^\"']*paddle\.com[^\"']*[\"'][^>]*>\s*(?:Buy|Add Guided setup)", pricing, re.I):
@@ -1117,6 +1130,11 @@ def verify_policy_pages(errors: list[str]) -> None:
                 "while checkoutOpen is true",
                 errors,
             )
+        if "foundingDiscountCodeAud" not in script or 'currencyCode === "AUD"' not in script:
+            fail(
+                "pricing checkout must apply FOUNDINGAU when the checkout currency is AUD",
+                errors,
+            )
         if "config.checkoutOpen === true" not in script:
             fail("the founding discount must stay behind checkoutOpen", errors)
         for snippet in (
@@ -1135,7 +1153,7 @@ def verify_policy_pages(errors: list[str]) -> None:
         catalog_phrases = [
             "Practical Stock Planner",
             "Plan stock period by period and see what to order and when.",
-            "Founding price US$29/month from 16 Nov 2026, then US$49/month",
+            "Founding price US$29/month for the first 12 months from 16 Nov 2026, for the first 20 customers or until 31 Jan 2027, then US$49/month",
             'href="/products/practical-stock-planner/"',
             'href="/products/" aria-current="page"',
             'alt="Practical Stock Planner logo"',
@@ -1169,8 +1187,13 @@ def verify_policy_pages(errors: list[str]) -> None:
             "2 business days (Brisbane time)",
             "14-day free trial",
             "Windows 10 or 11, 64-bit",
-            "US$29 per month for the first 12 months",
+            "US$29 per month",
+            "A$45 per month including GST in Australia",
+            "for the first 12 months",
             "FOUNDING29",
+            "FOUNDINGAU",
+            "The founding price is not withdrawn if you can&rsquo;t make the call.",
+            "A Guided setup booked later still has its 14-day refund counted from that payment.",
             "deleted within 30 days of the call",
             "Daniel Hampton",
             "56 757 743 802",
@@ -1178,6 +1201,10 @@ def verify_policy_pages(errors: list[str]) -> None:
         ):
             if phrase not in terms:
                 fail(f"/terms/ is missing approved copy: {phrase}", errors)
+        if "may not be created" in terms or "may not apply" in terms:
+            fail("/terms/ must not say the Australian founding code may be missing", errors)
+        if 'class="site-address">practicalsupplychainplanning.com' not in terms:
+            fail("/terms/ must let the website address wrap at a narrow width", errors)
         if re.search(r"launch deal|launch offer", terms, re.I):
             fail("/terms/ must not mention a launch deal", errors)
 
@@ -1191,6 +1218,8 @@ def verify_policy_pages(errors: list[str]) -> None:
             fail("/refunds/ must promise 14 days from any payment", errors)
         if "A Guided setup payment is covered in the same way." not in refunds:
             fail("/refunds/ must cover a Guided setup payment on the same 14-day terms", errors)
+        if "A Guided setup booked later still has its 14-day refund counted from that payment." not in refunds:
+            fail("/refunds/ must count a later Guided setup refund from that payment", errors)
 
     privacy_path = SITE / "privacy" / "index.html"
     if privacy_path.is_file():
