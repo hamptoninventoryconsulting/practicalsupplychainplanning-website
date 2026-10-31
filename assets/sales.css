@@ -112,6 +112,14 @@
   text-decoration: none;
 }
 
+a.sales-button:is(:link, :visited, :hover, :focus, :focus-visible, :active) {
+  color: var(--color-text-muted);
+}
+
+a.sales-button--action:not(:disabled):is(:link, :visited, :hover, :focus, :focus-visible, :active) {
+  color: var(--color-text);
+}
+
 .sales-button--action:not(:disabled):hover,
 .sales-button--action:not(:disabled):focus-visible {
   color: var(--color-text);
