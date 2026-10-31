@@ -2,7 +2,7 @@
 {
   "layout": "layouts/page.njk",
   "title": "Practical Stock Planner: time-phased stock planning for Windows — Practical Supply Chain Planning",
-  "description": "Plan stock period by period and see what to order and when. Windows desktop app for product businesses that buy in stock with lead times. 14-day free trial, then US$49 a month (A$75 incl. GST in Australia).",
+  "description": "Plan stock period by period and see what to order and when. Windows desktop app for product businesses that buy in stock with lead times. 14-day free trial. Founding price US$29 a month, or A$45 a month including GST in Australia, for the first 12 months, then US$49 a month (A$75 including GST in Australia).",
   "canonical": "https://practicalsupplychainplanning.com/products/practical-stock-planner/",
   "permalink": "/products/practical-stock-planner/"
 }
@@ -48,7 +48,10 @@
 
     <h2>Your data stays on your PC</h2>
     <p>
-      Your stock, sales, forecast and supplier data stay on your own PC. We never see them. The app only contacts our licence server to check your licence. See our <a href="/privacy/">Privacy Policy</a>.
+      Your stock, sales, forecast and supplier data stay on your own PC. We never see them. The app only contacts our licence server to check your licence.
+    </p>
+    <p>
+      The exception is Guided setup. If you choose it, you send me CSV files so I can check them for your setup. I use those files only for your setup. They are kept private and deleted within 30 days of the call. Day to day, the app still does not send your planning data. See our <a href="/privacy/">Privacy Policy</a>.
     </p>
   </div>
 </section>
@@ -56,14 +59,20 @@
 <section class="card" id="price" aria-labelledby="price-heading">
   <h2 class="card__title" id="price-heading">Price</h2>
   <div class="content">
-    <p><strong>Start with a 14-day free trial.</strong></p>
+    <p><strong>Start with a 14-day free trial.</strong> The founding-customer price is available from launch on 16 Nov 2026.</p>
+    <p>
+      For the first 20 customers, or until 31 Jan 2027, whichever comes first, the founding-customer price is <strong>US$29 per month</strong>, or <strong>A$45 per month including GST in Australia</strong>, for the first 12 months. After those 12 months it is <strong>US$49 per month</strong>, or <strong>A$75 per month including GST in Australia</strong>. A 20-minute feedback call is requested. The founding price is not withdrawn if you can&rsquo;t make the call. Giving a quote is optional.
+    </p>
+    <p>
+      The founding price is a Paddle discount. From 16 Nov, checkout applies <strong>FOUNDING29</strong> for US dollars, or <strong>FOUNDINGAU</strong> for Australian dollars. You don&rsquo;t type it in. Paddle shows what you&rsquo;ll pay, and when, before you confirm.
+    </p>
     <div class="content-table-scroll">
       <table class="content-table">
-        <caption class="visually-hidden">Price after the 14-day free trial</caption>
+        <caption class="visually-hidden">Normal monthly price after the founding 12 months, or if the founding price has ended</caption>
         <thead>
           <tr>
             <th scope="col">Where you buy</th>
-            <th scope="col">After the trial</th>
+            <th scope="col">Normal monthly price</th>
           </tr>
         </thead>
         <tbody>
@@ -78,10 +87,10 @@
         </tbody>
       </table>
     </div>
-    <p>Monthly subscription. Cancel any time. No lock-in contract.</p>
+    <p>The founding price covers your first 12 months after the trial. Then the normal monthly price applies. Monthly subscription. Cancel any time. No lock-in contract.</p>
     <p>
       <strong>How the free trial works.</strong>
-      You enter your card at checkout, but you aren&rsquo;t charged anything for 14 days. Cancel before the trial ends and you pay nothing. If you keep going, your first monthly payment is taken when the trial ends, then on the same date each month. This is Paddle&rsquo;s standard free trial: a card is taken at checkout, and nothing is charged during the 14 days. One trial per customer.
+      You enter your card at checkout, but you aren&rsquo;t charged anything for 14 days. Cancel before the trial ends and you pay nothing. If you keep going, your first monthly payment is taken when the trial ends, then on the same date each month. At the founding price, that payment is US$29, or A$45 including GST in Australia, and the next payments stay at that founding price until 12 months of founding price are done, then US$49 a month, or A$75 a month including GST in Australia. This is Paddle&rsquo;s standard free trial: a card is taken at checkout, and nothing is charged during the 14 days. One trial per customer.
     </p>
 
     {%- if paddle.checkoutOpen %}
@@ -137,7 +146,67 @@
       <li>Within a few minutes we email you your <strong>licence key</strong> and a <strong>download link</strong>.</li>
       <li>Install Practical Stock Planner, open it and enter your licence key.</li>
     </ol>
-    <p>After the trial, your subscription renews each month on the same date until you cancel.</p>
+    <p>After the trial, your subscription renews each month on the same date until you cancel. From 16 Nov, checkout applies the founding discount before you confirm: FOUNDING29 for US dollars, or FOUNDINGAU for Australian dollars.</p>
+  </div>
+</section>
+
+<section class="card" id="guided-setup" aria-labelledby="guided-setup-heading">
+  <h2 class="card__title" id="guided-setup-heading">Want a hand getting started? Guided setup</h2>
+  <div class="content">
+    <p>If you&rsquo;d rather not set up your first plan alone, I can help. I&rsquo;m Daniel Hampton, a working supply chain planner.</p>
+    <ol>
+      <li>You fill in a short form and send your files as CSV (exported from your own system, Excel or Google Sheets, using our templates).</li>
+      <li>I check that they load and send you a plain-English list of anything to fix, within 5 business days.</li>
+      <li>We have one 30&ndash;45 minute video call at a time you book. You load your files on your own PC and run your first plan while I talk you through the results and your first draft purchase order.</li>
+      <li>I follow up by email within 2 business days of the call, with answers to anything left open and links to the relevant how-to videos.</li>
+    </ol>
+    <p><strong>US$199 one-off</strong> (A$299 including GST in Australia). 2 slots a week. When those slots are full, booking shows the next free week.</p>
+    <p>Guided setup covers one stock location and one supplier per item, the same as the app. I check your files load and flag errors. I don&rsquo;t clean or rebuild your data.</p>
+
+    <h2>Included in Guided setup</h2>
+    <ul>
+      <li>A file check against the 7 templates: SKU Details, Supplier Details, SKU Supplier Details, SOH (stock on hand), Open SO (open sales orders), Open Supply, and Forecast.</li>
+      <li>An error list in plain English.</li>
+      <li>A suggested starting point for settings: safety stock weeks, and Lot Size (Weeks Cover).</li>
+      <li>The call, and the one follow-up email.</li>
+    </ul>
+
+    <h2>Not included in Guided setup</h2>
+    <ul>
+      <li>More than one location per plan, or more than one supplier per SKU. The app doesn&rsquo;t do these.</li>
+      <li>Live integrations.</li>
+      <li>Data cleaning beyond checking that the files load and flagging errors. You make the fixes.</li>
+      <li>Building a forecast.</li>
+      <li>Ongoing support beyond the call and the one follow-up email. After that, normal email support applies, with a reply within 2 business days.</li>
+      <li>Calls outside the published slots.</li>
+    </ul>
+
+    <h2>Questions about Guided setup</h2>
+    <h3>Do I need Guided setup?</h3>
+    <p>No. Most people can start with the demo files and the how-to videos. Guided setup is for when you want someone to check your files and walk through your first plan with you.</p>
+
+    <h3>What files do I send?</h3>
+    <p>CSV files only, using the app&rsquo;s templates: SKU Details, Supplier Details, SKU Supplier Details, stock on hand, open sales orders, open supply and forecast. Export them from your inventory system, or save them from Excel or Google Sheets as CSV UTF-8.</p>
+
+    <h3>What happens to my data?</h3>
+    <p>I use your files only to check them and prepare for your call. They&rsquo;re kept private and deleted within 30 days of your call. When you use the app day to day, your data stays on your own PC.</p>
+
+    <h3>When are the calls?</h3>
+    <p>There are 2 slots a week, so it can suit customers in different time zones. You&rsquo;ll see the times when you book. I&rsquo;m in Brisbane, Australia (UTC+10).</p>
+
+    <h3>Can I get more help after the call?</h3>
+    <p>Yes. Normal email support continues, with a reply within 2 business days. Extra calls aren&rsquo;t part of Guided setup.</p>
+
+    <h3>What if I change my mind?</h3>
+    <p>
+      Guided setup follows the same <a href="/refunds/">Refund Policy</a> as any other payment. Ask within 14 days of the Guided setup payment and you&rsquo;ll get that payment back in full. You don&rsquo;t have to give a reason. A Guided setup booked later still has its 14-day refund counted from that payment. After 14 days, that payment isn&rsquo;t refunded.
+    </p>
+
+    {%- if paddle.guidedSetupOpen %}
+    <p>You can add Guided setup after you start.</p>
+    {%- else %}
+    <p>You can add Guided setup after you start. There isn&rsquo;t a buy button for it yet.</p>
+    {%- endif %}
   </div>
 </section>
 
@@ -151,6 +220,11 @@
     <h3>Is there a free trial?</h3>
     <p>
       Yes, 14 days. You aren&rsquo;t charged until the trial ends, and you can cancel before then and pay nothing. After that, you can still ask for a refund within 14 days of any payment. See our <a href="/refunds/">Refund Policy</a>.
+    </p>
+
+    <h3>What is the founding-customer price?</h3>
+    <p>
+      From launch on 16 Nov 2026, it is US$29 a month, or A$45 a month including GST in Australia, for the first 12 months, then US$49 a month, or A$75 a month including GST in Australia. It is for the first 20 customers, or until 31 Jan 2027, whichever comes first. A 20-minute feedback call is requested. The founding price is not withdrawn if you can&rsquo;t make the call. Giving a quote is optional. The 14-day free trial still applies. The price section above has the rest.
     </p>
 
     <h3>How do I cancel?</h3>

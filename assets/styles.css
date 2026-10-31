@@ -124,6 +124,10 @@ a:hover {
   overflow-wrap: anywhere;
 }
 
+.site-address {
+  overflow-wrap: anywhere;
+}
+
 main {
   max-width: var(--max-width);
   margin: 0 auto;

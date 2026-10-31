@@ -729,6 +729,11 @@ def verify_welcome(errors: list[str]) -> None:
         stylesheet,
     ):
         fail("assets/styles.css must set overflow-wrap: anywhere on .support-email", errors)
+    if not re.search(
+        r"\.site-address\s*\{[^}]*overflow-wrap:\s*anywhere",
+        stylesheet,
+    ):
+        fail("assets/styles.css must set overflow-wrap: anywhere on .site-address", errors)
     for relative in ("welcome/index.html",) + tuple(path for path, _loc in POLICY_PAGES):
         page = (SITE / relative).read_text(encoding="utf-8")
         for match in re.finditer(
@@ -909,6 +914,15 @@ def verify_buy(errors: list[str]) -> None:
             fail("src/_data/paddle.js must set checkoutOpen to true or false", errors)
         if not launch_date():
             fail("src/_data/paddle.js must set launchDate", errors)
+        if 'foundingDiscountCode: "FOUNDING29"' not in source and "foundingDiscountCode: 'FOUNDING29'" not in source:
+            fail("src/_data/paddle.js must set foundingDiscountCode to FOUNDING29", errors)
+        if 'foundingDiscountCodeAud: "FOUNDINGAU"' not in source and "foundingDiscountCodeAud: 'FOUNDINGAU'" not in source:
+            fail("src/_data/paddle.js must set foundingDiscountCodeAud to FOUNDINGAU", errors)
+        if not re.search(r"guidedSetupOpen:\s*false\b", source):
+            fail(
+                "guidedSetupOpen must stay false so the page has no Guided setup buy link yet",
+                errors,
+            )
 
     email_logic = ROOT / "functions" / "email" / "logic.mjs"
     if email_logic.is_file():
@@ -1044,6 +1058,29 @@ def verify_policy_pages(errors: list[str]) -> None:
             "Practical Stock Planner",
             "US$49 per month, including any applicable tax",
             "A$75 per month including GST",
+            "US$29 per month",
+            "A$45 per month including GST in Australia",
+            "for the first 12 months",
+            "first 20 customers",
+            "31 Jan 2027",
+            "20-minute feedback call",
+            "FOUNDING29",
+            "FOUNDINGAU",
+            "available from launch on 16 Nov 2026",
+            "Guided setup",
+            "US$199 one-off",
+            "A$299 including GST in Australia",
+            "2 slots a week",
+            "SKU Details",
+            "Supplier Details",
+            "SKU Supplier Details",
+            "Open Supply",
+            "Lot Size (Weeks Cover)",
+            "deleted within 30 days of the call",
+            "within 14 days of the Guided setup payment",
+            "A Guided setup booked later still has its 14-day refund counted from that payment.",
+            "The founding price is not withdrawn if you can&rsquo;t make the call.",
+            "buy button for it yet",
             "Windows 10 or 11, 64-bit",
             "7 days from the first failed payment",
             "buy a second subscription",
@@ -1052,6 +1089,12 @@ def verify_policy_pages(errors: list[str]) -> None:
         ):
             if phrase not in pricing:
                 fail(f"the product page is missing approved copy: {phrase}", errors)
+        if "may not be created" in pricing or "may not apply" in pricing:
+            fail("the product page must not say the Australian founding code may be missing", errors)
+        if "buy.paddle" in pricing or "checkout.paddle" in pricing:
+            fail("the product page must not link to a Paddle buy URL", errors)
+        if re.search(r"<a\b[^>]*href=[\"'][^\"']*paddle\.com[^\"']*[\"'][^>]*>\s*(?:Buy|Add Guided setup)", pricing, re.I):
+            fail("the product page must not offer a Guided setup buy link", errors)
         if re.search(r"launch deal|launch offer", pricing, re.I):
             fail("the product page must not mention a launch deal", errors)
         if "Unblock" in pricing:
@@ -1076,7 +1119,24 @@ def verify_policy_pages(errors: list[str]) -> None:
         if "quantity: 1" not in script:
             fail("pricing checkout must open Paddle with quantity 1", errors)
         if "discountId" in script:
-            fail("pricing checkout must not apply a Paddle discount", errors)
+            fail(
+                "pricing checkout must pass foundingDiscountCode as discountCode, "
+                "not a Paddle discount entity id",
+                errors,
+            )
+        if "discountCode" not in script or "foundingDiscountCode" not in script:
+            fail(
+                "pricing checkout must apply foundingDiscountCode as discountCode "
+                "while checkoutOpen is true",
+                errors,
+            )
+        if "foundingDiscountCodeAud" not in script or 'currencyCode === "AUD"' not in script:
+            fail(
+                "pricing checkout must apply FOUNDINGAU when the checkout currency is AUD",
+                errors,
+            )
+        if "config.checkoutOpen === true" not in script:
+            fail("the founding discount must stay behind checkoutOpen", errors)
         for snippet in (
             "Paddle.Initialize",
             "Paddle.Checkout.open",
@@ -1093,7 +1153,7 @@ def verify_policy_pages(errors: list[str]) -> None:
         catalog_phrases = [
             "Practical Stock Planner",
             "Plan stock period by period and see what to order and when.",
-            "From US$49/month",
+            "Founding price US$29/month for the first 12 months from 16 Nov 2026, for the first 20 customers or until 31 Jan 2027, then US$49/month",
             'href="/products/practical-stock-planner/"',
             'href="/products/" aria-current="page"',
             'alt="Practical Stock Planner logo"',
@@ -1127,12 +1187,24 @@ def verify_policy_pages(errors: list[str]) -> None:
             "2 business days (Brisbane time)",
             "14-day free trial",
             "Windows 10 or 11, 64-bit",
+            "US$29 per month",
+            "A$45 per month including GST in Australia",
+            "for the first 12 months",
+            "FOUNDING29",
+            "FOUNDINGAU",
+            "The founding price is not withdrawn if you can&rsquo;t make the call.",
+            "A Guided setup booked later still has its 14-day refund counted from that payment.",
+            "deleted within 30 days of the call",
             "Daniel Hampton",
             "56 757 743 802",
             "Queensland, Australia",
         ):
             if phrase not in terms:
                 fail(f"/terms/ is missing approved copy: {phrase}", errors)
+        if "may not be created" in terms or "may not apply" in terms:
+            fail("/terms/ must not say the Australian founding code may be missing", errors)
+        if 'class="site-address">practicalsupplychainplanning.com' not in terms:
+            fail("/terms/ must let the website address wrap at a narrow width", errors)
         if re.search(r"launch deal|launch offer", terms, re.I):
             fail("/terms/ must not mention a launch deal", errors)
 
@@ -1144,6 +1216,10 @@ def verify_policy_pages(errors: list[str]) -> None:
                 fail(f"/refunds/ is missing Paddle's required sentence: {sentence}", errors)
         if "within 14 days of any payment" not in refunds:
             fail("/refunds/ must promise 14 days from any payment", errors)
+        if "A Guided setup payment is covered in the same way." not in refunds:
+            fail("/refunds/ must cover a Guided setup payment on the same 14-day terms", errors)
+        if "A Guided setup booked later still has its 14-day refund counted from that payment." not in refunds:
+            fail("/refunds/ must count a later Guided setup refund from that payment", errors)
 
     privacy_path = SITE / "privacy" / "index.html"
     if privacy_path.is_file():
@@ -1161,6 +1237,8 @@ def verify_policy_pages(errors: list[str]) -> None:
             "Tokyo, Japan",
             "Cloudflare D1",
             "Questions:",
+            "Guided setup exception.",
+            "deleted within 30 days of the call",
         ):
             if phrase not in privacy:
                 fail(f"/privacy/ is missing approved copy: {phrase}", errors)
