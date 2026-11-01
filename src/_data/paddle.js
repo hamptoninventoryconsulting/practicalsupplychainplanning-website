@@ -13,9 +13,12 @@
  * foundingDiscountCode is FOUNDING29: US$20 off for 12 billing periods
  * (US$29 per month). foundingDiscountCodeAud is FOUNDINGAU: 40% off for 12
  * billing periods (A$75 down to A$45 per month including GST). Paddle.js
- * accepts one code. A flat discount must match the checkout currency, so an
- * Australian-dollar checkout gets FOUNDINGAU and any other checkout gets
- * FOUNDING29. Neither code is sent while checkoutOpen is false.
+ * accepts one code. A flat discount must match the checkout currency. A
+ * US-dollar price preview gets FOUNDING29. An Australian-dollar price preview
+ * gets FOUNDINGAU. Any other currency opens checkout with no discount code.
+ * If the price preview fails, it is tried once more. If it still fails,
+ * checkout opens with no discount code. The page does not guess the currency
+ * from the device time zone. Neither code is sent while checkoutOpen is false.
  *
  * guidedSetupOpen stays false. The Guided setup product exists in Paddle,
  * but the product page must not render a buy link while this flag is false.
@@ -24,8 +27,8 @@
  * https://practicalsupplychainplanning.com/products/practical-stock-planner/
  *
  * Checkout is open for the 16 Nov 2026 launch. That loads Paddle on the
- * product page, shows "Start your free trial", applies FOUNDING29, or
- * FOUNDINGAU when the checkout currency is AUD, and serves /welcome/
+ * product page, shows "Start your free trial", applies FOUNDING29 when the
+ * price-preview currency is USD, or FOUNDINGAU when it is AUD, and serves /welcome/
  * instead of redirecting it. Set checkoutOpen to false and redeploy to
  * close checkout again.
  * Do not change the token, price, or successUrl.

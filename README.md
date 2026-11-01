@@ -38,7 +38,7 @@ Checkout is open for the 16 Nov 2026 launch. `checkoutOpen` in `src/_data/paddle
 
 - loads Paddle and `pricing-checkout.js` on the Practical Stock Planner page
 - shows the "Start your free trial" button
-- applies the founding discount code `FOUNDING29` for US dollars, or `FOUNDINGAU` when the checkout currency is AUD (`discountCode` on `Paddle.Checkout.open`)
+- applies the founding discount code `FOUNDING29` only when the price-preview currency is USD, or `FOUNDINGAU` only when it is AUD (`discountCode` on `Paddle.Checkout.open`). Any other currency, or a price preview that still fails after one retry, opens checkout with no discount code. The page does not guess the currency from the device time zone.
 - shows "Available now" and the trial link on the home page
 - serves `/welcome/` instead of redirecting it to the product page
 
