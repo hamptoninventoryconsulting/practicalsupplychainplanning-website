@@ -64,7 +64,7 @@
       For the first 20 customers, or until 31 Jan 2027, whichever comes first, the founding-customer price is <strong>US$29 per month</strong>, or <strong>A$45 per month including GST in Australia</strong>, for the first 12 months. After those 12 months it is <strong>US$49 per month</strong>, or <strong>A$75 per month including GST in Australia</strong>. A 20-minute feedback call is requested. The founding price is not withdrawn if you can&rsquo;t make the call. Giving a quote is optional.
     </p>
     <p>
-      The founding price is a Paddle discount. From 16 Nov, checkout applies <strong>FOUNDING29</strong> for US dollars, or <strong>FOUNDINGAU</strong> for Australian dollars. You don&rsquo;t type it in. Paddle shows what you&rsquo;ll pay, and when, before you confirm.
+      The founding price is a Paddle discount. {% if paddle.checkoutOpen %}Checkout applies{% else %}From 16 Nov, checkout applies{% endif %} <strong>FOUNDING29</strong> for US dollars, or <strong>FOUNDINGAU</strong> for Australian dollars. You don&rsquo;t type it in. Paddle shows what you&rsquo;ll pay, and when, before you confirm.
     </p>
     <div class="content-table-scroll">
       <table class="content-table">
@@ -146,7 +146,7 @@
       <li>Within a few minutes we email you your <strong>licence key</strong> and a <strong>download link</strong>.</li>
       <li>Install Practical Stock Planner, open it and enter your licence key.</li>
     </ol>
-    <p>After the trial, your subscription renews each month on the same date until you cancel. From 16 Nov, checkout applies the founding discount before you confirm: FOUNDING29 for US dollars, or FOUNDINGAU for Australian dollars.</p>
+    <p>After the trial, your subscription renews each month on the same date until you cancel. {% if paddle.checkoutOpen %}Checkout applies{% else %}From 16 Nov, checkout applies{% endif %} the founding discount before you confirm: FOUNDING29 for US dollars, or FOUNDINGAU for Australian dollars.</p>
   </div>
 </section>
 

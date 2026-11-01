@@ -23,15 +23,16 @@
  * Paddle's default live payment link, after the domain is approved:
  * https://practicalsupplychainplanning.com/products/practical-stock-planner/
  *
- * Turn checkout on (16 Nov 2026): set checkoutOpen to true and redeploy.
- * That one line loads Paddle on the product page, restores "Start your free trial",
- * applies FOUNDING29, or FOUNDINGAU when the checkout currency is AUD, and stops
- * the /welcome/ redirect.
+ * Checkout is open for the 16 Nov 2026 launch. That loads Paddle on the
+ * product page, shows "Start your free trial", applies FOUNDING29, or
+ * FOUNDINGAU when the checkout currency is AUD, and serves /welcome/
+ * instead of redirecting it. Set checkoutOpen to false and redeploy to
+ * close checkout again.
  * Do not change the token, price, or successUrl.
  * Leave guidedSetupOpen false. There is no Guided setup buy link yet.
  */
 module.exports = {
-  checkoutOpen: false,
+  checkoutOpen: true,
   launchDate: "16 Nov 2026",
   environment: "live",
   clientToken: "live_17000353de961361741fa101825",

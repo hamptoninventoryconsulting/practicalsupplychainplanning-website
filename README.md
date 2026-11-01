@@ -32,15 +32,17 @@ The header logo in use is `assets/brand/logo.jpg`.
 
 Do not replace `assets/brand/daniel-hampton.png`. That file is the About page photo. If `ogImageUrl` and `heroChartUrl` are both empty, the home social preview uses `assets/brand/logo.jpg`.
 
-## Turn checkout on
+## Checkout
 
-Checkout is off until 16 Nov 2026. In `src/_data/paddle.js`, set `checkoutOpen` to `true` and redeploy. That one line:
+Checkout is open for the 16 Nov 2026 launch. `checkoutOpen` in `src/_data/paddle.js` is `true`. That:
 
 - loads Paddle and `pricing-checkout.js` on the Practical Stock Planner page
-- restores the "Start your free trial" button
+- shows the "Start your free trial" button
 - applies the founding discount code `FOUNDING29` for US dollars, or `FOUNDINGAU` when the checkout currency is AUD (`discountCode` on `Paddle.Checkout.open`)
 - shows "Available now" and the trial link on the home page
-- stops redirecting `/welcome/` to the product page
+- serves `/welcome/` instead of redirecting it to the product page
+
+Set `checkoutOpen` to `false` and redeploy to close checkout again.
 
 Leave the client token, price id, `successUrl`, and `guidedSetupOpen: false` as they are. `guidedSetupOpen` stays false, so there is no Guided setup buy link yet. When `checkoutOpen` is true, checkout applies `FOUNDING29` for US dollar payments and `FOUNDINGAU` for Australian dollar payments. A flat discount has to match the checkout currency. `/welcome/` is still built. While `checkoutOpen` is `false`, `functions/_middleware.js` answers it with a 302 to `/products/practical-stock-planner/`. `npm run dev` does not run that function, so the welcome page is visible on the local server. A Cloudflare Pages deploy applies the redirect.
 
