@@ -60,28 +60,53 @@
 </script>
 <script>
 (function () {
-  function openFromHash() {
-    var raw = location.hash.replace(/^#/, "");
-    if (!raw) {
-      return;
-    }
+  function detailsForId(raw) {
     var id;
     try {
       id = decodeURIComponent(raw);
     } catch (error) {
-      return;
+      return null;
+    }
+    if (!id) {
+      return null;
     }
     var el = document.getElementById(id);
     if (!el) {
-      return;
+      return null;
     }
-    var details = el.tagName === "DETAILS" ? el : el.closest ? el.closest("details") : null;
-    if (!details) {
-      return;
+    if (el.tagName === "DETAILS") {
+      return el;
     }
-    details.open = true;
+    return el.closest ? el.closest("details") : null;
   }
+
+  function openFromHash() {
+    var details = detailsForId(location.hash.replace(/^#/, ""));
+    if (details) {
+      details.open = true;
+    }
+  }
+
   openFromHash();
   window.addEventListener("hashchange", openFromHash);
+  document.addEventListener("click", function (event) {
+    var link = event.target && event.target.closest ? event.target.closest("a[href]") : null;
+    if (!link) {
+      return;
+    }
+    var url;
+    try {
+      url = new URL(link.href, location.href);
+    } catch (error) {
+      return;
+    }
+    if (url.pathname !== location.pathname || !url.hash) {
+      return;
+    }
+    var details = detailsForId(url.hash.replace(/^#/, ""));
+    if (details) {
+      details.open = true;
+    }
+  });
 })();
 </script>

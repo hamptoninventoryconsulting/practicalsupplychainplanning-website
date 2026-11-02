@@ -177,10 +177,10 @@ const GROUPS = [
         term: "Safety stock / safety time",
         usedIn: ["Stock Planner"],
         definition:
-          "Safety stock is a quantity buffer, and safety time is the same protection stated as extra time: a projected balance that would fall below safety stock triggers a planned order, and safety time brings that order in earlier.",
+          "Safety stock is weeks of demand converted to a quantity: a projected balance that would fall below that quantity triggers a planned order, and those weeks do not move supply due dates.",
         example:
-          "On-hand stock is 100 and safety stock is 20. By the end of week 3 the projected balance would be 0, which is below 20, so a planned order is due in week 3 for enough to finish that week back at 20, before lot size is applied. Where safety stock is zero, the planned order is triggered when the projected balance would fall below zero. Safety time of one week makes the same order due in week 2.",
-        why: "The buffer covers a demand spike or a late delivery that the forecast and the lead time did not already name. Quantity and time are two ways to hold it. Both act through the projected balance. Neither one replaces the forecast, the open supply orders, or the supply lead time.",
+          "On-hand stock is 100. Safety stock is 2 weeks and weekly demand is 10, so the quantity is 20. By the end of week 3 the projected balance would be 0, which is below 20, so a planned order is due in week 3 for enough to finish that week back at 20, before lot size is applied. Where safety stock is zero, the planned order is triggered when the projected balance would fall below zero. An open supply order keeps its due date.",
+        why: "The buffer covers a demand spike or a late delivery that the forecast and the lead time did not already name. The weeks become units in the projected balance and leave supply due dates where they are. Safety time, cover stated as time rather than as a quantity, is a different rule and is not how this buffer is set.",
         seeAlso: ["projected-stock", "planned-order", "customer-service-level"],
       },
       {
