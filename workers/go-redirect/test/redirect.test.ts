@@ -1,14 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import worker, {
+import * as entry from "../src/index";
+import {
   CLICK_TIMEOUT_MS,
   HOME_URL,
   LINK_TOKEN,
   handleRequest,
   landingUrl,
-} from "../src/index";
+} from "../src/redirect";
+
+const worker = entry.default;
 
 const SECRET = "test-click-secret-value";
-const TOKEN = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ";
+/** 22 characters, the length of Python secrets.token_urlsafe(16). */
+const TOKEN = "abcDEF123_-xyz7890abcd";
 const API = "https://web-production-aa173b.up.railway.app/track/click";
 const USER_AGENT = "UA-TRACK-9f3a";
 const LANDING = `https://practicalsupplychainplanning.com/start/plan-ahead/?utm_source=outreach&utm_medium=email&utm_campaign=plan-ahead&utm_content=intro-v1&ref=${TOKEN}`;
@@ -69,9 +73,31 @@ describe("landing url", () => {
 });
 
 describe("go redirect", () => {
-  it("uses a 43 character url-safe token", () => {
+  it("accepts a 16 to 128 character url-safe token", () => {
+    expect(TOKEN).toHaveLength(22);
     expect(TOKEN).toMatch(LINK_TOKEN);
+    expect("a".repeat(16)).toMatch(LINK_TOKEN);
+    expect("a".repeat(128)).toMatch(LINK_TOKEN);
+    expect("a".repeat(15)).not.toMatch(LINK_TOKEN);
+    expect("a".repeat(129)).not.toMatch(LINK_TOKEN);
+    expect("abcDEF123_-xyz789.abcd").not.toMatch(LINK_TOKEN);
     expect(CLICK_TIMEOUT_MS).toBe(2000);
+    expect(Object.keys(entry).filter((key) => key !== "__esModule")).toEqual(["default"]);
+  });
+
+  it("sends the shortest and longest accepted tokens to the backend", async () => {
+    for (const token of ["a".repeat(16), "a".repeat(128)]) {
+      let seen = "";
+      const response = await handleRequest(trackingRequest("GET", token), env(), {
+        fetchImpl: async (_input, init) => {
+          const body = (await new Request("https://example.com", init).json()) as { token: string };
+          seen = body.token;
+          return jsonResponse(200, { url: HOME_URL });
+        },
+      });
+      expect(seen, token).toBe(token);
+      expect(response.headers.get("Location"), token).toBe(HOME_URL);
+    }
   });
 
   it("redirects a known token to the backend url", async () => {
@@ -91,6 +117,7 @@ describe("go redirect", () => {
     expect(response.headers.get("Location")).toBe(new URL(LANDING).href);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(response.headers.get("Referrer-Policy")).toBe("no-referrer");
+    expect(response.headers.get("content-type")).toBeNull();
     expect(response.headers.has("set-cookie")).toBe(false);
     expect(await response.text()).toBe("");
 
@@ -115,17 +142,21 @@ describe("go redirect", () => {
     expect(response.headers.get("Location")).not.toContain(SECRET);
   });
 
-  it("follows HEAD the same way, with an empty body", async () => {
-    let method = "";
+  it("answers HEAD with the home page and does not record a click", async () => {
+    let called = false;
     const response = await handleRequest(trackingRequest("HEAD"), env(), {
-      fetchImpl: async (input, init) => {
-        method = new Request(input, init).method;
-        return jsonResponse(200, { url: HOME_URL });
+      fetchImpl: async () => {
+        called = true;
+        return jsonResponse(200, { url: LANDING });
       },
     });
-    expect(method).toBe("POST");
+    expect(called).toBe(false);
     expect(response.status).toBe(302);
     expect(response.headers.get("Location")).toBe(HOME_URL);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(response.headers.get("Referrer-Policy")).toBe("no-referrer");
+    expect(response.headers.get("content-type")).toBeNull();
+    expect(response.headers.has("set-cookie")).toBe(false);
     expect(response.body).toBeNull();
   });
 
@@ -215,10 +246,10 @@ describe("go redirect", () => {
     };
     const malformed = [
       "not-a-token",
-      `${TOKEN}x`,
-      TOKEN.slice(0, 42),
-      `${TOKEN.slice(0, 42)}.`,
-      `${TOKEN.slice(0, 20)} ${TOKEN.slice(20)}`,
+      "a".repeat(15),
+      "a".repeat(129),
+      `${"a".repeat(21)}.`,
+      `${"a".repeat(10)} ${"a".repeat(11)}`,
       "person@example.com",
     ];
     for (const token of malformed) {

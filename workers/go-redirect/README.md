@@ -1,14 +1,14 @@
 # go.getpracticalplanning.com redirect Worker
 
-Outreach emails link to `https://go.getpracticalplanning.com/r/<token>`. This Worker asks the Potential Customers backend where that token should land, then answers **302**. If anything is wrong, it still sends the visitor to `https://practicalsupplychainplanning.com/`. A missed click is acceptable. A broken link is not.
+Outreach emails link to `https://go.getpracticalplanning.com/r/<token>`. A browser opens that link with GET. This Worker asks the Potential Customers backend where that token should land, then answers **302**. If anything is wrong, it still sends the visitor to `https://practicalsupplychainplanning.com/`. A missed click is acceptable. A broken link is not.
+
+HEAD goes straight to the home page and is not sent to the backend. Link scanners check a URL with HEAD, and those checks must not count as clicks.
 
 It is a separate Cloudflare Worker. It is not part of the Pages site. The site build does not read this folder.
 
-The Worker only redirects to `https://practicalsupplychainplanning.com`. It does not set cookies. Responses send `Cache-Control: no-store` and `Referrer-Policy: no-referrer`.
+The Worker only redirects to `https://practicalsupplychainplanning.com`. It does not set cookies. Responses send `Cache-Control: no-store` and `Referrer-Policy: no-referrer`, and they do not send a content-type header.
 
-A token is accepted only when it is 43 characters from `A–Z`, `a–z`, `0–9`, `-` and `_`. That is the string Python's `secrets.token_urlsafe()` returns at the default 32-byte length. Anything else, including `/r/not-a-token`, goes to the home page and is not sent to the backend.
-
-Before the first real send, copy one link token from Potential Customers and check that shape. If the token is a different length, or it uses any other character, stop and say so. Those links still open the home page, but the click is not recorded until this check matches the token the backend generates.
+A token is accepted when it is 16 to 128 characters from `A–Z`, `a–z`, `0–9`, `-` and `_`. Potential Customers creates the token with Python's `secrets.token_urlsafe(16)`, which is 22 characters, and the backend accepts that same 16–128 range. Anything else, including `/r/not-a-token`, goes to the home page and is not sent to the backend.
 
 `CLICK_SECRET` is a Worker secret. It is not in this folder, and the Worker does not write it to logs or responses. Logs record an outcome only (redirect or fallback). They do not record the token or the user agent. Invocation logs are off, because those logs store the request URL, and the token is in that URL.
 
