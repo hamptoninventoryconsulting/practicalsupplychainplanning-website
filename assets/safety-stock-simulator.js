@@ -160,24 +160,28 @@
   var COVER_HINT =
     "Average demand is about 40 a week, so 40 is about 1 week of cover.";
 
-  function coverHint(raw) {
-    var text = String(raw == null ? "" : raw).trim();
-    if (text === "" || !isFinite(Number(text))) {
-      return COVER_HINT;
+  function coverHint(raw, field) {
+    var normalized = engine.normalizeControls(
+      field === "ssQty" ? { ssQty: raw } : { lotQty: raw }
+    );
+    var qty = field === "ssQty" ? normalized.ssQty : normalized.lotQty;
+    var weeks = (qty / 40);
+    if (weeks < 0.05) {
+      return COVER_HINT + " This quantity is <0.1 weeks of cover.";
     }
-    var weeks = Math.round((Number(text) / 40) * 10) / 10;
-    var unit = weeks === 1 ? "week" : "weeks";
-    return COVER_HINT + " This quantity is " + weeks.toFixed(1) + " " + unit + " of cover.";
+    var shown = Math.round(weeks * 10) / 10;
+    var unit = shown === 1 ? "week" : "weeks";
+    return COVER_HINT + " This quantity is " + shown.toFixed(1) + " " + unit + " of cover.";
   }
 
   function updateCoverHints() {
     var lot = $("sim-lot-cover-hint");
     var safety = $("sim-ss-cover-hint");
     if (lot && $("sim-lot-qty")) {
-      lot.textContent = coverHint($("sim-lot-qty").value);
+      lot.textContent = coverHint($("sim-lot-qty").value, "lotQty");
     }
     if (safety && $("sim-ss-qty")) {
-      safety.textContent = coverHint($("sim-ss-qty").value);
+      safety.textContent = coverHint($("sim-ss-qty").value, "ssQty");
     }
   }
 
