@@ -267,24 +267,78 @@
     return out;
   }
 
+  function seriesStats(weeks) {
+    var min = weeks[0];
+    var max = weeks[0];
+    var sum = 0;
+    for (var i = 0; i < weeks.length; i += 1) {
+      if (weeks[i] < min) {
+        min = weeks[i];
+      }
+      if (weeks[i] > max) {
+        max = weeks[i];
+      }
+      sum += weeks[i];
+    }
+    return {
+      min: min,
+      max: max,
+      average: roundHalfEven(sum / weeks.length),
+    };
+  }
+
+  function levelSummary(weeks) {
+    return "The same forecast every week: " + seriesStats(weeks).average + " units.";
+  }
+
+  function seasonalSummary(weeks) {
+    var stats = seriesStats(weeks);
+    return (
+      "Peaks near " +
+      stats.max +
+      " and dips near " +
+      stats.min +
+      " a week, averaging " +
+      stats.average +
+      "."
+    );
+  }
+
+  function risingSummary(weeks) {
+    var stats = seriesStats(weeks);
+    return (
+      "Starts at " +
+      weeks[0] +
+      " a week and climbs to about " +
+      weeks[weeks.length - 1] +
+      ", averaging about " +
+      stats.average +
+      "."
+    );
+  }
+
+  var levelDemand = levelWeeks();
+  var seasonalDemand = seasonalWeeks();
+  var risingDemand = risingWeeks();
+
   var PATTERNS = [
     {
       id: "level",
       name: "Level",
-      summary: "The same forecast every week (40 units).",
-      weeks: levelWeeks(),
+      summary: levelSummary(levelDemand),
+      weeks: levelDemand,
     },
     {
       id: "seasonal",
       name: "Seasonal",
-      summary: "A smooth peak and trough around 40 units.",
-      weeks: seasonalWeeks(),
+      summary: seasonalSummary(seasonalDemand),
+      weeks: seasonalDemand,
     },
     {
       id: "rising",
       name: "Rising",
-      summary: "Forecast starts at 22 and steps up through the year.",
-      weeks: risingWeeks(),
+      summary: risingSummary(risingDemand),
+      weeks: risingDemand,
     },
   ];
 

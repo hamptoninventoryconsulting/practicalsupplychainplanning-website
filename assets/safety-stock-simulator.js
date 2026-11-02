@@ -157,6 +157,46 @@
     });
   }
 
+  var COVER_HINT =
+    "Average demand is about 40 a week, so 40 is about 1 week of cover.";
+
+  function coverHint(raw) {
+    var text = String(raw == null ? "" : raw).trim();
+    if (text === "" || !isFinite(Number(text))) {
+      return COVER_HINT;
+    }
+    var weeks = Math.round((Number(text) / 40) * 10) / 10;
+    var unit = weeks === 1 ? "week" : "weeks";
+    return COVER_HINT + " This quantity is " + weeks.toFixed(1) + " " + unit + " of cover.";
+  }
+
+  function updateCoverHints() {
+    var lot = $("sim-lot-cover-hint");
+    var safety = $("sim-ss-cover-hint");
+    if (lot && $("sim-lot-qty")) {
+      lot.textContent = coverHint($("sim-lot-qty").value);
+    }
+    if (safety && $("sim-ss-qty")) {
+      safety.textContent = coverHint($("sim-ss-qty").value);
+    }
+  }
+
+  function syncPatternSummaries() {
+    if (!engine || !engine.PATTERNS) {
+      return;
+    }
+    engine.PATTERNS.forEach(function (pattern) {
+      var button = document.querySelector('[data-pattern-id="' + pattern.id + '"]');
+      if (!button || !pattern.summary) {
+        return;
+      }
+      var summary = button.querySelector(".sim-scenario__summary");
+      if (summary) {
+        summary.textContent = pattern.summary;
+      }
+    });
+  }
+
   function writeControlsToDom() {
     var controls = state.controls;
     $("sim-lot-mode").value = controls.lotMode;
@@ -177,6 +217,7 @@
       button.setAttribute("aria-pressed", selected ? "true" : "false");
       button.classList.toggle("sim-scenario--selected", selected);
     });
+    syncPatternSummaries();
     applyMode();
     $("sim-lot-qty-field").hidden = controls.lotMode !== "fixed";
     $("sim-lot-weeks-field").hidden = controls.lotMode !== "weeks";
@@ -184,6 +225,7 @@
     $("sim-ss-weeks-field").hidden = controls.ssMode !== "weeks";
     $("sim-service-field").hidden = controls.ssMode !== "formula";
     $("sim-app").classList.toggle("sim-app--help", state.explanations);
+    updateCoverHints();
   }
 
   function metricCard(label, value, note) {
@@ -680,6 +722,7 @@
     });
     ["sim-lot-qty", "sim-ss-qty"].forEach(function (id) {
       $(id).addEventListener("change", onControlsChanged);
+      $(id).addEventListener("input", updateCoverHints);
     });
     $("sim-shock").addEventListener("change", onControlsChanged);
     $("sim-explanations").addEventListener("change", function () {

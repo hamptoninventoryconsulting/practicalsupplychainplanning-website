@@ -1048,6 +1048,15 @@ a.sim-button--secondary:is(:link, :visited, :hover, :focus, :focus-visible, :act
   display: none !important;
 }
 
+.sim-cover-hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+  overflow-wrap: break-word;
+}
+
 .sim-field input,
 .sim-field select {
   width: 100%;
