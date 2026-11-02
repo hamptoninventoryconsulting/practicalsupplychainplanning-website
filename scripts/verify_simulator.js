@@ -563,9 +563,65 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
   "week",
 ].sort());
 
-assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=4"/);
+assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=5"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
-assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=6"/);
+assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=7"/);
+
+const patternSummaries = {
+  level: "The same forecast every week: 40 units.",
+  seasonal: "Peaks near 58 and dips near 22 a week, averaging 40.",
+  rising: "Starts at 22 a week and climbs to about 58, averaging about 40.",
+};
+engine.PATTERNS.forEach((pattern) => {
+  assert.strictEqual(pattern.summary, patternSummaries[pattern.id], pattern.id);
+  assert.ok(page.includes(pattern.summary), pattern.id + " summary is on the page");
+  const stats = pattern.weeks.reduce(
+    (acc, value) => ({
+      min: Math.min(acc.min, value),
+      max: Math.max(acc.max, value),
+      sum: acc.sum + value,
+    }),
+    { min: Infinity, max: -Infinity, sum: 0 }
+  );
+  const average = Math.round(stats.sum / pattern.weeks.length);
+  assert.ok(pattern.summary.includes(String(average)), pattern.id + " average");
+  if (pattern.id === "seasonal") {
+    assert.strictEqual(stats.min, 22);
+    assert.strictEqual(stats.max, 58);
+    assert.strictEqual(average, 40);
+  }
+  if (pattern.id === "rising") {
+    assert.strictEqual(pattern.weeks[0], 22);
+    assert.strictEqual(pattern.weeks[pattern.weeks.length - 1], 58);
+    assert.strictEqual(average, 40);
+  }
+  if (pattern.id === "level") {
+    assert.strictEqual(stats.min, 40);
+    assert.strictEqual(stats.max, 40);
+  }
+});
+const coverHint = "Average demand is about 40 a week, so 40 is about 1 week of cover.";
+function labelInner(id) {
+  const marker = `id="${id}"`;
+  const start = page.indexOf(marker);
+  assert.ok(start !== -1, id);
+  const open = page.lastIndexOf("<label", start);
+  const close = page.indexOf("</label>", start);
+  return page.slice(open, close);
+}
+const lotQtyField = labelInner("sim-lot-qty-field");
+const ssQtyField = labelInner("sim-ss-qty-field");
+assert.ok(lotQtyField.includes(coverHint), "fixed lot hint");
+assert.ok(ssQtyField.includes(coverHint), "fixed safety stock hint");
+assert.ok(lotQtyField.includes('id="sim-lot-cover-hint"'));
+assert.ok(ssQtyField.includes('id="sim-ss-cover-hint"'));
+assert.ok(!labelInner("sim-lot-weeks-field").includes("sim-cover-hint"));
+assert.ok(!labelInner("sim-ss-weeks-field").includes("sim-cover-hint"));
+assert.ok(!labelInner("sim-service-field").includes("sim-cover-hint"));
+assert.match(ui, /This quantity is /);
+assert.match(ui, /\/ 40\)/);
+assert.match(ui, /lotMode !== "fixed"/);
+assert.match(ui, /ssMode !== "fixed"/);
 assert.match(page, /sessionStorage/);
 assert.match(page, /Teaching tool only/);
 assert.match(page, /not suitable for real\s+operational use/i);

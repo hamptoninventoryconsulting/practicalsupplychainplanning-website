@@ -7,9 +7,9 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/",
   "scripts": [
-    "/assets/safety-stock-engine.js?v=4",
+    "/assets/safety-stock-engine.js?v=5",
     "/assets/sim-results-form.js?v=7",
-    "/assets/safety-stock-simulator.js?v=6"
+    "/assets/safety-stock-simulator.js?v=7"
   ]
 }
 ---
@@ -92,7 +92,7 @@
               aria-pressed="true"
             >
               <span class="sim-scenario__name">Level</span>
-              <span class="sim-scenario__summary">The same forecast every week (40 units).</span>
+              <span class="sim-scenario__summary">The same forecast every week: 40 units.</span>
             </button>
             <button
               type="button"
@@ -101,7 +101,7 @@
               aria-pressed="false"
             >
               <span class="sim-scenario__name">Seasonal</span>
-              <span class="sim-scenario__summary">A smooth peak and trough around 40 units.</span>
+              <span class="sim-scenario__summary">Peaks near 58 and dips near 22 a week, averaging 40.</span>
             </button>
             <button
               type="button"
@@ -110,7 +110,7 @@
               aria-pressed="false"
             >
               <span class="sim-scenario__name">Rising</span>
-              <span class="sim-scenario__summary">Forecast starts at 22 and steps up through the year.</span>
+              <span class="sim-scenario__summary">Starts at 22 a week and climbs to about 58, averaging about 40.</span>
             </button>
           </div>
           <p class="sim-help">
@@ -132,6 +132,7 @@
             <label class="sim-field" id="sim-lot-qty-field" for="sim-lot-qty">
               Fixed lot quantity
               <input id="sim-lot-qty" type="number" min="1" max="1000" step="1" value="40" />
+              <span class="sim-cover-hint" id="sim-lot-cover-hint">Average demand is about 40 a week, so 40 is about 1 week of cover. This quantity is 1.0 week of cover.</span>
             </label>
             <label class="sim-field" id="sim-lot-weeks-field" for="sim-lot-weeks" hidden>
               Weeks of cover
@@ -153,6 +154,7 @@
             <label class="sim-field" id="sim-ss-qty-field" for="sim-ss-qty">
               Fixed safety stock
               <input id="sim-ss-qty" type="number" min="0" max="1000" step="1" value="20" />
+              <span class="sim-cover-hint" id="sim-ss-cover-hint">Average demand is about 40 a week, so 40 is about 1 week of cover. This quantity is 0.5 weeks of cover.</span>
             </label>
             <label class="sim-field" id="sim-ss-weeks-field" for="sim-ss-weeks" hidden>
               Safety stock cover
