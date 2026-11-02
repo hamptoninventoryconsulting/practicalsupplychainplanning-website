@@ -89,6 +89,7 @@ CORE_PAGES = (
     "/learn/safety-stock-simulator/own-data/",
     "/learn/starter-forecast/",
     "/learn/difot-calculator/",
+    "/learn/glossary/",
     "/products/",
     "/products/practical-stock-planner/",
     "/terms/",
@@ -109,6 +110,7 @@ CANONICAL_PAGES = (
     ),
     ("learn/starter-forecast/index.html", f"{SITE_ORIGIN}/learn/starter-forecast/"),
     ("learn/difot-calculator/index.html", f"{SITE_ORIGIN}/learn/difot-calculator/"),
+    ("learn/glossary/index.html", f"{SITE_ORIGIN}/learn/glossary/"),
     ("products/index.html", f"{SITE_ORIGIN}/products/"),
     ("products/practical-stock-planner/index.html", f"{SITE_ORIGIN}/products/practical-stock-planner/"),
     ("terms/index.html", f"{SITE_ORIGIN}/terms/"),
@@ -1321,6 +1323,94 @@ def verify_seller(errors: list[str]) -> None:
             fail(f"{relative} is missing the seller name", errors)
 
 
+def verify_glossary(errors: list[str]) -> None:
+    """Planning glossary: public page, anchors, JSON-LD, and copy limits."""
+    page_path = SITE / "learn" / "glossary" / "index.html"
+    if not page_path.is_file():
+        fail("/learn/glossary/ is missing from the build", errors)
+        return
+    text = page_path.read_text(encoding="utf-8")
+    if "<title>Supply Chain Planning Glossary | Practical Supply Chain Planning</title>" not in text:
+        fail("/learn/glossary/ title is not the approved SEO title", errors)
+    if (
+        '<meta name="description" content="Plain-English definitions of safety stock, lead time, MOQ, forecasting and more, from a working supply chain planner."'
+        not in text
+    ):
+        fail("/learn/glossary/ meta description is not the approved text", errors)
+    if '<h1 class="page-title">Planning glossary</h1>' not in text:
+        fail("/learn/glossary/ h1 must be Planning glossary", errors)
+    if len(H1_RE.findall(text)) != 1:
+        fail("/learn/glossary/ must have exactly one h1", errors)
+    if "from a working supply chain planner" not in text:
+        fail("/learn/glossary/ intro must say from a working supply chain planner", errors)
+    if "projects stock forward against the forecast, open orders and lead times" not in text:
+        fail("/learn/glossary/ intro must use the time-phased framing", errors)
+    if "12 complete weeks before the plan start week" not in text:
+        fail("/learn/glossary/ must keep the 12-week average window accurate", errors)
+    for phrase in (
+        "Weeks before that are left out",
+        "Zero weeks after that first sale are counted",
+        "capped at 12",
+        "A negative average is set to 0",
+        "rounded to 2 decimals",
+        "1 unit every few weeks",
+    ):
+        if phrase not in text:
+            fail(f"/learn/glossary/ is missing the 12-week average rule: {phrase}", errors)
+    for banned in (
+        r"reorder point",
+        r"\breorder\b",
+        r"\bre-order\b",
+        r"\bROP\b",
+        r"min-?max",
+        r"minmax",
+        r"croston",
+        r"\bexcel\b",
+        r"option\s*[123]",
+        r"4-4-5",
+    ):
+        if re.search(banned, text, re.I):
+            fail(f"/learn/glossary/ contains banned copy: {banned}", errors)
+    headings = re.findall(r'<h2 class="glossary-group__title"[^>]*>([^<]+)</h2>', text)
+    if headings != ["Supply &amp; ordering", "Stock &amp; service", "Demand &amp; forecasting"]:
+        fail(f"/learn/glossary/ groups are {headings!r}", errors)
+    blocks = re.findall(
+        r'<details class="sim-details" id="([^"]+)">\s*<summary>([^<]+)</summary>',
+        text,
+    )
+    if len(blocks) < 20:
+        fail(f"/learn/glossary/ has {len(blocks)} term expanders", errors)
+    ids = [item[0] for item in blocks]
+    if len(ids) != len(set(ids)):
+        fail("/learn/glossary/ term ids are not unique", errors)
+    for needed in ("projected-stock", "planned-order", "time-phased-planning"):
+        if needed not in ids:
+            fail(f"/learn/glossary/ is missing the term anchor {needed}", errors)
+    if "function openFromHash" not in text:
+        fail("/learn/glossary/ must open a term when its anchor is used", errors)
+    if '"@type": "DefinedTermSet"' not in text:
+        fail("/learn/glossary/ is missing DefinedTermSet JSON-LD", errors)
+    term_urls = re.findall(
+        r'"@type": "DefinedTerm"[\s\S]*?"url": "https://practicalsupplychainplanning.com/learn/glossary/#([^"]+)"',
+        text,
+    )
+    if term_urls != ids:
+        fail("/learn/glossary/ JSON-LD terms do not match the page anchors", errors)
+    if text.count("Used in:") != len(ids):
+        fail("/learn/glossary/ each term needs a Used in tag", errors)
+    learn = (SITE / "learn" / "index.html").read_text(encoding="utf-8")
+    if learn.count('class="learn-card"') != 5:
+        fail("/learn/ must show five cards, including the glossary", errors)
+    if 'href="/learn/glossary/"' not in learn:
+        fail("/learn/ must link to the planning glossary", errors)
+    about = (SITE / "about" / "index.html").read_text(encoding="utf-8")
+    if 'href="/learn/glossary/"' not in about:
+        fail("/about/ must link to the planning glossary", errors)
+    footer = (ROOT / "src" / "_includes" / "partials" / "footer.njk").read_text(encoding="utf-8")
+    if 'href="/learn/glossary/"' not in footer:
+        fail("footer must link to the planning glossary", errors)
+
+
 def verify_difot_sent(errors: list[str]) -> None:
     sent = SITE / "learn" / "difot-calculator" / "sent" / "index.html"
     if not sent.is_file():
@@ -1449,6 +1539,7 @@ def main() -> int:
         verify_internal_links(errors)
         verify_simulator_assets(errors)
         verify_difot_sent(errors)
+        verify_glossary(errors)
         verify_seller(errors)
     except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
         fail(str(exc), errors)
