@@ -1,0 +1,112 @@
+---json
+{
+  "layout": "layouts/page.njk",
+  "title": "Supply Chain Planning Glossary | Practical Supply Chain Planning",
+  "description": "Plain-English definitions of safety stock, lead time, MOQ, forecasting and more, from a working supply chain planner.",
+  "canonical": "https://practicalsupplychainplanning.com/learn/glossary/",
+  "nav": "learn",
+  "permalink": "/learn/glossary/"
+}
+---
+<p class="learn-back"><a href="/learn/">← Learn</a></p>
+<h1 class="page-title">Planning glossary</h1>
+<p class="tagline">Time-phased planning projects stock forward against the forecast, open orders and lead times. Plain-English definitions, from a working supply chain planner.</p>
+<p class="glossary-intro">Open a term for the definition, an example, and why it matters. A link to a term opens that entry.</p>
+
+<nav class="glossary-jump" aria-label="Glossary topics">
+  {%- for group in glossary.groups %}
+  <a href="#{{ group.id }}">{{ group.title }}</a>
+  {%- endfor %}
+</nav>
+
+<div class="glossary-list">
+  {%- for group in glossary.groups %}
+  <section class="glossary-group" id="{{ group.id }}" aria-labelledby="{{ group.id }}-title">
+    <h2 class="glossary-group__title" id="{{ group.id }}-title">{{ group.title }}</h2>
+    {%- for term in group.terms %}
+    <details class="sim-details" id="{{ term.id }}">
+      <summary>{{ term.term }}</summary>
+      <div class="content">
+        <p class="glossary-used">Used in: {{ term.usedIn | join(" / ") }}</p>
+        <p>{{ term.definition }}</p>
+        {%- if term.points %}
+        <ul>
+          {%- for point in term.points %}
+          <li><strong>{{ point.label }}.</strong> {{ point.text }}</li>
+          {%- endfor %}
+        </ul>
+        {%- endif %}
+        <h3 class="glossary-part">Example</h3>
+        <p>{{ term.example }}</p>
+        <h3 class="glossary-part">Why it matters</h3>
+        <p>{{ term.why }}</p>
+        {%- if term.seeAlso and term.seeAlso.length %}
+        <p class="glossary-see">See also:
+          {%- for id in term.seeAlso %}
+          {%- if not loop.first %},{% endif %}
+          <a href="#{{ id }}">{{ glossary.byId[id].term }}</a>
+          {%- endfor %}
+        </p>
+        {%- endif %}
+      </div>
+    </details>
+    {%- endfor %}
+  </section>
+  {%- endfor %}
+</div>
+
+<script type="application/ld+json">
+{{ glossary.schemaJson | safe }}
+</script>
+<script>
+(function () {
+  function detailsForId(raw) {
+    var id;
+    try {
+      id = decodeURIComponent(raw);
+    } catch (error) {
+      return null;
+    }
+    if (!id) {
+      return null;
+    }
+    var el = document.getElementById(id);
+    if (!el) {
+      return null;
+    }
+    if (el.tagName === "DETAILS") {
+      return el;
+    }
+    return el.closest ? el.closest("details") : null;
+  }
+
+  function openFromHash() {
+    var details = detailsForId(location.hash.replace(/^#/, ""));
+    if (details) {
+      details.open = true;
+    }
+  }
+
+  openFromHash();
+  window.addEventListener("hashchange", openFromHash);
+  document.addEventListener("click", function (event) {
+    var link = event.target && event.target.closest ? event.target.closest("a[href]") : null;
+    if (!link) {
+      return;
+    }
+    var url;
+    try {
+      url = new URL(link.href, location.href);
+    } catch (error) {
+      return;
+    }
+    if (url.pathname !== location.pathname || !url.hash) {
+      return;
+    }
+    var details = detailsForId(url.hash.replace(/^#/, ""));
+    if (details) {
+      details.open = true;
+    }
+  });
+})();
+</script>
