@@ -174,7 +174,7 @@ const GROUPS = [
       },
       {
         id: "safety-stock",
-        term: "Safety stock / safety time",
+        term: "Safety stock",
         usedIn: ["Stock Planner"],
         definition:
           "Safety stock is weeks of demand converted to a quantity: a projected balance that would fall below that quantity triggers a planned order, and those weeks do not move supply due dates.",
