@@ -31,7 +31,7 @@ const GROUPS = [
           "Lot size is the quantity ordered or produced in one batch.",
         example:
           "A pallet holds 1,200 units and that is the lot size. The projected balance needs 400 units to finish the week back at safety stock. The planned order is still 1,200. The projected balance finishes higher than the shortage alone, and the extra 800 stays until demand uses it.",
-        why: "The extra quantity is stock you hold so the order matches how the item is bought or made. A larger lot slows inventory turns and ties up cash. A smaller lot orders more often. The projected balance shows how long the batch will sit.",
+        why: "The extra quantity is stock you hold so the order matches how the item is bought or made. A larger lot slows inventory turns and ties up cash. A smaller lot orders more often. The projected balance shows how many weeks of demand each order covers.",
         seeAlso: ["minimum-order-quantity", "planned-order", "inventory-turns"],
       },
       {
