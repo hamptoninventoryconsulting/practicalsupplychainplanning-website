@@ -1345,18 +1345,19 @@ def verify_glossary(errors: list[str]) -> None:
         fail("/learn/glossary/ intro must say from a working supply chain planner", errors)
     if "projects stock forward against the forecast, open orders and lead times" not in text:
         fail("/learn/glossary/ intro must use the time-phased framing", errors)
-    if "12 complete weeks before the plan start week" not in text:
-        fail("/learn/glossary/ must keep the 12-week average window accurate", errors)
     for phrase in (
-        "Weeks before that are left out",
-        "Zero weeks after that first sale are counted",
-        "capped at 12",
-        "A negative average is set to 0",
-        "rounded to 2 decimals",
-        "1 unit every few weeks",
+        "Each item and location is assigned a Forecast Profile based on its Demand Bucket and demand characteristics identified during the previous steps.",
+        "The Forecast Profile determines which forecasting method will be used when the forecast is generated.",
+        "Forecastable products where no meaningful trend or seasonality has been identified in the Sales History.",
+        "Forecastable products where a trend has been identified in the Sales History, but no seasonality is evident.",
+        "Forecastable products where seasonality has been identified in the Sales History, but no trend is evident.",
+        "Forecastable products where both trend and seasonality have been identified in the Sales History.",
+        "Low regular demand. The forecast is the average of the last 12 weeks. When there are fewer than 12 weeks, the weeks available are used. Weeks with no sales after the first sale count. Weeks before the first sale do not.",
+        "Infrequent demand. The forecast is the average quantity of the weeks that sold in the last 26 weeks, rounded up.",
+        "Products without enough sales history for a trend or a seasonal forecast. The 12-week average of the weeks available since the first sale is used until more history is available.",
     ):
         if phrase not in text:
-            fail(f"/learn/glossary/ is missing the 12-week average rule: {phrase}", errors)
+            fail(f"/learn/glossary/ is missing the app forecast profile wording: {phrase}", errors)
     for banned in (
         r"reorder point",
         r"\breorder\b",

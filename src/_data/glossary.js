@@ -201,7 +201,6 @@ const BANNED = [
   { label: "Excel", re: /\bexcel\b/i },
   { label: "numbered option", re: /option\s*[123]/i },
   { label: "4-4-5", re: /4-4-5/ },
-  { label: "product name in the body", re: /stock planner|demand planner/i },
 ];
 
 function sortTerms(terms) {

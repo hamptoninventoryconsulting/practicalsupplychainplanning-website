@@ -135,7 +135,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "The application focuses on demonstrating:"
+            "text": "Practical Stock Planner focuses on demonstrating:"
           },
           {
             "type": "ul",
@@ -148,7 +148,7 @@
           },
           {
             "type": "p",
-            "text": "The application is designed for conceptual understanding and does not attempt to fully replicate the detailed exception management of a full-scale planning system."
+            "text": "Practical Stock Planner is designed for conceptual understanding and does not attempt to fully replicate the detailed exception management of a full-scale planning system."
           }
         ],
         "heading": "Application Behavior",
@@ -1845,13 +1845,13 @@
     ]
   },
   "demand-bucket": {
-    "definition": "Before forecasting begins, the application analyses historical sales to understand the characteristics of demand for every SKU and Location.",
+    "definition": "Before forecasting begins, Practical Demand Planner analyses historical sales to understand the characteristics of demand for every SKU and Location.",
     "sections": [
       {
         "blocks": [
           {
             "type": "p",
-            "text": "Before forecasting begins, the application analyses historical sales to understand the characteristics of demand for every SKU and Location."
+            "text": "Before forecasting begins, Practical Demand Planner analyses historical sales to understand the characteristics of demand for every SKU and Location."
           },
           {
             "type": "p",
@@ -1884,7 +1884,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "The application classifies each SKU into a Demand Bucket based on the quantity and frequency of historical demand."
+            "text": "Practical Demand Planner classifies each SKU into a Demand Bucket based on the quantity and frequency of historical demand."
           },
           {
             "type": "p",
@@ -1902,7 +1902,7 @@
           },
           {
             "type": "p",
-            "text": "There is sufficient demand history for the application to identify trend and seasonal patterns, allowing a statistical forecast to be generated. These products generally contain enough demand signal for the forecasting algorithms to produce reliable results."
+            "text": "There is sufficient demand history for Practical Demand Planner to identify trend and seasonal patterns, allowing a statistical forecast to be generated. These products generally contain enough demand signal for the forecasting algorithms to produce reliable results."
           }
         ],
         "heading": "Forecastable",
@@ -1916,7 +1916,7 @@
           },
           {
             "type": "p",
-            "text": "While demand is generally stable, there is insufficient demand signal for the application to reliably identify trend or seasonality. For these products, the forecast is based on a moving average rather than statistical forecasting methods."
+            "text": "While demand is generally stable, there is insufficient demand signal for Practical Demand Planner to reliably identify trend or seasonality. For these products, the forecast is based on a moving average rather than statistical forecasting methods."
           }
         ],
         "heading": "Low Stable",
@@ -2115,7 +2115,7 @@
           },
           {
             "type": "p",
-            "text": "This application uses a simplified forecast consumption assumption:"
+            "text": "Forecast consumption works like this:"
           },
           {
             "type": "ul",
@@ -2189,11 +2189,11 @@
         "blocks": [
           {
             "type": "p",
-            "text": "Like most forecasting systems, the application assumes that historical demand provides useful information about future demand."
+            "text": "Like most forecasting systems, Practical Demand Planner assumes that historical demand provides useful information about future demand."
           },
           {
             "type": "p",
-            "text": "Depending on the Demand Bucket, the application analyses historical sales for characteristics such as trend, seasonality, average demand and demand frequency, and applies the most appropriate forecasting method."
+            "text": "Depending on the Demand Bucket, Practical Demand Planner analyses historical sales for characteristics such as trend, seasonality, average demand and demand frequency, and applies the most appropriate forecasting method."
           },
           {
             "type": "p",
@@ -2201,7 +2201,7 @@
           },
           {
             "type": "p",
-            "text": "Historical sales contain both genuine demand patterns (the signal) and random variation (the noise). The application uses a series of heuristic techniques to identify meaningful demand characteristics such as trend and seasonality while reducing the influence of short-term fluctuations."
+            "text": "Historical sales contain both genuine demand patterns (the signal) and random variation (the noise). Practical Demand Planner uses a series of heuristic techniques to identify meaningful demand characteristics such as trend and seasonality while reducing the influence of short-term fluctuations."
           },
           {
             "type": "p",
@@ -2215,7 +2215,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "The application automatically selects the most appropriate forecasting method based on the Demand Bucket assigned to each item and location."
+            "text": "Practical Demand Planner automatically selects the most appropriate forecasting method based on the Demand Bucket assigned to each item and location."
           },
           {
             "type": "ul",
@@ -2238,7 +2238,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "The application identifies trend by comparing the average demand for each quarter with the corresponding quarter from the previous year."
+            "text": "Practical Demand Planner identifies trend by comparing the average demand for each quarter with the corresponding quarter from the previous year."
           },
           {
             "type": "p",
@@ -2285,7 +2285,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "The application identifies seasonality by comparing the average demand for each quarter with the average demand for the corresponding year."
+            "text": "Practical Demand Planner identifies seasonality by comparing the average demand for each quarter with the average demand for the corresponding year."
           },
           {
             "type": "p",
@@ -2316,7 +2316,7 @@
           },
           {
             "type": "p",
-            "text": "Comparing each quarter with its yearly average allows the application to identify seasonal patterns independently of changes in overall demand."
+            "text": "Comparing each quarter with its yearly average allows Practical Demand Planner to identify seasonal patterns independently of changes in overall demand."
           },
           {
             "type": "p",
@@ -2433,9 +2433,7 @@
             "type": "p",
             "text": "The Forecast Profile determines which forecasting method will be used when the forecast is generated."
           }
-        ],
-        "heading": "Step 3 - Create Forecast Profile",
-        "level": 3
+        ]
       },
       {
         "blocks": [
@@ -2576,13 +2574,13 @@
     ]
   },
   "sales-history": {
-    "definition": "Sales history is the foundation of every forecast generated by this application.",
+    "definition": "Sales history is the foundation of every forecast generated by Practical Demand Planner.",
     "sections": [
       {
         "blocks": [
           {
             "type": "p",
-            "text": "Sales history is the foundation of every forecast generated by this application."
+            "text": "Sales history is the foundation of every forecast generated by Practical Demand Planner."
           },
           {
             "type": "p",
@@ -2637,7 +2635,7 @@
           },
           {
             "type": "p",
-            "text": "The objective is not to match the application's import format directly, but to transform your source data into a clean, consistent sales history suitable for forecasting."
+            "text": "The objective is not to match Practical Demand Planner's import format directly, but to transform your source data into a clean, consistent sales history suitable for forecasting."
           }
         ],
         "heading": "What should I expect from my source system?",
@@ -2646,13 +2644,13 @@
     ]
   },
   "seasonality": {
-    "definition": "The application identifies seasonality by comparing the average demand for each quarter with the average demand for the corresponding year.",
+    "definition": "Practical Demand Planner identifies seasonality by comparing the average demand for each quarter with the average demand for the corresponding year.",
     "sections": [
       {
         "blocks": [
           {
             "type": "p",
-            "text": "The application identifies seasonality by comparing the average demand for each quarter with the average demand for the corresponding year."
+            "text": "Practical Demand Planner identifies seasonality by comparing the average demand for each quarter with the average demand for the corresponding year."
           },
           {
             "type": "p",
@@ -2683,7 +2681,7 @@
           },
           {
             "type": "p",
-            "text": "Comparing each quarter with its yearly average allows the application to identify seasonal patterns independently of changes in overall demand."
+            "text": "Comparing each quarter with its yearly average allows Practical Demand Planner to identify seasonal patterns independently of changes in overall demand."
           },
           {
             "type": "p",
@@ -2755,7 +2753,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "Throughout the application, forecasts and sales history can be analysed at either the individual SKU level or by Forecasting Group. This provides a higher-level view of demand and helps identify trends that may not be visible when reviewing individual products."
+            "text": "Throughout Practical Demand Planner, forecasts and sales history can be analysed at either the individual SKU level or by Forecasting Group. This provides a higher-level view of demand and helps identify trends that may not be visible when reviewing individual products."
           }
         ],
         "heading": "How is it used?",
@@ -2764,13 +2762,13 @@
     ]
   },
   "trend": {
-    "definition": "The application identifies trend by comparing the average demand for each quarter with the corresponding quarter from the previous year.",
+    "definition": "Practical Demand Planner identifies trend by comparing the average demand for each quarter with the corresponding quarter from the previous year.",
     "sections": [
       {
         "blocks": [
           {
             "type": "p",
-            "text": "The application identifies trend by comparing the average demand for each quarter with the corresponding quarter from the previous year."
+            "text": "Practical Demand Planner identifies trend by comparing the average demand for each quarter with the corresponding quarter from the previous year."
           },
           {
             "type": "p",
