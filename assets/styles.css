@@ -2263,6 +2263,26 @@ a.trial-button:is(:link, :visited, :hover, :focus, :focus-visible, :active) {
   color: var(--color-text);
 }
 
+.glossary-list .content h4.glossary-sub {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--color-text);
+}
+
+.glossary-list .content pre.glossary-pre {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  background: var(--color-surface-muted);
+  border-radius: 0.35rem;
+  white-space: pre;
+}
+
 .glossary-see {
   margin-top: 0.25rem;
   font-size: 0.9375rem;

@@ -28,6 +28,30 @@
       <summary>{{ term.term }}</summary>
       <div class="content">
         <p class="glossary-used">Used in: {{ term.usedIn | join(" / ") }}</p>
+        {%- if term.sections %}
+        {%- for section in term.sections %}
+        {%- if section.heading %}
+        {%- if section.level == 4 %}
+        <h4 class="glossary-sub">{{ section.heading }}</h4>
+        {%- else %}
+        <h3 class="glossary-part">{{ section.heading }}</h3>
+        {%- endif %}
+        {%- endif %}
+        {%- for block in section.blocks %}
+        {%- if block.type == "ul" %}
+        <ul>
+          {%- for item in block.html %}
+          <li>{{ item | safe }}</li>
+          {%- endfor %}
+        </ul>
+        {%- elif block.type == "pre" %}
+        <pre class="glossary-pre">{{ block.html | safe }}</pre>
+        {%- else %}
+        <p>{{ block.html | safe }}</p>
+        {%- endif %}
+        {%- endfor %}
+        {%- endfor %}
+        {%- else %}
         <p>{{ term.definition }}</p>
         {%- if term.points %}
         <ul>
@@ -36,10 +60,15 @@
           {%- endfor %}
         </ul>
         {%- endif %}
+        {%- if term.example %}
         <h3 class="glossary-part">Example</h3>
         <p>{{ term.example }}</p>
+        {%- endif %}
+        {%- if term.why %}
         <h3 class="glossary-part">Why it matters</h3>
         <p>{{ term.why }}</p>
+        {%- endif %}
+        {%- endif %}
         {%- if term.seeAlso and term.seeAlso.length %}
         <p class="glossary-see">See also:
           {%- for id in term.seeAlso %}

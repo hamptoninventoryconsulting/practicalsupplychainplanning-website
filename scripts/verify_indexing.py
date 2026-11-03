@@ -1345,18 +1345,46 @@ def verify_glossary(errors: list[str]) -> None:
         fail("/learn/glossary/ intro must say from a working supply chain planner", errors)
     if "projects stock forward against the forecast, open orders and lead times" not in text:
         fail("/learn/glossary/ intro must use the time-phased framing", errors)
-    if "12 complete weeks before the plan start week" not in text:
-        fail("/learn/glossary/ must keep the 12-week average window accurate", errors)
+    if "Forecasting is the process of estimating future demand for a product." not in text:
+        fail("/learn/glossary/ is missing the general forecast definition", errors)
+    if "The forecast horizon is how far ahead the forecast runs." not in text:
+        fail("/learn/glossary/ is missing the general forecast horizon definition", errors)
+    if "Intermittent demand has many weeks with no sales." not in text:
+        fail("/learn/glossary/ is missing the general intermittent demand definition", errors)
+    reliability = "Forecast reliability is influenced by the variability of historical demand."
+    forecast_block = re.search(
+        r'<details class="sim-details" id="forecast">.*?</details>',
+        text,
+        re.S,
+    )
+    if forecast_block and reliability in forecast_block.group(0):
+        fail("/learn/glossary/ forecast entry repeats the forecast reliability text", errors)
+    if reliability not in text:
+        fail("/learn/glossary/ is missing the forecast reliability entry", errors)
     for phrase in (
-        "Weeks before that are left out",
-        "Zero weeks after that first sale are counted",
-        "capped at 12",
-        "A negative average is set to 0",
-        "rounded to 2 decimals",
-        "1 unit every few weeks",
+        "26, 52, and 78 weeks",
+        "how many future months will be generated",
+        "weeks that sold in the last 26 weeks",
+        "This simplified logic demonstrates",
+        "Products exist in the SKU Master",
+        "grey cell",
+        "Below Safety Stock on Expedite",
     ):
-        if phrase not in text:
-            fail(f"/learn/glossary/ is missing the 12-week average rule: {phrase}", errors)
+        if phrase in text:
+            fail(f"/learn/glossary/ still has app-specific material: {phrase}", errors)
+    for phrase in (
+        'id="forecast-profile"',
+        'id="demand-bucket"',
+        'id="trend"',
+        'id="seasonality"',
+        "Application Behavior",
+        "How Recommended Is Decided",
+        "Step 3 - Create Forecast Profile",
+        "Practical Stock Planner",
+        "Practical Demand Planner",
+    ):
+        if phrase in text:
+            fail(f"/learn/glossary/ still has app-specific material: {phrase}", errors)
     for banned in (
         r"reorder point",
         r"\breorder\b",
