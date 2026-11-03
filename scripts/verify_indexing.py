@@ -1640,8 +1640,10 @@ def verify_start_pages(errors: list[str]) -> None:
         if 'id="signup"' in plan:
             fail("/start/plan-ahead/ must not show the email sign-up while checkout is open", errors)
     else:
-        if plan.count("Join the list") < 1 or 'href="#signup"' not in plan or "keep-in-touch.js" not in plan:
-            fail("/start/plan-ahead/ must use the email sign-up while checkout is closed", errors)
+        if plan.count("Join the list") != 1 or 'id="signup"' not in plan or "keep-in-touch.js" not in plan:
+            fail("/start/plan-ahead/ must use one email sign-up while checkout is closed", errors)
+        if 'href="#signup"' in plan:
+            fail("/start/plan-ahead/ must not repeat Join the list as a link above the form", errors)
         if "Start your free trial" in plan:
             fail("/start/plan-ahead/ must not show the trial path while checkout is closed", errors)
 
@@ -1650,7 +1652,7 @@ def verify_start_pages(errors: list[str]) -> None:
         "Practical planning guides from a working supply chain planner.",
         "projects stock forward against your forecast, open orders and lead times.",
         "New guides and tools, monthly.",
-        'href="/blog/"',
+        '<a class="learn-card" href="/learn/">',
         'href="/learn/glossary/"',
         'href="/products/practical-stock-planner/"',
         "keep-in-touch.js",
