@@ -1512,6 +1512,172 @@ def verify_simulator_assets(errors: list[str]) -> None:
         fail("scenarios.json was not copied into _site", errors)
 
 
+START_PAGES = (
+    "start/plan-ahead/index.html",
+    "start/planning-guides/index.html",
+)
+PREEXISTING_NOINDEX = {
+    "404.html": "noindex",
+    "welcome/index.html": "noindex",
+    "learn/safety-stock-simulator/sent/index.html": "noindex",
+    "learn/starter-forecast/sent/index.html": "noindex",
+    "learn/difot-calculator/sent/index.html": "noindex",
+}
+ROBOTS_META_RE = re.compile(
+    r'<meta\s+name=["\']robots["\']\s+content=["\']([^"\']*)["\']',
+    re.I,
+)
+START_BANNED = (
+    r"reorder point",
+    r"reorder-point",
+    r"\bROP\b",
+    r"min-?max",
+    r"min/max",
+    r"minmax",
+    r"\bmin max\b",
+    r"croston",
+)
+
+
+def learn_tool_hrefs() -> list[str]:
+    text = (ROOT / "src" / "_data" / "learnTools.js").read_text(encoding="utf-8")
+    return re.findall(r'href:\s*"([^"]+)"', text)
+
+
+def verify_start_pages(errors: list[str]) -> None:
+    """Pages under /start/ are hidden by path and keep their query string."""
+    source_robots = (ROOT / "robots.txt").read_text(encoding="utf-8")
+    built_robots = ROBOTS_PATH.read_text(encoding="utf-8") if ROBOTS_PATH.is_file() else ""
+    if built_robots != source_robots:
+        fail("robots.txt in _site must match the source file", errors)
+    if "/start/" in source_robots:
+        fail("robots.txt must not block or mention /start/", errors)
+
+    sitemap = SITEMAP_PATH.read_text(encoding="utf-8") if SITEMAP_PATH.is_file() else ""
+    if "/start/" in sitemap:
+        fail("sitemap.xml must not include a /start/ URL", errors)
+
+    for relative in (
+        "src/_includes/partials/header.njk",
+        "src/_includes/partials/footer.njk",
+    ):
+        menu = (ROOT / relative).read_text(encoding="utf-8")
+        if "/start/" in menu:
+            fail(f"{relative} must not link to /start/", errors)
+
+    found_start: set[str] = set()
+    for path in sorted(SITE.rglob("*.html")):
+        relative = path.relative_to(SITE).as_posix()
+        text = path.read_text(encoding="utf-8")
+        metas = ROBOTS_META_RE.findall(text)
+        under_start = relative == "start" or relative.startswith("start/")
+        if under_start:
+            found_start.add(relative)
+            if metas != ["noindex, nofollow"]:
+                fail(
+                    f"{relative} must have exactly one noindex, nofollow robots meta, found {metas!r}",
+                    errors,
+                )
+            if "history.replaceState" in text or REFRESH_RE.search(text):
+                fail(f"{relative} must keep utm_ and ref in the address bar", errors)
+            if re.search(r"location\.(?:replace|assign|href)\s*=", text):
+                fail(f"{relative} must not send the browser to a URL that drops the query", errors)
+            for banned in START_BANNED:
+                if re.search(banned, text, re.I):
+                    fail(f"{relative} contains banned copy: {banned}", errors)
+            if "cdn.paddle.com" in text or "pricing-checkout.js" in text:
+                fail(f"{relative} must not load Paddle", errors)
+            if re.search(r"FOUNDING|US\$|A\$|\bpri_|\blive_", text):
+                fail(f"{relative} must not add prices, tokens or discount codes", errors)
+            if text.lower().count("<h1") != 1:
+                fail(f"{relative} must have exactly one h1", errors)
+            continue
+        if any("nofollow" in value.lower() for value in metas):
+            fail(f"{relative} gained a nofollow robots meta", errors)
+        if relative in PREEXISTING_NOINDEX:
+            if metas != [PREEXISTING_NOINDEX[relative]]:
+                fail(f"{relative} robots meta changed to {metas!r}", errors)
+        elif any("noindex" in value.lower() for value in metas):
+            fail(f"{relative} gained a noindex robots meta", errors)
+        if 'href="/start/' in text or 'href="/start"' in text:
+            fail(f"{relative} links to a /start/ page", errors)
+
+    if found_start != set(START_PAGES):
+        fail(
+            f"/start/ pages are {sorted(found_start)!r}, expected {list(START_PAGES)!r}",
+            errors,
+        )
+
+    plan_source = (ROOT / "src" / "start" / "plan-ahead.njk").read_text(encoding="utf-8")
+    guides_source = (ROOT / "src" / "start" / "planning-guides.njk").read_text(encoding="utf-8")
+    for label, source in (("plan-ahead", plan_source), ("planning-guides", guides_source)):
+        if re.search(r'"robots"\s*:', source):
+            fail(f"/start/{label}/ must not set robots in front matter", errors)
+
+    plan = (SITE / "start" / "plan-ahead" / "index.html").read_text(encoding="utf-8")
+    for phrase in (
+        "See your stock position weeks ahead, before it runs short or piles up.",
+        "projects stock forward against your forecast, open orders and lead times.",
+        "Reordering by gut feel or spreadsheet, and finding out too late.",
+        "week by week from your forecast, open orders and lead times.",
+        "Planned orders are timed to arrive before stock drops below safety stock.",
+        "Small product businesses with CSV exports, for example Shopify, Xero or Cin7.",
+        "Built by Daniel Hampton, a working supply chain planner.",
+        "Your data stays in CSV files. No integration is needed.",
+        "/images/IMG000009.webp",
+        'alt="Practical Stock Planner inventory projection, with projected stock across the weeks of the plan."',
+        "/assets/brand/daniel-hampton-312.png",
+    ):
+        if phrase not in plan:
+            fail(f"/start/plan-ahead/ is missing approved copy: {phrase}", errors)
+    if "paddle.checkoutOpen" not in plan_source or "Join the list" not in plan_source:
+        fail("/start/plan-ahead/ must switch the sign-up CTA on checkoutOpen", errors)
+    if "/products/practical-stock-planner/#price" not in plan_source or "Start your free trial" not in plan_source:
+        fail("/start/plan-ahead/ must use the product trial path when checkout is open", errors)
+    if checkout_open():
+        if 'href="/products/practical-stock-planner/#price"' not in plan or "Start your free trial" not in plan:
+            fail("/start/plan-ahead/ must show the product trial path while checkout is open", errors)
+        if 'id="signup"' in plan:
+            fail("/start/plan-ahead/ must not show the email sign-up while checkout is open", errors)
+    else:
+        if plan.count("Join the list") != 1 or 'id="signup"' not in plan or "keep-in-touch.js" not in plan:
+            fail("/start/plan-ahead/ must use one email sign-up while checkout is closed", errors)
+        if 'href="#signup"' in plan:
+            fail("/start/plan-ahead/ must not repeat Join the list as a link above the form", errors)
+        if "Start your free trial" in plan:
+            fail("/start/plan-ahead/ must not show the trial path while checkout is closed", errors)
+
+    guides = (SITE / "start" / "planning-guides" / "index.html").read_text(encoding="utf-8")
+    for phrase in (
+        "Practical planning guides from a working supply chain planner.",
+        "projects stock forward against your forecast, open orders and lead times.",
+        "New guides and tools, monthly.",
+        '<a class="learn-card" href="/learn/">',
+        'href="/learn/glossary/"',
+        'href="/products/practical-stock-planner/"',
+        "keep-in-touch.js",
+        "Learn articles",
+        "Free tools",
+    ):
+        if phrase not in guides:
+            fail(f"/start/planning-guides/ is missing {phrase}", errors)
+    for href in learn_tool_hrefs():
+        if href == "/learn/glossary/":
+            continue
+        page = public_file_for_path(href)
+        if not page.is_file():
+            fail(f"/start/planning-guides/ must not link a missing free tool: {href}", errors)
+            continue
+        if f'href="{href}"' not in guides:
+            fail(f"/start/planning-guides/ must link the existing free tool {href}", errors)
+    if "difot" in guides.lower():
+        difot_page = SITE / "learn" / "difot-calculator" / "index.html"
+        if not difot_page.is_file():
+            fail("/start/planning-guides/ mentions DIFOT, but that page is not built", errors)
+    if 'class="home-button"' in guides:
+        fail("/start/planning-guides/ should keep the Stock Planner link soft", errors)
+
+
 def main() -> int:
     errors: list[str] = []
     verify_legacy_sources(errors)
@@ -1541,6 +1707,7 @@ def main() -> int:
         verify_difot_sent(errors)
         verify_glossary(errors)
         verify_seller(errors)
+        verify_start_pages(errors)
     except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
         fail(str(exc), errors)
     if errors:

@@ -1,0 +1,45 @@
+---json
+{
+  "layout": "layouts/page.njk",
+  "title": "Practical planning guides — Practical Supply Chain Planning",
+  "description": "Practical planning guides from a working supply chain planner. Time-phased planning projects stock forward against your forecast, open orders and lead times.",
+  "canonical": "https://practicalsupplychainplanning.com/start/planning-guides/",
+  "permalink": "/start/planning-guides/"
+}
+---
+<h1 class="page-title">Practical planning guides from a working supply chain planner.</h1>
+<p class="tagline">Time-phased planning projects stock forward against your forecast, open orders and lead times.</p>
+
+<ul class="learn-list">
+  <li class="learn-list__item">
+    <a class="learn-card" href="/learn/">
+      <h2 class="learn-card__title">Learn articles</h2>
+      <p class="learn-card__summary">Free guides and tools on stock planning.</p>
+    </a>
+  </li>
+  <li class="learn-list__item">
+    <a class="learn-card" href="/learn/glossary/">
+      <h2 class="learn-card__title">Glossary</h2>
+      <p class="learn-card__summary">Plain-English definitions for time-phased planning.</p>
+    </a>
+  </li>
+  <li class="learn-list__item">
+    <div class="learn-card">
+      <h2 class="learn-card__title">Free tools</h2>
+      <p class="learn-card__summary">Use these in the browser.</p>
+      <ul class="home-points">
+        {%- for tool in learnTools | withHref %}
+        {%- if tool.href != "/learn/glossary/" %}
+        <li><a href="{{ tool.href }}">{{ tool.title }}</a></li>
+        {%- endif %}
+        {%- endfor %}
+      </ul>
+    </div>
+  </li>
+</ul>
+
+{% set kitTitle = "New guides and tools" %}
+{% set kitIntro = "New guides and tools, monthly." %}
+{% include "partials/keep-in-touch.njk" %}
+
+<p class="home-more">When you want this for the whole range, see <a href="/products/practical-stock-planner/">Practical Stock Planner</a>.</p>

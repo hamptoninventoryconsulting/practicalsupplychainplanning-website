@@ -1,0 +1,83 @@
+---json
+{
+  "layout": "layouts/page.njk",
+  "title": "See your stock position weeks ahead — Practical Supply Chain Planning",
+  "description": "Time-phased planning projects stock forward against your forecast, open orders and lead times. For small product businesses with CSV exports.",
+  "canonical": "https://practicalsupplychainplanning.com/start/plan-ahead/",
+  "permalink": "/start/plan-ahead/"
+}
+---
+{%- set photo = home.photoUrl | publicAsset -%}
+{%- set photoWebp = home.photoWebpUrl | publicAsset -%}
+<h1 class="page-title">See your stock position weeks ahead, before it runs short or piles up.</h1>
+<p class="tagline">Time-phased planning projects stock forward against your forecast, open orders and lead times.</p>
+
+<section class="card" aria-labelledby="problem-heading">
+  <h2 class="card__title" id="problem-heading">The problem</h2>
+  <div class="content">
+    <p>Reordering by gut feel or spreadsheet, and finding out too late.</p>
+  </div>
+</section>
+
+<section class="card" aria-labelledby="how-heading">
+  <h2 class="card__title" id="how-heading">How it works</h2>
+  <div class="content">
+    <p>Practical Stock Planner projects stock week by week from your forecast, open orders and lead times.</p>
+    <p>Planned orders are timed to arrive before stock drops below safety stock.</p>
+  </div>
+  <figure class="home-chart">
+    <img
+      src="/images/IMG000009.webp"
+      alt="Practical Stock Planner inventory projection, with projected stock across the weeks of the plan."
+      width="1536"
+      height="1024"
+    />
+  </figure>
+</section>
+
+<section class="card" aria-labelledby="who-heading">
+  <h2 class="card__title" id="who-heading">Who it&rsquo;s for</h2>
+  <div class="content">
+    <p>Small product businesses with CSV exports, for example Shopify, Xero or Cin7.</p>
+  </div>
+</section>
+
+<section class="card" aria-labelledby="built-heading">
+  <h2 class="card__title" id="built-heading">Built by a working planner</h2>
+  <div class="home-founder">
+    {%- if photo %}
+    <picture>
+      {%- if photoWebp %}
+      <source srcset="{{ photoWebp }}" type="image/webp" />
+      {%- endif %}
+      <img
+        class="home-portrait"
+        src="{{ photo }}"
+        alt="{{ home.photoAlt }}"
+        width="312"
+        height="312"
+      />
+    </picture>
+    {%- endif %}
+    <div class="content">
+      <p>Built by Daniel Hampton, a working supply chain planner.</p>
+    </div>
+  </div>
+</section>
+
+{%- if paddle.checkoutOpen %}
+<p class="home-actions">
+  <a class="home-button" href="/products/practical-stock-planner/#price">Start your free trial</a>
+</p>
+{%- else %}
+{% set kitTitle = "Join the list" %}
+{% include "partials/keep-in-touch.njk" %}
+{%- endif %}
+
+<section class="card" aria-labelledby="start-faq-heading">
+  <h2 class="card__title" id="start-faq-heading">Questions</h2>
+  <div class="content">
+    <h3>Where does my data go?</h3>
+    <p>Your data stays in CSV files. No integration is needed.</p>
+  </div>
+</section>
