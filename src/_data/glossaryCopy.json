@@ -135,29 +135,6 @@
         "blocks": [
           {
             "type": "p",
-            "text": "Practical Stock Planner focuses on demonstrating:"
-          },
-          {
-            "type": "ul",
-            "items": [
-              "Time-phased inventory behavior",
-              "Supply and demand timing alignment",
-              "Projected inventory risk",
-              "Simplified planning decision support"
-            ]
-          },
-          {
-            "type": "p",
-            "text": "Practical Stock Planner is designed for conceptual understanding and does not attempt to fully replicate the detailed exception management of a full-scale planning system."
-          }
-        ],
-        "heading": "Application Behavior",
-        "level": 3
-      },
-      {
-        "blocks": [
-          {
-            "type": "p",
             "text": "Frequent expedite activity may indicate underlying planning issues such as:"
           },
           {
@@ -1844,100 +1821,6 @@
       }
     ]
   },
-  "demand-bucket": {
-    "definition": "Before forecasting begins, Practical Demand Planner analyses historical sales to understand the characteristics of demand for every SKU and Location.",
-    "sections": [
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "Before forecasting begins, Practical Demand Planner analyses historical sales to understand the characteristics of demand for every SKU and Location."
-          },
-          {
-            "type": "p",
-            "text": "This information helps determine which products are suitable for statistical forecasting and identifies products that may require alternative planning methods."
-          }
-        ],
-        "heading": "Sales History Analysis",
-        "level": 3
-      },
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "The analysis calculates several measures, including:"
-          },
-          {
-            "type": "ul",
-            "items": [
-              "**History Weeks** – Number of weeks of available sales history.",
-              "**Zero Weeks** – Number of weeks with no recorded sales.",
-              "**Average Demand Interval (ADI)** – A measure of how frequently demand occurs.",
-              "**12-week average** – The average weekly demand over the most recent 12 weeks, or the weeks available when history is shorter."
-            ]
-          }
-        ],
-        "heading": "Key Measures",
-        "level": 3
-      },
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "Practical Demand Planner classifies each SKU into a Demand Bucket based on the quantity and frequency of historical demand."
-          },
-          {
-            "type": "p",
-            "text": "The objective is to determine whether there is sufficient information in the sales history for statistical forecasting to produce meaningful results."
-          }
-        ],
-        "heading": "Demand Buckets",
-        "level": 3
-      },
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "Forecastable products have statistically significant demand."
-          },
-          {
-            "type": "p",
-            "text": "There is sufficient demand history for Practical Demand Planner to identify trend and seasonal patterns, allowing a statistical forecast to be generated. These products generally contain enough demand signal for the forecasting algorithms to produce reliable results."
-          }
-        ],
-        "heading": "Forecastable",
-        "level": 3
-      },
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "Low Stable products have regular demand, but the sales volumes are too low to be considered statistically significant."
-          },
-          {
-            "type": "p",
-            "text": "While demand is generally stable, there is insufficient demand signal for Practical Demand Planner to reliably identify trend or seasonality. For these products, the forecast is based on a moving average rather than statistical forecasting methods."
-          }
-        ],
-        "heading": "Low Stable",
-        "level": 3
-      },
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "Intermittent products have many weeks with no recorded sales."
-          },
-          {
-            "type": "p",
-            "text": "The forecast uses the average quantity of the weeks that sold in the last 26 weeks, rounded up. The average demand interval (ADI), also rounded up, sets which future weeks get that quantity. If there was no sale in the last 26 weeks, the forecast is zero."
-          }
-        ],
-        "heading": "Intermittent",
-        "level": 3
-      }
-    ]
-  },
   "exception-outlier": {
     "definition": "An exception is any event that causes recorded sales to differ from normal customer demand.",
     "sections": [
@@ -2115,20 +1998,6 @@
           },
           {
             "type": "p",
-            "text": "Forecast consumption works like this:"
-          },
-          {
-            "type": "ul",
-            "items": [
-              "Planned demand = MAX(Forecast, Open Sales Orders)"
-            ]
-          },
-          {
-            "type": "p",
-            "text": "Under this approach, remaining unconsumed forecast is still treated as future demand unless actual customer orders exceed the forecast."
-          },
-          {
-            "type": "p",
             "text": "This simplified logic demonstrates how planning systems often continue recognizing forecast demand until actual demand fully replaces it."
           }
         ],
@@ -2189,19 +2058,11 @@
         "blocks": [
           {
             "type": "p",
-            "text": "Like most forecasting systems, Practical Demand Planner assumes that historical demand provides useful information about future demand."
-          },
-          {
-            "type": "p",
-            "text": "Depending on the Demand Bucket, Practical Demand Planner analyses historical sales for characteristics such as trend, seasonality, average demand and demand frequency, and applies the most appropriate forecasting method."
-          },
-          {
-            "type": "p",
             "text": "Forecasting is fundamentally the process of separating signal from noise."
           },
           {
             "type": "p",
-            "text": "Historical sales contain both genuine demand patterns (the signal) and random variation (the noise). Practical Demand Planner uses a series of heuristic techniques to identify meaningful demand characteristics such as trend and seasonality while reducing the influence of short-term fluctuations."
+            "text": "Historical sales contain both genuine demand patterns (the signal) and random variation (the noise)."
           },
           {
             "type": "p",
@@ -2215,128 +2076,9 @@
         "blocks": [
           {
             "type": "p",
-            "text": "Practical Demand Planner automatically selects the most appropriate forecasting method based on the Demand Bucket assigned to each item and location."
-          },
-          {
-            "type": "ul",
-            "items": [
-              "**Steady demand** – a level, trend, or seasonal forecast. A trend eases off further out.",
-              "**Low regular demand** – 12-week average.",
-              "**Intermittent demand** – the average quantity of the weeks that sold in the last 26 weeks, rounded up. The average demand interval, also rounded up, sets which future weeks get that quantity.",
-              "**Short history** – the 12-week average of the weeks available since the first sale. Weeks with no sales after the first sale count. Weeks before the first sale do not."
-            ]
-          },
-          {
-            "type": "p",
             "text": "The quality of the forecast is heavily influenced by the quality of the Sales History used as input. Reviewing exceptions and maintaining representative Sales History will generally improve forecast quality more than changing forecasting parameters."
           }
-        ],
-        "heading": "Forecasting Method",
-        "level": 3
-      },
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "Practical Demand Planner identifies trend by comparing the average demand for each quarter with the corresponding quarter from the previous year."
-          },
-          {
-            "type": "p",
-            "text": "This approach compares like-for-like periods, helping to avoid seasonal demand being incorrectly identified as trend."
-          }
-        ],
-        "heading": "Identifying Trend",
-        "level": 3
-      },
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "For each item and location:"
-          },
-          {
-            "type": "ul",
-            "items": [
-              "The most recent four quarters are compared with the same four quarters from the previous year.",
-              "The percentage change is calculated for each quarter.",
-              "Each quarter is classified as **Up**, **Down** or **Flat** using the configured trend threshold.",
-              "If three or more of the four quarters show an increase, the product is classified as **Up Trend**.",
-              "If three or more of the four quarters show a decrease, the product is classified as **Down Trend**.",
-              "Otherwise, the product is classified as **Flat**."
-            ]
-          },
-          {
-            "type": "p",
-            "text": "Example"
-          },
-          {
-            "type": "pre",
-            "text": "Quarter      Previous Year      Current Year      Result\n\nQ1                 100               118           Up\nQ2                 120               138           Up\nQ3                 110               121           Up\nQ4                 130               134           Flat"
-          },
-          {
-            "type": "p",
-            "text": "Three of the four quarters increased by more than the configured trend threshold, so the item and location would be classified as **Up Trend**."
-          }
-        ],
-        "heading": "How it works",
-        "level": 4
-      },
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "Practical Demand Planner identifies seasonality by comparing the average demand for each quarter with the average demand for the corresponding year."
-          },
-          {
-            "type": "p",
-            "text": "Rather than comparing absolute sales quantities, each quarter is measured relative to the yearly average. This allows seasonal patterns to be identified even when overall demand is increasing or decreasing over time."
-          }
-        ],
-        "heading": "Identifying Seasonality",
-        "level": 3
-      },
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "For each item and location:"
-          },
-          {
-            "type": "ul",
-            "items": [
-              "Only complete years containing all four quarters are analysed.",
-              "The average demand is calculated for each quarter.",
-              "The average demand for the year is calculated.",
-              "Each quarter is expressed as a percentage above or below the yearly average.",
-              "The two most recent complete years are then compared.",
-              "If the same quarter is above average in both years, or below average in both years, it contributes to the Seasonality Score.",
-              "The larger and more consistent the quarterly pattern, the higher the Seasonality Score.",
-              "When the Seasonality Score exceeds the configured threshold, the item and location is classified as Seasonal."
-            ]
-          },
-          {
-            "type": "p",
-            "text": "Comparing each quarter with its yearly average allows Practical Demand Planner to identify seasonal patterns independently of changes in overall demand."
-          },
-          {
-            "type": "p",
-            "text": "For example, a product may be growing by 10% each year, but still consistently sell more in Quarter 3 and less in Quarter 1. Measuring each quarter relative to its yearly average helps separate the seasonal signal from the overall growth trend."
-          },
-          {
-            "type": "p",
-            "text": "Example"
-          },
-          {
-            "type": "pre",
-            "text": "Quarter        Year 1        Year 2\n\nQ1             -18%          -21%\nQ2              -6%           -8%\nQ3             +22%          +19%\nQ4              +2%           +5%"
-          },
-          {
-            "type": "p",
-            "text": "Each quarter remained on the same side of the yearly average in both years, indicating a consistent seasonal pattern. The combined Seasonality Score exceeds the threshold, so the item and location is classified as Seasonal."
-          }
-        ],
-        "heading": "How it works",
-        "level": 4
+        ]
       },
       {
         "blocks": [
@@ -2420,85 +2162,6 @@
       }
     ]
   },
-  "forecast-profile": {
-    "definition": "Each item and location is assigned a Forecast Profile based on its Demand Bucket and demand characteristics identified during the previous steps.",
-    "sections": [
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "Each item and location is assigned a Forecast Profile based on its Demand Bucket and demand characteristics identified during the previous steps."
-          },
-          {
-            "type": "p",
-            "text": "The Forecast Profile determines which forecasting method will be used when the forecast is generated."
-          }
-        ]
-      },
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "**Baseline**"
-          },
-          {
-            "type": "p",
-            "text": "Forecastable products where no meaningful trend or seasonality has been identified in the Sales History."
-          },
-          {
-            "type": "p",
-            "text": "**Trend**"
-          },
-          {
-            "type": "p",
-            "text": "Forecastable products where a trend has been identified in the Sales History, but no seasonality is evident."
-          },
-          {
-            "type": "p",
-            "text": "**Seasonal**"
-          },
-          {
-            "type": "p",
-            "text": "Forecastable products where seasonality has been identified in the Sales History, but no trend is evident."
-          },
-          {
-            "type": "p",
-            "text": "**Seasonal Trend**"
-          },
-          {
-            "type": "p",
-            "text": "Forecastable products where both trend and seasonality have been identified in the Sales History."
-          },
-          {
-            "type": "p",
-            "text": "**12-week average**"
-          },
-          {
-            "type": "p",
-            "text": "Low regular demand. The forecast is the average of the last 12 weeks. When there are fewer than 12 weeks, the weeks available are used. Weeks with no sales after the first sale count. Weeks before the first sale do not."
-          },
-          {
-            "type": "p",
-            "text": "**Intermittent**"
-          },
-          {
-            "type": "p",
-            "text": "Infrequent demand. The forecast is the average quantity of the weeks that sold in the last 26 weeks, rounded up. The average demand interval, also rounded up, sets which future weeks get that quantity. If there was no sale in the last 26 weeks, the forecast is zero."
-          },
-          {
-            "type": "p",
-            "text": "**Short history**"
-          },
-          {
-            "type": "p",
-            "text": "Products without enough sales history for a trend or a seasonal forecast. The 12-week average of the weeks available since the first sale is used until more history is available."
-          }
-        ],
-        "heading": "Forecast Profiles",
-        "level": 4
-      }
-    ]
-  },
   "forecast-reliability": {
     "definition": "Forecast reliability is influenced by the variability of historical demand.",
     "sections": [
@@ -2574,14 +2237,10 @@
     ]
   },
   "sales-history": {
-    "definition": "Sales history is the foundation of every forecast generated by Practical Demand Planner.",
+    "definition": "Historical sales are imported from your accounting, sales or warehouse system and converted into a standard format suitable for forecasting.",
     "sections": [
       {
         "blocks": [
-          {
-            "type": "p",
-            "text": "Sales history is the foundation of every forecast generated by Practical Demand Planner."
-          },
           {
             "type": "p",
             "text": "Historical sales are imported from your accounting, sales or warehouse system and converted into a standard format suitable for forecasting."
@@ -2632,76 +2291,10 @@
           {
             "type": "p",
             "text": "Some systems provide individual invoice transactions, while others export daily, weekly or monthly summaries. Depending on the system, exports may also include returns, cancelled orders or stock transfers."
-          },
-          {
-            "type": "p",
-            "text": "The objective is not to match Practical Demand Planner's import format directly, but to transform your source data into a clean, consistent sales history suitable for forecasting."
           }
         ],
         "heading": "What should I expect from my source system?",
         "level": 3
-      }
-    ]
-  },
-  "seasonality": {
-    "definition": "Practical Demand Planner identifies seasonality by comparing the average demand for each quarter with the average demand for the corresponding year.",
-    "sections": [
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "Practical Demand Planner identifies seasonality by comparing the average demand for each quarter with the average demand for the corresponding year."
-          },
-          {
-            "type": "p",
-            "text": "Rather than comparing absolute sales quantities, each quarter is measured relative to the yearly average. This allows seasonal patterns to be identified even when overall demand is increasing or decreasing over time."
-          }
-        ],
-        "heading": "Identifying Seasonality",
-        "level": 3
-      },
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "For each item and location:"
-          },
-          {
-            "type": "ul",
-            "items": [
-              "Only complete years containing all four quarters are analysed.",
-              "The average demand is calculated for each quarter.",
-              "The average demand for the year is calculated.",
-              "Each quarter is expressed as a percentage above or below the yearly average.",
-              "The two most recent complete years are then compared.",
-              "If the same quarter is above average in both years, or below average in both years, it contributes to the Seasonality Score.",
-              "The larger and more consistent the quarterly pattern, the higher the Seasonality Score.",
-              "When the Seasonality Score exceeds the configured threshold, the item and location is classified as Seasonal."
-            ]
-          },
-          {
-            "type": "p",
-            "text": "Comparing each quarter with its yearly average allows Practical Demand Planner to identify seasonal patterns independently of changes in overall demand."
-          },
-          {
-            "type": "p",
-            "text": "For example, a product may be growing by 10% each year, but still consistently sell more in Quarter 3 and less in Quarter 1. Measuring each quarter relative to its yearly average helps separate the seasonal signal from the overall growth trend."
-          },
-          {
-            "type": "p",
-            "text": "Example"
-          },
-          {
-            "type": "pre",
-            "text": "Quarter        Year 1        Year 2\n\nQ1             -18%          -21%\nQ2              -6%           -8%\nQ3             +22%          +19%\nQ4              +2%           +5%"
-          },
-          {
-            "type": "p",
-            "text": "Each quarter remained on the same side of the yearly average in both years, indicating a consistent seasonal pattern. The combined Seasonality Score exceeds the threshold, so the item and location is classified as Seasonal."
-          }
-        ],
-        "heading": "How it works",
-        "level": 4
       }
     ]
   },
@@ -2748,68 +2341,6 @@
         ],
         "heading": "Common Examples",
         "level": 3
-      },
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "Throughout Practical Demand Planner, forecasts and sales history can be analysed at either the individual SKU level or by Forecasting Group. This provides a higher-level view of demand and helps identify trends that may not be visible when reviewing individual products."
-          }
-        ],
-        "heading": "How is it used?",
-        "level": 3
-      }
-    ]
-  },
-  "trend": {
-    "definition": "Practical Demand Planner identifies trend by comparing the average demand for each quarter with the corresponding quarter from the previous year.",
-    "sections": [
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "Practical Demand Planner identifies trend by comparing the average demand for each quarter with the corresponding quarter from the previous year."
-          },
-          {
-            "type": "p",
-            "text": "This approach compares like-for-like periods, helping to avoid seasonal demand being incorrectly identified as trend."
-          }
-        ],
-        "heading": "Identifying Trend",
-        "level": 3
-      },
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "For each item and location:"
-          },
-          {
-            "type": "ul",
-            "items": [
-              "The most recent four quarters are compared with the same four quarters from the previous year.",
-              "The percentage change is calculated for each quarter.",
-              "Each quarter is classified as **Up**, **Down** or **Flat** using the configured trend threshold.",
-              "If three or more of the four quarters show an increase, the product is classified as **Up Trend**.",
-              "If three or more of the four quarters show a decrease, the product is classified as **Down Trend**.",
-              "Otherwise, the product is classified as **Flat**."
-            ]
-          },
-          {
-            "type": "p",
-            "text": "Example"
-          },
-          {
-            "type": "pre",
-            "text": "Quarter      Previous Year      Current Year      Result\n\nQ1                 100               118           Up\nQ2                 120               138           Up\nQ3                 110               121           Up\nQ4                 130               134           Flat"
-          },
-          {
-            "type": "p",
-            "text": "Three of the four quarters increased by more than the configured trend threshold, so the item and location would be classified as **Up Trend**."
-          }
-        ],
-        "heading": "How it works",
-        "level": 4
       }
     ]
   }

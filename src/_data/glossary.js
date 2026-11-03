@@ -2,8 +2,8 @@
  * Planning glossary for /learn/glossary/.
  * General planning terms only. Groups stay in this order.
  * Terms are sorted A–Z by display name when the page is built.
- * Entry wording lives in glossaryCopy.json: Daniel's app glossary text,
- * copied in full except sentences that only describe app screens.
+ * Entry wording lives in glossaryCopy.json: general planning text from the
+ * app glossaries. App-specific entries and sections are not included.
  */
 "use strict";
 
@@ -125,12 +125,6 @@ const GROUPS = [
     title: "Demand & forecasting",
     terms: [
       {
-        id: "demand-bucket",
-        term: "Demand bucket",
-        usedIn: ["Demand Planner"],
-        seeAlso: ["forecast-profile", "intermittent-demand", "sales-history"],
-      },
-      {
         id: "exception-outlier",
         term: "Exception / outlier",
         usedIn: ["Demand Planner"],
@@ -140,19 +134,13 @@ const GROUPS = [
         id: "forecast",
         term: "Forecast",
         usedIn: ["Stock Planner", "Demand Planner"],
-        seeAlso: ["forecast-profile", "forecast-horizon", "sales-history"],
+        seeAlso: ["forecast-horizon", "sales-history", "forecast-reliability"],
       },
       {
         id: "forecast-horizon",
         term: "Forecast horizon",
         usedIn: ["Demand Planner"],
         seeAlso: ["forecast", "supply-lead-time", "time-phased-planning"],
-      },
-      {
-        id: "forecast-profile",
-        term: "Forecast profile",
-        usedIn: ["Demand Planner"],
-        seeAlso: ["forecast", "trend", "seasonality", "intermittent-demand"],
       },
       {
         id: "forecast-reliability",
@@ -164,7 +152,7 @@ const GROUPS = [
         id: "intermittent-demand",
         term: "Intermittent demand",
         usedIn: ["Demand Planner"],
-        seeAlso: ["demand-bucket", "forecast-profile", "exception-outlier"],
+        seeAlso: ["exception-outlier", "forecast", "sales-history"],
       },
       {
         id: "sales-history",
@@ -173,22 +161,10 @@ const GROUPS = [
         seeAlso: ["exception-outlier", "forecast", "unit-of-measure"],
       },
       {
-        id: "seasonality",
-        term: "Seasonality",
-        usedIn: ["Demand Planner"],
-        seeAlso: ["forecast-profile", "trend", "forecast-horizon"],
-      },
-      {
         id: "sku-forecasting-group",
         term: "SKU forecasting group",
         usedIn: ["Demand Planner"],
-        seeAlso: ["forecast", "demand-bucket", "sales-history"],
-      },
-      {
-        id: "trend",
-        term: "Trend",
-        usedIn: ["Demand Planner"],
-        seeAlso: ["forecast-profile", "seasonality", "forecast"],
+        seeAlso: ["forecast", "sales-history", "exception-outlier"],
       },
     ],
   },
@@ -201,6 +177,7 @@ const BANNED = [
   { label: "Excel", re: /\bexcel\b/i },
   { label: "numbered option", re: /option\s*[123]/i },
   { label: "4-4-5", re: /4-4-5/ },
+  { label: "product name in the body", re: /stock planner|demand planner/i },
 ];
 
 function sortTerms(terms) {
