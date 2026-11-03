@@ -123,10 +123,10 @@
   }
 
   // Chart label for the mean ending SOH. Units use the page's count formatting.
-  // Dollars are that same mean times the teaching $30 per unit (PRICES.gp),
-  // the rate in the annual-demand note, then the page's money formatting.
+  // Dollars are that same mean times the $70 unit cost (PRICES.cost), the
+  // cost working capital uses, then the page's money formatting.
   function averageSohLabel(mean) {
-    var rate = engine.PRICES && engine.PRICES.gp;
+    var rate = engine.PRICES && engine.PRICES.cost;
     if (mean == null || !isFinite(mean) || rate == null || !isFinite(rate)) {
       return "";
     }
