@@ -1,0 +1,2818 @@
+{
+  "planned-order": {
+    "definition": "A planned order is what we intend to buy from a supplier, or intend to make, and when. It isn't placed yet. The plan raises one so the projected balance stays at or above safety stock. Also called a planned supply order. Why it matters: planned orders show your future buying and production ahead of time, which is very useful for supplier forecasts, cash and capacity planning, and confirming lead times early. Review them before they become supply orders."
+  },
+  "time-phased-planning": {
+    "definition": "Time-phased planning projects stock forward, bucket by bucket, against the forecast, open orders and lead times, and times a planned order so it arrives before the projected balance falls below safety stock.",
+    "example": "The supply lead time is 6 weeks and the projected balance goes below safety stock in week 9. The plan shows the order in week 3, while the balance today can still look comfortable.",
+    "why": "Today's balance only says whether you are short now. The projection shows a shortage that is already inside the lead time, and it shows an open order that arrives too late to cover it."
+  },
+  "projected-stock": {
+    "definition": "Projected stock, also called the projected balance, is the on-hand quantity carried forward through each time bucket after that bucket's forecast and open supply orders.",
+    "example": "Opening stock is 100. The week 1 forecast is 30 and nothing is due in, so the projected balance finishes week 1 at 70. Week 2 opens at 70. Its forecast is 40 and a supply order of 100 is due, so the projected balance finishes week 2 at 130.",
+    "why": "The week the projected balance falls below safety stock is the week a planned order has to cover. Adding up all stock and all demand can hide that week, because supply that arrives later does not help an earlier bucket."
+  },
+  "expedite-reschedule": {
+    "definition": "Expedite and reschedule concepts are commonly used in MRP and supply planning systems to identify when supply timing may no longer properly align with projected demand requirements.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Expedite and reschedule concepts are commonly used in MRP and supply planning systems to identify when supply timing may no longer properly align with projected demand requirements."
+          }
+        ]
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "MRP systems calculate projected inventory balances across future time buckets."
+          },
+          {
+            "type": "p",
+            "text": "As projected supply and demand conditions change over time, existing supply orders may no longer arrive at the most appropriate time."
+          },
+          {
+            "type": "p",
+            "text": "Exception messages are typically generated when projected inventory positions violate planning rules or thresholds."
+          },
+          {
+            "type": "p",
+            "text": "Examples may include:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Projected shortages",
+              "Inventory projected below safety stock",
+              "Supply arriving later than required",
+              "Supply arriving significantly earlier than required",
+              "Excess projected inventory"
+            ]
+          }
+        ],
+        "heading": "Core Planning Concept",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "An expedite recommendation is triggered when projected inventory falls below the planning threshold before an existing open supply order arrives."
+          },
+          {
+            "type": "p",
+            "text": "In simple terms:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Projected inventory drops below the threshold",
+              "An open supply order is due in a later period",
+              "MRP recommends bringing that order forward"
+            ]
+          }
+        ],
+        "heading": "Expedite Logic",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "A reschedule-out recommendation is triggered when an open supply order is due before it's needed."
+          },
+          {
+            "type": "p",
+            "text": "In simple terms:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Projected inventory stays above the threshold without that order",
+              "An open supply order is due in an earlier period than needed",
+              "MRP recommends moving that order out to the period when projected inventory would otherwise drop below the threshold"
+            ]
+          }
+        ],
+        "heading": "Reschedule Logic",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Expedite and reschedule messages can create a lot of noise. Depending on your time buckets, MRP may recommend moving an open order by just a day. That's logically correct, but it isn't worth acting on, and dozens of small messages can hide the ones that matter. Find the sweet spot: set your time buckets or a minimum change so that only meaningful moves show up."
+          }
+        ],
+        "heading": "Noise",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Expedite and reschedule recommendations are generally outputs generated from the MRP calculation itself."
+          },
+          {
+            "type": "p",
+            "text": "The planning system first calculates projected inventory balances over time, then evaluates whether existing supply timing still supports planning objectives."
+          },
+          {
+            "type": "p",
+            "text": "The timing of supply is often just as important as the quantity of supply."
+          },
+          {
+            "type": "p",
+            "text": "A company may have sufficient total inventory overall, but still experience shortages if supply arrives too late."
+          }
+        ],
+        "heading": "Relationship to MRP",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "The application focuses on demonstrating:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Time-phased inventory behavior",
+              "Supply and demand timing alignment",
+              "Projected inventory risk",
+              "Simplified planning decision support"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "The application is designed for conceptual understanding and does not attempt to fully replicate the detailed exception management of a full-scale planning system."
+          }
+        ],
+        "heading": "Application Behavior",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Frequent expedite activity may indicate underlying planning issues such as:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Poor forecast accuracy",
+              "Incorrect lead times",
+              "Supply variability",
+              "Inventory inaccuracies",
+              "Capacity constraints"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Many organizations attempt to reduce unnecessary expedite activity because expediting often increases operational cost, planning instability, and supply chain variability."
+          }
+        ],
+        "heading": "Important Operational Consideration",
+        "level": 3
+      }
+    ]
+  },
+  "lot-size": {
+    "definition": "The required ordering increment used after the minimum order quantity (MOQ) is met.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "The required ordering increment used after the minimum order quantity (MOQ) is met."
+          }
+        ]
+      },
+      {
+        "blocks": [
+          {
+            "type": "ul",
+            "items": [
+              "MOQ = 1,000 units",
+              "Lot Size = 250 units"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Valid order quantities would be:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "1,000",
+              "1,250",
+              "1,500",
+              "1,750"
+            ]
+          }
+        ],
+        "heading": "Example",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Suppliers often define lot size increments due to:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Manufacturing batch sizes",
+              "Packaging standards",
+              "Carton or pallet quantities",
+              "Material handling efficiency",
+              "Freight optimization"
+            ]
+          }
+        ],
+        "heading": "Why Suppliers Use Lot Sizes",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Widgets come in cartons of 24, and you can't buy half a carton. If you need 30, you have to order 48, which is 2 cartons."
+          },
+          {
+            "type": "p",
+            "text": "The key question is how much demand one lot covers. If a carton is a few days' or a week's worth of demand, rounding up makes little difference. If one lot covers months of demand, every order leaves you with extra stock, which ties up cash and space and raises the risk it becomes slow-moving or obsolete."
+          },
+          {
+            "type": "p",
+            "text": "To check, divide the lot size by average weekly demand. For example, cartons of 24 with demand of 12 a week means each carton is 2 weeks of cover."
+          }
+        ],
+        "heading": "Why It Matters",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "ul",
+            "items": [
+              "**MOQ** defines the minimum starting order quantity",
+              "**Lot Size** defines the required increment above MOQ"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "In many supplier environments, orders must satisfy both conditions simultaneously."
+          }
+        ],
+        "heading": "Relationship to MOQ",
+        "level": 3
+      }
+    ]
+  },
+  "minimum-order-quantity": {
+    "definition": "The minimum quantity a supplier allows per purchase order.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "The minimum quantity a supplier allows per purchase order."
+          }
+        ]
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "A supplier may require a minimum order of **1,000 units** per SKU."
+          }
+        ],
+        "heading": "Example",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Suppliers often establish MOQ requirements due to:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Manufacturing batch/run sizes",
+              "Material handling constraints",
+              "Pallet or carton quantity standards",
+              "Production setup costs",
+              "Freight efficiency requirements"
+            ]
+          }
+        ],
+        "heading": "Why Suppliers Use MOQ",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "The key question is how much demand the MOQ covers. If it's a week or two of demand, it has little effect. If it's months of demand, for example 6 months, you end up holding far more stock than you need, which ties up cash, takes up space, and raises the risk the stock becomes slow-moving or obsolete."
+          },
+          {
+            "type": "p",
+            "text": "To check, divide the MOQ by average weekly demand. For example, an MOQ of 1,000 with demand of 50 a week is 20 weeks of cover."
+          }
+        ],
+        "heading": "Why It Matters",
+        "level": 3
+      }
+    ]
+  },
+  "minimum-order-value": {
+    "definition": "The minimum total dollar value required for a supplier purchase order.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "The minimum total dollar value required for a supplier purchase order."
+          }
+        ]
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "A supplier may require all purchase orders to total at least **$5,000**."
+          }
+        ],
+        "heading": "Example",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "MOV constraints can force planners to:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Purchase more inventory than immediately needed",
+              "Consolidate orders",
+              "Delay replenishment timing",
+              "Increase inventory carrying costs"
+            ]
+          }
+        ],
+        "heading": "Why It Matters",
+        "level": 3
+      }
+    ]
+  },
+  "mrp": {
+    "definition": "MRP is a time-phased inventory planning process that projects future inventory balances over time.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "MRP is a time-phased inventory planning process that projects future inventory balances over time."
+          }
+        ],
+        "heading": "MRP (Material Requirements Planning)",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "At a simple level, MRP does this calculation for each item at each location, for each time period, such as each week:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Starting stock on hand (SOH) at that location",
+              "Plus incoming supply due to that location in that period",
+              "Minus expected demand from that location for that period",
+              "Resulting in projected ending inventory at that location for that period"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "The projected ending inventory from one period then becomes the starting inventory for the next period."
+          },
+          {
+            "type": "p",
+            "text": "Each location is planned on its own. Stock at one warehouse doesn't cover demand at another unless it's moved there with a transfer order."
+          },
+          {
+            "type": "p",
+            "text": "A general MRP principle is that planned supply orders are only created for dates after your open supply orders. That keeps the plan easy to follow, because you never see a new suggested order arriving ahead of an order you've already placed."
+          }
+        ],
+        "heading": "Core MRP Concept",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Week 1:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Starting SOH = 500",
+              "Supply = 200",
+              "Demand = 400",
+              "Ending SOH = 300"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Week 2:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Starting SOH = 300",
+              "Supply = 100",
+              "Demand = 450",
+              "Ending SOH = -50 shortage"
+            ]
+          }
+        ],
+        "heading": "Simple Example",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "MRP calculations are typically performed across repeating time buckets."
+          },
+          {
+            "type": "p",
+            "text": "Different systems may use:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Daily buckets",
+              "Weekly buckets",
+              "Monthly buckets"
+            ]
+          }
+        ],
+        "heading": "Time Buckets",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Inventory may appear sufficient overall, but shortages can still occur if supply arrives after demand is required."
+          },
+          {
+            "type": "p",
+            "text": "The timing of supply is often just as important as the quantity of supply."
+          }
+        ],
+        "heading": "Why Time Matters",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "MRP commonly generates:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Planned supply recommendations",
+              "Inventory projections",
+              "Shortage visibility",
+              "Time-phased supply and demand views"
+            ]
+          }
+        ],
+        "heading": "Typical MRP Outputs",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "For SKUs marked Obsolete, the MRP rules specify that no further supply orders are to be generated."
+          },
+          {
+            "type": "p",
+            "text": "Existing inventory can therefore be consumed by demand until it reaches zero."
+          },
+          {
+            "type": "ul",
+            "items": [
+              "No planned supply orders are generated for Obsolete SKUs",
+              "Projected SOH cannot fall below zero",
+              "Once available stock is exhausted, projected SOH remains at zero",
+              "This represents the SKU being run down and eventually finished"
+            ]
+          }
+        ],
+        "heading": "Obsolete SKUs",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Starting SOH = 100"
+          },
+          {
+            "type": "p",
+            "text": "Demand = 150"
+          },
+          {
+            "type": "p",
+            "text": "Supply = 0"
+          },
+          {
+            "type": "p",
+            "text": "Projected SOH = 0, not -50."
+          },
+          {
+            "type": "p",
+            "text": "If demand continues in later weeks, projected SOH remains 0 because no further supply is planned."
+          }
+        ],
+        "heading": "Example",
+        "level": 4
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "MRP outputs are only as reliable as the underlying data."
+          },
+          {
+            "type": "p",
+            "text": "Incorrect inventory balances, lead times, supply dates, forecasts, or transaction timing can significantly affect planning results."
+          }
+        ],
+        "heading": "Important Operational Consideration",
+        "level": 3
+      }
+    ]
+  },
+  "past-due": {
+    "definition": "Demand or supply that should already have happened by its date but hasn't.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Demand or supply that should already have happened by its date but hasn't."
+          }
+        ],
+        "heading": "Definition",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "A purchase order due on 1 July that hasn't arrived by 2 July is past-due."
+          },
+          {
+            "type": "p",
+            "text": "Sales orders can be past-due too. They're usually called back orders."
+          }
+        ],
+        "heading": "Example",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "**Why it matters:**"
+          },
+          {
+            "type": "p",
+            "text": "The key question is whether a past-due order will still happen, and when."
+          },
+          {
+            "type": "ul",
+            "items": [
+              "**Purchase orders:** any supplier, local or overseas, might have lost your order or never received it. Overseas orders also have more genuine reasons to run late, such as a delayed ship, a busy port, or goods held in customs. So a late overseas order is more likely to still be on its way, while a late local order is a stronger sign that something has gone wrong. Either way, check with the supplier and get a new date.",
+              "**Sales orders:** in some industries, a customer will wait weeks for a back order. In others, the sale is lost after a short delay. Check whether old back orders are still wanted before planning stock for them."
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "supply-lead-time": {
+    "definition": "Supply lead time is the total elapsed time between placing a supply order and the inventory being received into Stock on Hand (SOH).",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Supply lead time is the total elapsed time between placing a supply order and the inventory being received into Stock on Hand (SOH)."
+          }
+        ]
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Lead time may include:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Supplier order processing",
+              "Manufacturing or production time",
+              "Picking and packing",
+              "Freight transit time",
+              "Customs clearance",
+              "Receiving and warehouse processing"
+            ]
+          }
+        ],
+        "heading": "Typical Lead Time Components",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "A supplier may quote:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "10 days manufacturing",
+              "7 days ocean transit",
+              "3 days receiving and processing"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Total supply lead time = **20 days**"
+          }
+        ],
+        "heading": "Example",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "It is important to understand exactly what activities are included within the agreed lead time."
+          },
+          {
+            "type": "p",
+            "text": "Different supplier agreements may define responsibility differently."
+          },
+          {
+            "type": "p",
+            "text": "Examples include:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Supplier ships from their warehouse only",
+              "Supplier delivers to your receiving dock",
+              "Freight arranged by customer vs supplier"
+            ]
+          }
+        ],
+        "heading": "Important Operational Consideration",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Terms such as:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Ex-Works (EXW)",
+              "Free Into Store (FIS)"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "can significantly change the practical lead time experienced by the planner."
+          },
+          {
+            "type": "p",
+            "text": "The same supplier manufacturing time may result in very different inventory arrival dates depending on who manages freight and receiving activities."
+          },
+          {
+            "type": "p",
+            "text": "Terms like these are often based on Incoterms, the international rules that set out who pays for and manages each step of shipping. To learn more, see the [ICC Incoterms rules](https://iccwbo.org/business-solutions/incoterms-rules/)."
+          }
+        ],
+        "heading": "Supplier Agreement Differences",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "The planned lead time is what the supplier quotes or what's set in your system. The actual lead time is how long orders really take to arrive. These can differ a lot. If the planned lead time is 20 days but orders take 35 days on average, plans built on 20 days will keep running short. It's worth tracking actual arrival times and deciding which number to plan with. You can also ask the supplier whether the quoted time is realistic."
+          }
+        ],
+        "heading": "Planned vs Actual Lead Time",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Effective planners benefit from understanding how their suppliers actually replenish and produce inventory."
+          },
+          {
+            "type": "p",
+            "text": "Different suppliers may operate very differently:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Make products only after receiving customer orders",
+              "Wait to accumulate enough demand before starting production",
+              "Hold finished stock ready for immediate shipment",
+              "Purchase inventory only after receiving customer demand"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "For manufacturing suppliers, additional delays may occur due to:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Production scheduling queues",
+              "Limited manufacturing capacity",
+              "Availability of raw materials or components",
+              "Internal supplier lead times"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Even when a quoted lead time appears fixed, the underlying supply process may create variability."
+          },
+          {
+            "type": "p",
+            "text": "Developing a conceptual understanding of how suppliers operate can significantly improve planning decisions and shortage risk management."
+          }
+        ],
+        "heading": "Understanding Supplier Supply Models",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Incorrect lead times can result in:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Inventory shortages",
+              "Excess inventory",
+              "Expediting costs",
+              "Missed customer demand",
+              "Incorrect MRP recommendations"
+            ]
+          }
+        ],
+        "heading": "Why It Matters",
+        "level": 3
+      }
+    ]
+  },
+  "supply-order": {
+    "definition": "A supply order represents incoming inventory intended to satisfy future demand.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "A supply order represents incoming inventory intended to satisfy future demand."
+          },
+          {
+            "type": "p",
+            "text": "Depending on the business model, supply orders may include:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Purchase Orders (POs) from external suppliers",
+              "Production / Manufacturing Orders created internally",
+              "Transfer Orders bringing stock in from another internal location"
+            ]
+          }
+        ]
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Each supply order typically contains a unique identifier used for:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Tracking",
+              "Receiving",
+              "Supplier communication",
+              "Shipment matching",
+              "Planning visibility",
+              "Audit/history purposes"
+            ]
+          }
+        ],
+        "heading": "Unique Identifiers",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "In supplier relationships, your Purchase Order (PO) is often entered into the supplier's system as a:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Sales Order (SO)"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "This means:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Your incoming supply is the supplier's outgoing demand",
+              "Both systems may reference different document numbers",
+              "Cross-referencing identifiers is important during issue resolution"
+            ]
+          }
+        ],
+        "heading": "Supplier System Relationship",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Supply orders are critical inputs into MRP and inventory planning because they determine:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Future inventory availability",
+              "Expected replenishment timing",
+              "Shortage risk",
+              "Supplier execution performance"
+            ]
+          }
+        ],
+        "heading": "Why It Matters",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Supply orders may become unreliable due to:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Supplier delays",
+              "Incorrect dates or quantities",
+              "Duplicate orders",
+              "Unprocessed receipts",
+              "Cancelled or held orders",
+              "Production constraints"
+            ]
+          }
+        ],
+        "heading": "Common Risks",
+        "level": 3
+      }
+    ]
+  },
+  "unit-of-measure": {
+    "definition": "A Unit of Measure (UoM) defines how inventory, purchasing, production, or sales quantities are represented and tracked.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "A Unit of Measure (UoM) defines how inventory, purchasing, production, or sales quantities are represented and tracked."
+          }
+        ]
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Your unit of measure and your supplier's may not match. You might count stock in single units while your supplier sells by the carton or the box. An order for \"100\" could mean 100 units or 100 cartons, so always say which unit you mean on the purchase order. Then check that the supplier's confirmation uses the same one."
+          }
+        ],
+        "heading": "Why It Matters",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "ul",
+            "items": [
+              "Each (EA)",
+              "Carton (CTN)",
+              "Inner Carton",
+              "Outer Carton",
+              "Pallet (PLT)",
+              "Kilogram (KG)",
+              "Liter (L)"
+            ]
+          }
+        ],
+        "heading": "Common UoM Examples",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Different businesses and suppliers may transact the same product using different units of measure."
+          },
+          {
+            "type": "p",
+            "text": "Incorrect assumptions can create major ordering and inventory issues."
+          }
+        ],
+        "heading": "Why UoM Matters",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "A planner intended to order **inner cartons** of Easter chocolate."
+          },
+          {
+            "type": "p",
+            "text": "The supplier interpreted the order as **outer cartons**."
+          },
+          {
+            "type": "p",
+            "text": "Since each outer carton contained **6 inner cartons**, the actual order quantity became **6× larger than intended**."
+          }
+        ],
+        "heading": "Real-World Example",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "UoM conversion defines the mathematical relationship between different units."
+          },
+          {
+            "type": "p",
+            "text": "Example:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "1 Outer Carton = 6 Inner Cartons"
+            ]
+          }
+        ],
+        "heading": "UoM Conversion",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Different countries, industries, and suppliers may use different measurement systems."
+          },
+          {
+            "type": "p",
+            "text": "Examples include:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Metric vs Imperial measurements",
+              "Liters vs Fluid Ounces",
+              "Kilograms vs Pounds",
+              "Metric tons vs Short tons"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "UoM assumptions should always be validated when working across suppliers, regions, or other business systems."
+          }
+        ],
+        "heading": "Regional and Supplier Differences",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Equivalent quantities are not always operationally interchangeable."
+          },
+          {
+            "type": "p",
+            "text": "Example:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "1 × 10L paint tin = 10 liters",
+              "10 × 1L paint tins = 10 liters"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Both represent the same total volume, but they may not satisfy the same operational requirement."
+          },
+          {
+            "type": "p",
+            "text": "A production process may specifically require the single 10L container format."
+          }
+        ],
+        "heading": "Important Operational Consideration",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Incorrect UoM handling can result in:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Over-ordering or under-ordering",
+              "Inventory inaccuracies",
+              "Production disruptions",
+              "Freight inefficiencies",
+              "Receiving discrepancies",
+              "Planning errors"
+            ]
+          }
+        ],
+        "heading": "Why It Matters",
+        "level": 3
+      }
+    ]
+  },
+  "customer-service-level": {
+    "definition": "Customer service level refers to the ability to satisfy customer demand within the expected timeframe and availability requirements.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Customer service level refers to the ability to satisfy customer demand within the expected timeframe and availability requirements."
+          }
+        ]
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Service expectations may include:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Immediate stock availability",
+              "Same-day shipment",
+              "Delivery within several days",
+              "Backorder acceptance",
+              "Scheduled production lead times"
+            ]
+          }
+        ],
+        "heading": "Common Examples",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Different customers may have very different expectations."
+          },
+          {
+            "type": "p",
+            "text": "Examples include:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Some customers expect products immediately from stock",
+              "Some customers are comfortable waiting for replenishment",
+              "Some products are expected to always be available",
+              "Some specialized products may naturally require longer lead times"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Your customer service level is a business decision. Customer expectations are worth knowing, but the target should reflect the service your company chooses to offer, weighed against the extra working capital it requires."
+          }
+        ],
+        "heading": "Customer Expectations Can Differ",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Higher service levels generally require higher inventory investment."
+          },
+          {
+            "type": "p",
+            "text": "Additional inventory may increase:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Working capital requirements",
+              "Warehouse space usage",
+              "Inventory carrying costs",
+              "Obsolescence risk"
+            ]
+          }
+        ],
+        "heading": "Working Capital Trade-Off",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Service level and inventory investment are not linearly related."
+          },
+          {
+            "type": "p",
+            "text": "Achieving very high availability levels may require disproportionately larger increases in safety stock and working capital."
+          }
+        ],
+        "heading": "Example",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Effective planning involves balancing:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Customer expectations",
+              "Inventory investment",
+              "Supply lead times",
+              "Demand variability",
+              "Business profitability"
+            ]
+          }
+        ],
+        "heading": "Balancing Service and Inventory",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Appropriate customer service levels often depend heavily on the industry and market environment."
+          },
+          {
+            "type": "p",
+            "text": "Examples include:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "FMCG (Fast-Moving Consumer Goods, called CPG in the US) environments often require very high service levels due to strong customer availability expectations",
+              "Industrial or specialized products may tolerate longer replenishment times",
+              "Spare parts businesses may prioritize availability for critical items only"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Customer expectations, competitive pressure, and product criticality all influence appropriate inventory and service level strategies."
+          }
+        ],
+        "heading": "Industry and Market Expectations",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Not every product or customer necessarily requires the same service level."
+          },
+          {
+            "type": "p",
+            "text": "Businesses often apply different inventory and replenishment strategies depending on:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Customer importance",
+              "Product criticality",
+              "Demand predictability",
+              "Supply risk",
+              "Commercial value"
+            ]
+          }
+        ],
+        "heading": "Important Operational Consideration",
+        "level": 3
+      }
+    ]
+  },
+  "inventory-turns": {
+    "definition": "Stockturns: how many times a year your average stock is used up and replaced to meet customer demand. For example, if your cost of goods sold for the year is $600,000 and you hold $100,000 of stock on average, that's 6 turns a year.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Stockturns: how many times a year your average stock is used up and replaced to meet customer demand. For example, if your cost of goods sold for the year is $600,000 and you hold $100,000 of stock on average, that's 6 turns a year."
+          },
+          {
+            "type": "p",
+            "text": "Stockturns show how much working capital is tied up in stock to meet customer demand at the service level you've chosen. More turns means less cash tied up in stock. Fewer turns means more cash tied up in stock."
+          }
+        ],
+        "heading": "Inventory Turns / Stockturns",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "If a business replenishes inventory:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "52 times per year → inventory turns faster",
+              "12 times per year → inventory turns slower",
+              "2 times per year → inventory turns much slower"
+            ]
+          }
+        ],
+        "heading": "Simple Concept",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Faster inventory turns often reduce:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Working capital requirements",
+              "Inventory carrying costs",
+              "Warehouse space usage",
+              "Obsolescence exposure"
+            ]
+          }
+        ],
+        "heading": "Why It Matters",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Inventory exists to support customer service expectations."
+          },
+          {
+            "type": "p",
+            "text": "However, the amount of inventory required depends heavily on:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Replenishment frequency",
+              "Supply lead times",
+              "MOQ and lot size constraints",
+              "Demand variability",
+              "Supplier reliability"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Ordering smaller quantities more frequently can often reduce average inventory investment — if operationally and commercially possible."
+          }
+        ],
+        "heading": "Relationship to Customer Service",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Assuming the same annual demand:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Ordering weekly generally requires less average inventory than ordering monthly",
+              "Ordering monthly generally requires less average inventory than ordering twice per year"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "In practice, ordering frequency may be constrained by:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "MOQ requirements",
+              "Freight economics",
+              "Supplier production models",
+              "Lead times",
+              "Operational capacity"
+            ]
+          }
+        ],
+        "heading": "Example",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Inventory turns and working capital are closely related."
+          },
+          {
+            "type": "p",
+            "text": "All else being equal:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Higher inventory turns generally reduce average inventory holdings",
+              "Lower average inventory holdings generally reduce working capital requirements"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "As a simple conceptual example:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "If inventory turns double, average inventory investment may roughly halve."
+            ]
+          }
+        ],
+        "heading": "Relationship Between Turns and Working Capital",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Inventory turns are often measured at an aggregate business or warehouse level."
+          },
+          {
+            "type": "p",
+            "text": "This means overall inventory performance may hide important product-level differences."
+          },
+          {
+            "type": "p",
+            "text": "Slow-moving or obsolete inventory (SLOB) can negatively affect overall inventory turns because capital remains tied up in inventory with low or no consumption."
+          },
+          {
+            "type": "p",
+            "text": "Businesses often analyze inventory turns at multiple levels such as:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Company-wide",
+              "Warehouse/location",
+              "Product category",
+              "Individual SKU"
+            ]
+          }
+        ],
+        "heading": "Aggregate vs Individual Product Performance",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Effective inventory planning balances:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Customer service expectations",
+              "Working capital investment",
+              "Supply reliability",
+              "Operational practicality",
+              "Inventory efficiency"
+            ]
+          }
+        ],
+        "heading": "Balancing Efficiency and Service",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "All else being equal, with no safety stock, your average stock is half of each order lot. If you halve the lot size, average stock halves and stockturns double. The working capital you need halves too. It's a direct relationship. For example, ordering 2 weeks of demand at a time instead of 4 takes you from 13 turns a year to 26."
+          }
+        ],
+        "heading": "Lot Size and Stockturns",
+        "level": 3
+      }
+    ]
+  },
+  "safety-stock": {
+    "definition": "Safety stock and safety time are planning buffers used to protect against uncertainty in supply and demand.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Safety stock and safety time are planning buffers used to protect against uncertainty in supply and demand."
+          }
+        ],
+        "heading": "Safety Stock / Safety Time",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Safety stock is additional inventory intentionally held above expected demand requirements."
+          },
+          {
+            "type": "p",
+            "text": "Safety stock is held in your base unit of measure, the same unit you use for stock on hand. If you count stock in single units, set safety stock in single units too, not in cases or pallets. Otherwise the plan will compare numbers that don't match."
+          }
+        ],
+        "heading": "Safety Stock",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Safety time represents a time-based protection buffer."
+          },
+          {
+            "type": "p",
+            "text": "Instead of storing a fixed quantity, planners define additional coverage time such as:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "3 days",
+              "1 week",
+              "14 days"
+            ]
+          }
+        ],
+        "heading": "Safety Time",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "For MRP, safety time is converted into an inventory quantity using expected demand rates."
+          },
+          {
+            "type": "p",
+            "text": "Example:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Average demand = 100 units/day",
+              "Safety time = 5 days"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Result:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Safety stock requirement = 500 units"
+            ]
+          }
+        ],
+        "heading": "Converting Time Into Units",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Safety stock protects against two things:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "**Variability in customer demand**, for example when the forecast is wrong or a large order arrives unexpectedly.",
+              "**Variability in supply timing**, for example supplier delays or transport disruptions."
+            ]
+          }
+        ],
+        "heading": "Why Safety Stock Exists",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Longer lead times generally create greater uncertainty and variability."
+          },
+          {
+            "type": "p",
+            "text": "The further planners must look into the future, the less predictable supply timing and customer demand may become."
+          }
+        ],
+        "heading": "Lead Time and Variability",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Supplier operating models can significantly affect supply variability."
+          },
+          {
+            "type": "p",
+            "text": "Examples include:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Manufacturers producing only after orders are received",
+              "Suppliers waiting to accumulate enough demand before production",
+              "Wholesalers holding finished inventory ready for shipment",
+              "Distributors purchasing stock only after receiving customer orders"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Manufacturing suppliers may also experience variability due to:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Production scheduling delays",
+              "Raw material shortages",
+              "Component availability",
+              "Capacity constraints"
+            ]
+          }
+        ],
+        "heading": "Supplier Operating Model Matters",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "In MRP, safety stock isn't meant to sit unused. It's the level that triggers replenishment."
+          },
+          {
+            "type": "p",
+            "text": "MRP calculates projected stock for each period. When projected stock drops below safety stock, MRP plans a new supply order to bring it back up."
+          }
+        ],
+        "heading": "Safety Stock as an MRP Trigger",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "**Customer service level:**"
+          },
+          {
+            "type": "p",
+            "text": "This is the share of demanded units you aim to supply straight from stock, without back orders or lost sales. For example, a 95% service level means that for every 100 units customers order, you aim to ship 95 from stock on hand."
+          },
+          {
+            "type": "p",
+            "text": "The higher the service level you need, the more safety stock you have to hold. The cost also climbs steeply near the top: going from 95% to 99% takes much more extra stock than going from 90% to 95%. So it's worth setting higher targets for your most important items and lower ones for the rest."
+          }
+        ]
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Safety stock is generally designed to absorb normal operational variability, not extreme or exceptional events."
+          },
+          {
+            "type": "p",
+            "text": "Example:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Expected demand = 100 units",
+              "Typical variability may range between 80–130 units"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Safety stock may help protect against this type of normal fluctuation."
+          },
+          {
+            "type": "p",
+            "text": "However, safety stock is usually not intended to fully absorb highly abnormal events such as:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Demand surges from 100 to 600 units",
+              "Major supplier shutdowns",
+              "Port closures",
+              "Natural disasters",
+              "Systemic supply chain disruptions"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "In most planning environments, \"normal\" variability is estimated using historical operational behavior."
+          },
+          {
+            "type": "p",
+            "text": "Past demand patterns, supplier performance, and lead time variability are commonly used to determine appropriate safety stock levels."
+          }
+        ],
+        "heading": "Normal vs Abnormal Variability",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Insufficient safety stock can increase shortage risk."
+          },
+          {
+            "type": "p",
+            "text": "Excessive safety stock can increase:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Inventory carrying costs",
+              "Obsolescence exposure",
+              "Warehouse space requirements",
+              "Working capital usage"
+            ]
+          }
+        ],
+        "heading": "Why It Matters",
+        "level": 3
+      }
+    ]
+  },
+  "slow-mover": {
+    "definition": "Slow-moving inventory refers to products with relatively low inventory usage or sales activity over time.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Slow-moving inventory refers to products with relatively low inventory usage or sales activity over time."
+          },
+          {
+            "type": "p",
+            "text": "SLOB commonly stands for:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Slow Moving",
+              "Obsolete Inventory"
+            ]
+          }
+        ]
+      },
+      {
+        "blocks": [
+          {
+            "type": "ul",
+            "items": [
+              "Slow movers still have ongoing demand, but consumption occurs infrequently or at low volumes",
+              "Obsolete inventory generally has little or no expected future demand"
+            ]
+          }
+        ],
+        "heading": "Slow Mover vs Obsolete",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Slow-moving inventory may result from:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Demand declines",
+              "Forecast inaccuracy",
+              "Large MOQ or lot size constraints",
+              "Long lead times",
+              "Safety stock policies",
+              "Product lifecycle changes",
+              "Customer behavior changes"
+            ]
+          }
+        ],
+        "heading": "Why Slow Movers Occur",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "A product averaging only 2 units of demand per month while holding 500 units of inventory may be considered a slow mover."
+          }
+        ],
+        "heading": "Example",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Slow-moving inventory is not always \"bad\" inventory."
+          },
+          {
+            "type": "p",
+            "text": "Some products intentionally carry low turnover because they are:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Critical spare parts",
+              "Service items",
+              "Long lead-time products",
+              "Insurance stock for important customers",
+              "Required for regulatory or contractual obligations"
+            ]
+          }
+        ],
+        "heading": "Important Operational Consideration",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Excessive slow-moving inventory can increase:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Inventory carrying costs",
+              "Warehouse space usage",
+              "Working capital requirements",
+              "Obsolescence risk",
+              "Write-off exposure"
+            ]
+          }
+        ],
+        "heading": "Why It Matters",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Businesses often review SLOB inventory to determine whether actions are required such as:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Inventory reduction",
+              "Transfers between locations",
+              "Supplier return negotiations",
+              "MOQ reduction discussions with suppliers",
+              "Product phase-out planning",
+              "Promotional sales activity",
+              "Disposal or write-off"
+            ]
+          }
+        ],
+        "heading": "SLOB Management",
+        "level": 3
+      }
+    ]
+  },
+  "demand-bucket": {
+    "definition": "Before forecasting begins, the application analyses historical sales to understand the characteristics of demand for every SKU and Location.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Before forecasting begins, the application analyses historical sales to understand the characteristics of demand for every SKU and Location."
+          },
+          {
+            "type": "p",
+            "text": "This information helps determine which products are suitable for statistical forecasting and identifies products that may require alternative planning methods."
+          }
+        ],
+        "heading": "Sales History Analysis",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "The analysis calculates several measures, including:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "**History Weeks** – Number of weeks of available sales history.",
+              "**Zero Weeks** – Number of weeks with no recorded sales.",
+              "**Average Demand Interval (ADI)** – A measure of how frequently demand occurs.",
+              "**12-week average** – The average weekly demand over the most recent 12 weeks, or the weeks available when history is shorter."
+            ]
+          }
+        ],
+        "heading": "Key Measures",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "The application classifies each SKU into a Demand Bucket based on the quantity and frequency of historical demand."
+          },
+          {
+            "type": "p",
+            "text": "The objective is to determine whether there is sufficient information in the sales history for statistical forecasting to produce meaningful results."
+          }
+        ],
+        "heading": "Demand Buckets",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Forecastable products have statistically significant demand."
+          },
+          {
+            "type": "p",
+            "text": "There is sufficient demand history for the application to identify trend and seasonal patterns, allowing a statistical forecast to be generated. These products generally contain enough demand signal for the forecasting algorithms to produce reliable results."
+          }
+        ],
+        "heading": "Forecastable",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Low Stable products have regular demand, but the sales volumes are too low to be considered statistically significant."
+          },
+          {
+            "type": "p",
+            "text": "While demand is generally stable, there is insufficient demand signal for the application to reliably identify trend or seasonality. For these products, the forecast is based on a moving average rather than statistical forecasting methods."
+          }
+        ],
+        "heading": "Low Stable",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Intermittent products have many weeks with no recorded sales."
+          },
+          {
+            "type": "p",
+            "text": "The forecast uses the average quantity of the weeks that sold in the last 26 weeks, rounded up. The average demand interval (ADI), also rounded up, sets which future weeks get that quantity. If there was no sale in the last 26 weeks, the forecast is zero."
+          }
+        ],
+        "heading": "Intermittent",
+        "level": 3
+      }
+    ]
+  },
+  "exception-outlier": {
+    "definition": "An exception is any event that causes recorded sales to differ from normal customer demand.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "An exception is any event that causes recorded sales to differ from normal customer demand."
+          },
+          {
+            "type": "p",
+            "text": "Exceptions may increase recorded sales, reduce recorded sales, or prevent genuine customer demand from being captured. If these events are not identified, they can distort the demand pattern used for forecasting."
+          }
+        ],
+        "heading": "Exceptions",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Statistical forecasting assumes that past demand is a reasonable indicator of future demand. When unusual events are included in the sales history, they can distort this relationship and produce forecasts that are either too high or too low."
+          },
+          {
+            "type": "p",
+            "text": "Identifying exceptions helps separate one-off events from the underlying demand pattern that the forecast is trying to predict."
+          }
+        ],
+        "heading": "Why are exceptions important?",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Examples of exceptions include:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Promotions",
+              "Customer stock builds",
+              "Large project orders",
+              "Product launches",
+              "End-of-life clearance",
+              "Supply shortages",
+              "Data entry errors",
+              "Natural disasters or industrial action"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Not every unusual sale should be treated as an exception. The objective is to identify events that are unlikely to occur again under normal trading conditions."
+          }
+        ],
+        "heading": "Common Examples",
+        "level": 3
+      }
+    ]
+  },
+  "forecast": {
+    "definition": "Forecasting is the process of estimating future demand for a product.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Forecasting is the process of estimating future demand for a product."
+          },
+          {
+            "type": "p",
+            "text": "Forecasts help organizations plan inventory, purchasing, production, capacity, and supply requirements before actual customer orders occur."
+          }
+        ],
+        "heading": "Forecasting",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "A forecast is your best estimate of what customers will want to buy. It isn't a promise of what you can supply. Limits on working capital, manufacturing capacity, or other constraints can mean you're able to supply less than the forecast."
+          }
+        ],
+        "heading": "Good to know",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Most supply chains require time to respond to demand."
+          },
+          {
+            "type": "p",
+            "text": "Because materials often have lead times, companies must make inventory and supply decisions before actual demand is known."
+          },
+          {
+            "type": "p",
+            "text": "Forecasting helps organizations:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Anticipate future demand",
+              "Position inventory appropriately",
+              "Improve customer service",
+              "Reduce shortages and excess stock",
+              "Support purchasing and production planning"
+            ]
+          }
+        ],
+        "heading": "Why Forecasting Matters",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Organizations may use different forecast methods depending on the business."
+          },
+          {
+            "type": "p",
+            "text": "Common examples include:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Statistical forecasts based on historical demand",
+              "Forecasts from customers",
+              "Forecasts from account managers / product managers",
+              "Promotional forecasts",
+              "Consensus or collaborative forecasts"
+            ]
+          }
+        ],
+        "heading": "Common Forecast Types",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Forecasts are estimates and will rarely be perfectly accurate."
+          },
+          {
+            "type": "p",
+            "text": "Some level of normal variation between forecast and actual demand is expected in nearly all supply chains."
+          },
+          {
+            "type": "p",
+            "text": "Demand variability, seasonality, promotions, market changes, and unexpected events can all affect forecast accuracy."
+          },
+          {
+            "type": "p",
+            "text": "The objective is not perfect accuracy, but forecasts that are directionally useful and operationally reliable."
+          },
+          {
+            "type": "p",
+            "text": "Consistent forecast bias is often more problematic than normal forecast variation."
+          },
+          {
+            "type": "p",
+            "text": "Repeatedly over-forecasting may create excess inventory, while repeated under-forecasting may increase shortages and expedite activity."
+          }
+        ],
+        "heading": "Forecast Accuracy",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "In many planning environments, forecasts are gradually replaced by actual customer orders as demand becomes known."
+          },
+          {
+            "type": "p",
+            "text": "This application uses a simplified forecast consumption assumption:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Planned demand = MAX(Forecast, Open Sales Orders)"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Under this approach, remaining unconsumed forecast is still treated as future demand unless actual customer orders exceed the forecast."
+          },
+          {
+            "type": "p",
+            "text": "This simplified logic demonstrates how planning systems often continue recognizing forecast demand until actual demand fully replaces it."
+          }
+        ],
+        "heading": "Forecast Consumption",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Poor forecast quality can lead to:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Excess inventory",
+              "Stock shortages",
+              "Expediting costs",
+              "Reduced customer service",
+              "Increased working capital"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "While normal forecast error is expected, forecasts that are consistently inaccurate or heavily biased become far less useful for planning purposes."
+          },
+          {
+            "type": "p",
+            "text": "In most supply chain environments, it is often more important that a forecast is operationally useful than perfectly accurate."
+          },
+          {
+            "type": "p",
+            "text": "Forecasts are commonly more accurate at higher levels of aggregation than at detailed item or customer levels."
+          },
+          {
+            "type": "p",
+            "text": "For example, aggregate forecasts may still be highly useful for:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Revenue projections",
+              "Capacity planning",
+              "Workforce planning",
+              "Procurement planning",
+              "Financial planning"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Forecast performance should therefore be monitored and continuously improved over time, with particular attention given to reducing systematic forecast bias."
+          }
+        ],
+        "heading": "Important Operational Consideration",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Like most forecasting systems, the application assumes that historical demand provides useful information about future demand."
+          },
+          {
+            "type": "p",
+            "text": "Depending on the Demand Bucket, the application analyses historical sales for characteristics such as trend, seasonality, average demand and demand frequency, and applies the most appropriate forecasting method."
+          },
+          {
+            "type": "p",
+            "text": "Forecasting is fundamentally the process of separating signal from noise."
+          },
+          {
+            "type": "p",
+            "text": "Historical sales contain both genuine demand patterns (the signal) and random variation (the noise). The application uses a series of heuristic techniques to identify meaningful demand characteristics such as trend and seasonality while reducing the influence of short-term fluctuations."
+          },
+          {
+            "type": "p",
+            "text": "By focusing on consistent patterns rather than isolated events, the resulting forecast is generally more representative of underlying customer demand."
+          }
+        ],
+        "heading": "Forecast Generation",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "The application automatically selects the most appropriate forecasting method based on the Demand Bucket assigned to each item and location."
+          },
+          {
+            "type": "ul",
+            "items": [
+              "**Steady demand** – a level, trend, or seasonal forecast. A trend eases off further out.",
+              "**Low regular demand** – 12-week average.",
+              "**Intermittent demand** – the average quantity of the weeks that sold in the last 26 weeks, rounded up. The average demand interval, also rounded up, sets which future weeks get that quantity.",
+              "**Short history** – the 12-week average of the weeks available since the first sale. Weeks with no sales after the first sale count. Weeks before the first sale do not."
+            ]
+          },
+          {
+            "type": "p",
+            "text": "The quality of the forecast is heavily influenced by the quality of the Sales History used as input. Reviewing exceptions and maintaining representative Sales History will generally improve forecast quality more than changing forecasting parameters."
+          }
+        ],
+        "heading": "Forecasting Method",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "The application identifies trend by comparing the average demand for each quarter with the corresponding quarter from the previous year."
+          },
+          {
+            "type": "p",
+            "text": "This approach compares like-for-like periods, helping to avoid seasonal demand being incorrectly identified as trend."
+          }
+        ],
+        "heading": "Identifying Trend",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "For each item and location:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "The most recent four quarters are compared with the same four quarters from the previous year.",
+              "The percentage change is calculated for each quarter.",
+              "Each quarter is classified as **Up**, **Down** or **Flat** using the configured trend threshold.",
+              "If three or more of the four quarters show an increase, the product is classified as **Up Trend**.",
+              "If three or more of the four quarters show a decrease, the product is classified as **Down Trend**.",
+              "Otherwise, the product is classified as **Flat**."
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Example"
+          },
+          {
+            "type": "pre",
+            "text": "Quarter      Previous Year      Current Year      Result\n\nQ1                 100               118           Up\nQ2                 120               138           Up\nQ3                 110               121           Up\nQ4                 130               134           Flat"
+          },
+          {
+            "type": "p",
+            "text": "Three of the four quarters increased by more than the configured trend threshold, so the item and location would be classified as **Up Trend**."
+          }
+        ],
+        "heading": "How it works",
+        "level": 4
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "The application identifies seasonality by comparing the average demand for each quarter with the average demand for the corresponding year."
+          },
+          {
+            "type": "p",
+            "text": "Rather than comparing absolute sales quantities, each quarter is measured relative to the yearly average. This allows seasonal patterns to be identified even when overall demand is increasing or decreasing over time."
+          }
+        ],
+        "heading": "Identifying Seasonality",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "For each item and location:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Only complete years containing all four quarters are analysed.",
+              "The average demand is calculated for each quarter.",
+              "The average demand for the year is calculated.",
+              "Each quarter is expressed as a percentage above or below the yearly average.",
+              "The two most recent complete years are then compared.",
+              "If the same quarter is above average in both years, or below average in both years, it contributes to the Seasonality Score.",
+              "The larger and more consistent the quarterly pattern, the higher the Seasonality Score.",
+              "When the Seasonality Score exceeds the configured threshold, the item and location is classified as Seasonal."
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Comparing each quarter with its yearly average allows the application to identify seasonal patterns independently of changes in overall demand."
+          },
+          {
+            "type": "p",
+            "text": "For example, a product may be growing by 10% each year, but still consistently sell more in Quarter 3 and less in Quarter 1. Measuring each quarter relative to its yearly average helps separate the seasonal signal from the overall growth trend."
+          },
+          {
+            "type": "p",
+            "text": "Example"
+          },
+          {
+            "type": "pre",
+            "text": "Quarter        Year 1        Year 2\n\nQ1             -18%          -21%\nQ2              -6%           -8%\nQ3             +22%          +19%\nQ4              +2%           +5%"
+          },
+          {
+            "type": "p",
+            "text": "Each quarter remained on the same side of the yearly average in both years, indicating a consistent seasonal pattern. The combined Seasonality Score exceeds the threshold, so the item and location is classified as Seasonal."
+          }
+        ],
+        "heading": "How it works",
+        "level": 4
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Forecast reliability is influenced by the variability of historical demand."
+          },
+          {
+            "type": "p",
+            "text": "Products with relatively consistent demand are generally easier to forecast than products with highly variable demand, even when the average demand is the same."
+          },
+          {
+            "type": "p",
+            "text": "For example, the following sales histories both average **100 units per week**:"
+          },
+          {
+            "type": "p",
+            "text": "**Low Variability**"
+          },
+          {
+            "type": "p",
+            "text": "100, 110, 90, 100, 80, 120"
+          },
+          {
+            "type": "p",
+            "text": "**High Variability**"
+          },
+          {
+            "type": "p",
+            "text": "50, 200, 120, 80, 0, 150"
+          },
+          {
+            "type": "p",
+            "text": "Although both examples have the same average demand, the first is likely to produce a more reliable short-term forecast because demand varies less from week to week."
+          },
+          {
+            "type": "p",
+            "text": "Over longer forecasting horizons, the impact of this variability is generally reduced as short-term fluctuations tend to average out."
+          }
+        ],
+        "heading": "Forecast Reliability",
+        "level": 3
+      }
+    ]
+  },
+  "forecast-horizon": {
+    "definition": "The forecast horizon is how far ahead the forecast runs. 6, 12, and 18 months are 26, 52, and 78 weeks.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "The forecast horizon is how far ahead the forecast runs. 6, 12, and 18 months are 26, 52, and 78 weeks."
+          }
+        ]
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "The Forecast Horizon determines how many future months will be generated for each item and location. Typical horizons range from 6 to 24 months depending on business requirements."
+          },
+          {
+            "type": "p",
+            "text": "A forecast horizon should be appropriate for both the available Sales History and the planning objective."
+          },
+          {
+            "type": "p",
+            "text": "As a general guide:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Forecast horizons of **12 months or more** are recommended when seasonal demand patterns need to be identified and visualised.",
+              "Avoid generating forecasts that extend well beyond the available Sales History. For example, a 12-month forecast based on only 6 months of Sales History is unlikely to produce reliable results."
+            ]
+          }
+        ],
+        "heading": "Forecast Horizon",
+        "level": 3
+      }
+    ]
+  },
+  "forecast-profile": {
+    "definition": "Each item and location is assigned a Forecast Profile based on its Demand Bucket and demand characteristics identified during the previous steps.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Each item and location is assigned a Forecast Profile based on its Demand Bucket and demand characteristics identified during the previous steps."
+          },
+          {
+            "type": "p",
+            "text": "The Forecast Profile determines which forecasting method will be used when the forecast is generated."
+          }
+        ],
+        "heading": "Step 3 - Create Forecast Profile",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "**Baseline**"
+          },
+          {
+            "type": "p",
+            "text": "Forecastable products where no meaningful trend or seasonality has been identified in the Sales History."
+          },
+          {
+            "type": "p",
+            "text": "**Trend**"
+          },
+          {
+            "type": "p",
+            "text": "Forecastable products where a trend has been identified in the Sales History, but no seasonality is evident."
+          },
+          {
+            "type": "p",
+            "text": "**Seasonal**"
+          },
+          {
+            "type": "p",
+            "text": "Forecastable products where seasonality has been identified in the Sales History, but no trend is evident."
+          },
+          {
+            "type": "p",
+            "text": "**Seasonal Trend**"
+          },
+          {
+            "type": "p",
+            "text": "Forecastable products where both trend and seasonality have been identified in the Sales History."
+          },
+          {
+            "type": "p",
+            "text": "**12-week average**"
+          },
+          {
+            "type": "p",
+            "text": "Low regular demand. The forecast is the average of the last 12 weeks. When there are fewer than 12 weeks, the weeks available are used. Weeks with no sales after the first sale count. Weeks before the first sale do not."
+          },
+          {
+            "type": "p",
+            "text": "**Intermittent**"
+          },
+          {
+            "type": "p",
+            "text": "Infrequent demand. The forecast is the average quantity of the weeks that sold in the last 26 weeks, rounded up. The average demand interval, also rounded up, sets which future weeks get that quantity. If there was no sale in the last 26 weeks, the forecast is zero."
+          },
+          {
+            "type": "p",
+            "text": "**Short history**"
+          },
+          {
+            "type": "p",
+            "text": "Products without enough sales history for a trend or a seasonal forecast. The 12-week average of the weeks available since the first sale is used until more history is available."
+          }
+        ],
+        "heading": "Forecast Profiles",
+        "level": 4
+      }
+    ]
+  },
+  "forecast-reliability": {
+    "definition": "Forecast reliability is influenced by the variability of historical demand.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Forecast reliability is influenced by the variability of historical demand."
+          },
+          {
+            "type": "p",
+            "text": "Products with relatively consistent demand are generally easier to forecast than products with highly variable demand, even when the average demand is the same."
+          },
+          {
+            "type": "p",
+            "text": "For example, the following sales histories both average **100 units per week**:"
+          },
+          {
+            "type": "p",
+            "text": "**Low Variability**"
+          },
+          {
+            "type": "p",
+            "text": "100, 110, 90, 100, 80, 120"
+          },
+          {
+            "type": "p",
+            "text": "**High Variability**"
+          },
+          {
+            "type": "p",
+            "text": "50, 200, 120, 80, 0, 150"
+          },
+          {
+            "type": "p",
+            "text": "Although both examples have the same average demand, the first is likely to produce a more reliable short-term forecast because demand varies less from week to week."
+          },
+          {
+            "type": "p",
+            "text": "Over longer forecasting horizons, the impact of this variability is generally reduced as short-term fluctuations tend to average out."
+          }
+        ],
+        "heading": "Forecast Reliability",
+        "level": 3
+      }
+    ]
+  },
+  "intermittent-demand": {
+    "definition": "Intermittent demand has many weeks with no sales. The forecast uses the average quantity of the weeks that sold in the last 26 weeks, rounded up. The average demand interval (ADI), also rounded up, sets which future weeks get that quantity. If there was no sale in the last 26 weeks, the forecast is zero.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Intermittent demand has many weeks with no sales. The forecast uses the average quantity of the weeks that sold in the last 26 weeks, rounded up. The average demand interval (ADI), also rounded up, sets which future weeks get that quantity. If there was no sale in the last 26 weeks, the forecast is zero."
+          }
+        ]
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Intermittent products have many weeks with no recorded sales."
+          },
+          {
+            "type": "p",
+            "text": "The forecast uses the average quantity of the weeks that sold in the last 26 weeks, rounded up. The average demand interval (ADI), also rounded up, sets which future weeks get that quantity. If there was no sale in the last 26 weeks, the forecast is zero."
+          }
+        ],
+        "heading": "Intermittent",
+        "level": 3
+      }
+    ]
+  },
+  "sales-history": {
+    "definition": "Sales history is the foundation of every forecast generated by this application.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Sales history is the foundation of every forecast generated by this application."
+          },
+          {
+            "type": "p",
+            "text": "Historical sales are imported from your accounting, sales or warehouse system and converted into a standard format suitable for forecasting."
+          }
+        ]
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Every business system stores sales differently. Before forecasting can begin, the imported data is validated to ensure it is complete, consistent and suitable for analysis."
+          },
+          {
+            "type": "p",
+            "text": "Validation helps identify data quality issues before they affect forecast accuracy."
+          }
+        ],
+        "heading": "Why is sales history validated?",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Validation includes checks such as:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Required columns are present",
+              "Dates are valid",
+              "Quantities are numeric",
+              "Duplicate records are identified",
+              "SKU and Location values are populated",
+              "Products exist in the SKU Master"
+            ]
+          }
+        ],
+        "heading": "Typical Validation Checks",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Every source system exports sales history differently."
+          },
+          {
+            "type": "p",
+            "text": "Some systems provide individual invoice transactions, while others export daily, weekly or monthly summaries. Depending on the system, exports may also include returns, cancelled orders or stock transfers."
+          },
+          {
+            "type": "p",
+            "text": "The objective is not to match the application's import format directly, but to transform your source data into a clean, consistent sales history suitable for forecasting."
+          }
+        ],
+        "heading": "What should I expect from my source system?",
+        "level": 3
+      }
+    ]
+  },
+  "seasonality": {
+    "definition": "The application identifies seasonality by comparing the average demand for each quarter with the average demand for the corresponding year.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "The application identifies seasonality by comparing the average demand for each quarter with the average demand for the corresponding year."
+          },
+          {
+            "type": "p",
+            "text": "Rather than comparing absolute sales quantities, each quarter is measured relative to the yearly average. This allows seasonal patterns to be identified even when overall demand is increasing or decreasing over time."
+          }
+        ],
+        "heading": "Identifying Seasonality",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "For each item and location:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Only complete years containing all four quarters are analysed.",
+              "The average demand is calculated for each quarter.",
+              "The average demand for the year is calculated.",
+              "Each quarter is expressed as a percentage above or below the yearly average.",
+              "The two most recent complete years are then compared.",
+              "If the same quarter is above average in both years, or below average in both years, it contributes to the Seasonality Score.",
+              "The larger and more consistent the quarterly pattern, the higher the Seasonality Score.",
+              "When the Seasonality Score exceeds the configured threshold, the item and location is classified as Seasonal."
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Comparing each quarter with its yearly average allows the application to identify seasonal patterns independently of changes in overall demand."
+          },
+          {
+            "type": "p",
+            "text": "For example, a product may be growing by 10% each year, but still consistently sell more in Quarter 3 and less in Quarter 1. Measuring each quarter relative to its yearly average helps separate the seasonal signal from the overall growth trend."
+          },
+          {
+            "type": "p",
+            "text": "Example"
+          },
+          {
+            "type": "pre",
+            "text": "Quarter        Year 1        Year 2\n\nQ1             -18%          -21%\nQ2              -6%           -8%\nQ3             +22%          +19%\nQ4              +2%           +5%"
+          },
+          {
+            "type": "p",
+            "text": "Each quarter remained on the same side of the yearly average in both years, indicating a consistent seasonal pattern. The combined Seasonality Score exceeds the threshold, so the item and location is classified as Seasonal."
+          }
+        ],
+        "heading": "How it works",
+        "level": 4
+      }
+    ]
+  },
+  "sku-forecasting-group": {
+    "definition": "The SKU Forecasting Group allows related products to be analysed together.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "The SKU Forecasting Group allows related products to be analysed together."
+          },
+          {
+            "type": "p",
+            "text": "Rather than reviewing forecasts one SKU at a time, products can be grouped into meaningful business categories to simplify reporting and identify trends."
+          }
+        ],
+        "heading": "SKU Forecasting Group",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "The Forecasting Group can represent any classification that is meaningful to your business, for example:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Product Manager",
+              "Product Category",
+              "Product Family",
+              "Brand",
+              "Supplier",
+              "Department",
+              "Business Unit",
+              "Product Type"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "There is no single correct choice—the Forecasting Group should reflect how you naturally review and manage your product range."
+          }
+        ],
+        "heading": "Common Examples",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Throughout the application, forecasts and sales history can be analysed at either the individual SKU level or by Forecasting Group. This provides a higher-level view of demand and helps identify trends that may not be visible when reviewing individual products."
+          }
+        ],
+        "heading": "How is it used?",
+        "level": 3
+      }
+    ]
+  },
+  "trend": {
+    "definition": "The application identifies trend by comparing the average demand for each quarter with the corresponding quarter from the previous year.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "The application identifies trend by comparing the average demand for each quarter with the corresponding quarter from the previous year."
+          },
+          {
+            "type": "p",
+            "text": "This approach compares like-for-like periods, helping to avoid seasonal demand being incorrectly identified as trend."
+          }
+        ],
+        "heading": "Identifying Trend",
+        "level": 3
+      },
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "For each item and location:"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "The most recent four quarters are compared with the same four quarters from the previous year.",
+              "The percentage change is calculated for each quarter.",
+              "Each quarter is classified as **Up**, **Down** or **Flat** using the configured trend threshold.",
+              "If three or more of the four quarters show an increase, the product is classified as **Up Trend**.",
+              "If three or more of the four quarters show a decrease, the product is classified as **Down Trend**.",
+              "Otherwise, the product is classified as **Flat**."
+            ]
+          },
+          {
+            "type": "p",
+            "text": "Example"
+          },
+          {
+            "type": "pre",
+            "text": "Quarter      Previous Year      Current Year      Result\n\nQ1                 100               118           Up\nQ2                 120               138           Up\nQ3                 110               121           Up\nQ4                 130               134           Flat"
+          },
+          {
+            "type": "p",
+            "text": "Three of the four quarters increased by more than the configured trend threshold, so the item and location would be classified as **Up Trend**."
+          }
+        ],
+        "heading": "How it works",
+        "level": 4
+      }
+    ]
+  }
+}
