@@ -7,9 +7,9 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/",
   "scripts": [
-    "/assets/safety-stock-engine.js?v=5",
+    "/assets/safety-stock-engine.js?v=6",
     "/assets/sim-results-form.js?v=7",
-    "/assets/safety-stock-simulator.js?v=7"
+    "/assets/safety-stock-simulator.js?v=8"
   ]
 }
 ---
@@ -330,9 +330,11 @@
             <figcaption id="sim-chart-title">
               <ul class="sim-legend">
                 <li class="sim-legend__ending">Ending SOH</li>
+                <li class="sim-legend__avg">Average SOH</li>
                 <li class="sim-legend__ss">Safety stock</li>
                 <li class="sim-legend__zero">Zero</li>
               </ul>
+              <p id="sim-chart-avg" class="visually-hidden"></p>
               <p class="sim-meta">One year only. Monte Carlo does not draw this chart.</p>
             </figcaption>
           </figure>

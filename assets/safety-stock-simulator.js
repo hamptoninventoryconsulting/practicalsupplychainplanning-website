@@ -122,6 +122,17 @@
     return sign + "$" + Math.abs(rounded).toLocaleString("en-US");
   }
 
+  // Chart label for the mean ending SOH. Units use the page's count formatting.
+  // Dollars are that same mean times the teaching $30 per unit (PRICES.gp),
+  // the rate in the annual-demand note, then the page's money formatting.
+  function averageSohLabel(mean) {
+    var rate = engine.PRICES && engine.PRICES.gp;
+    if (mean == null || !isFinite(mean) || rate == null || !isFinite(rate)) {
+      return "";
+    }
+    return "Avg SOH " + formatCount(mean) + " units (" + formatMoney(mean * rate) + ")";
+  }
+
   function formatBand(band, format) {
     return (
       "Median " +
@@ -422,6 +433,59 @@
       "stroke-width": "2",
       d: seriesPath(function (week) { return week.endingSoh; }),
     });
+    var mean = engine.meanEndingSoh(weeks);
+    var avgLabel = averageSohLabel(mean);
+    var avgCaption = $("sim-chart-avg");
+    if (avgCaption) {
+      avgCaption.textContent = avgLabel;
+    }
+    if (avgLabel) {
+      var avgY = y(mean);
+      add("line", {
+        class: "sim-chart__avg",
+        fill: "none",
+        stroke: "#6d28d9",
+        "stroke-width": "2",
+        "stroke-dasharray": "4 3",
+        x1: String(left),
+        x2: String(width - right),
+        y1: avgY.toFixed(2),
+        y2: avgY.toFixed(2),
+      });
+      var textY = avgY - 10;
+      if (textY < top + 12) {
+        textY = avgY + 16;
+      }
+      var label = add("text", {
+        class: "sim-chart__avg-label",
+        x: String(width - right - 6),
+        y: textY.toFixed(2),
+        "text-anchor": "end",
+        fill: "#6d28d9",
+        "font-size": "12",
+        "font-family": "system-ui, sans-serif",
+        "font-weight": "600",
+      });
+      label.textContent = avgLabel;
+      var box = null;
+      try {
+        box = label.getBBox();
+      } catch (err) {
+        box = null;
+      }
+      if (box && isFinite(box.width) && box.width > 0 && isFinite(box.height) && box.height > 0) {
+        var bg = add("rect", {
+          class: "sim-chart__avg-label-bg",
+          fill: "#ffffff",
+          x: (box.x - 4).toFixed(2),
+          y: (box.y - 2).toFixed(2),
+          width: (box.width + 8).toFixed(2),
+          height: (box.height + 4).toFixed(2),
+          rx: "2",
+        });
+        svg.insertBefore(bg, label);
+      }
+    }
     [1, 13, 26, 39, 52].forEach(function (weekNo) {
       var label = add("text", {
         class: "sim-chart__label",
@@ -490,6 +554,10 @@
     $("sim-formula-note").textContent = "";
     $("sim-shock-weeks").textContent = "";
     $("sim-weeks-body").innerHTML = "";
+    var avgCaption = $("sim-chart-avg");
+    if (avgCaption) {
+      avgCaption.textContent = "";
+    }
     var svg = $("sim-chart");
     while (svg.firstChild) {
       svg.removeChild(svg.firstChild);
