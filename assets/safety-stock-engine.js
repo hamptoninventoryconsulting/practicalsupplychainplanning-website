@@ -574,6 +574,23 @@
     };
   }
 
+  // Arithmetic mean of ending SOH across the simulated weeks.
+  // Negatives stay in the average. Turns use a different, floored average.
+  function meanEndingSoh(weeks) {
+    if (!weeks || !weeks.length) {
+      return null;
+    }
+    var sum = 0;
+    for (var i = 0; i < weeks.length; i += 1) {
+      var ending = Number(weeks[i].endingSoh);
+      if (!isFinite(ending)) {
+        return null;
+      }
+      sum += ending;
+    }
+    return sum / weeks.length;
+  }
+
   function computeMetrics(weeks) {
     var oosWeeks = 0;
     var sumEnding = 0;
@@ -1214,6 +1231,7 @@
     leadTimeExtraMax: leadTimeExtraMax,
     allowedLotReceipts: allowedLotReceipts,
     sampleShockWeeks: sampleShockWeeks,
+    meanEndingSoh: meanEndingSoh,
     computeMetrics: computeMetrics,
     needsPedagogyCallout: needsPedagogyCallout,
     summariseMonteCarlo: summariseMonteCarlo,

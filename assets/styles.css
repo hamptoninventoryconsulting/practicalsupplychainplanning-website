@@ -1331,6 +1331,24 @@ a.sim-button--secondary:is(:link, :visited, :hover, :focus, :focus-visible, :act
   stroke-dasharray: 6 4;
 }
 
+.sim-chart__avg {
+  fill: none;
+  stroke: #6d28d9;
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+}
+
+.sim-chart__avg-label {
+  fill: #6d28d9;
+  font-size: 12px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+}
+
+.sim-chart__avg-label-bg {
+  fill: #ffffff;
+}
+
 .sim-chart__label {
   fill: var(--color-text-muted);
   font-size: 11px;
@@ -1359,6 +1377,14 @@ a.sim-button--secondary:is(:link, :visited, :hover, :focus, :focus-visible, :act
 
 .sim-legend__ending {
   color: #0e7490;
+}
+
+.sim-legend__avg {
+  color: #6d28d9;
+}
+
+.sim-legend li.sim-legend__avg::before {
+  border-top-style: dashed;
 }
 
 .sim-legend__ss {

@@ -563,9 +563,83 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
   "week",
 ].sort());
 
-assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=5"/);
+assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=6"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
-assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=7"/);
+assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=9"/);
+
+assert.strictEqual(engine.meanEndingSoh([]), null);
+assert.strictEqual(engine.meanEndingSoh(null), null);
+assert.strictEqual(engine.meanEndingSoh([{ endingSoh: -4 }, { endingSoh: 10 }]), 3);
+assert.strictEqual(engine.meanEndingSoh([{ endingSoh: NaN }]), null);
+assert.ok(Math.abs(engine.meanEndingSoh(mixedWeeks) - raw) < 1e-12);
+assert.ok(
+  Math.abs(engine.meanEndingSoh(mixedWeeks) * engine.PRICES.cost - mixed.averageWc) < 1e-6,
+  "mean ending SOH is the working-capital average, negatives included"
+);
+const levelYear = engine.runYear(engine.DEFAULT_CONTROLS, 1);
+assert.strictEqual(engine.meanEndingSoh(levelYear.weeks), 40);
+assert.strictEqual(engine.PRICES.cost, 70);
+assert.strictEqual(levelYear.metrics.averageWc, 40 * engine.PRICES.cost);
+
+function pageMoney(value) {
+  const rounded = Math.round(value);
+  const sign = rounded < 0 ? "-" : "";
+  return sign + "$" + Math.abs(rounded).toLocaleString("en-US");
+}
+function chartAverageLabel(mean) {
+  const units =
+    Math.abs(mean - Math.round(mean)) < 1e-9 ? String(Math.round(mean)) : mean.toFixed(1);
+  return "Avg SOH " + units + " units (" + pageMoney(mean * engine.PRICES.cost) + ")";
+}
+function moneyInAverageLabel(label) {
+  const match = label.match(/\(([^)]+)\)$/);
+  assert.ok(match, label);
+  return match[1];
+}
+assert.strictEqual(chartAverageLabel(40), "Avg SOH 40 units ($2,800)");
+assert.strictEqual(chartAverageLabel(38), "Avg SOH 38 units ($2,660)");
+assert.strictEqual(chartAverageLabel(15.826923076923077), "Avg SOH 15.8 units ($1,108)");
+assert.strictEqual(chartAverageLabel(-2.24), "Avg SOH -2.2 units (-$157)");
+assert.strictEqual(
+  moneyInAverageLabel(chartAverageLabel(engine.meanEndingSoh(levelYear.weeks))),
+  pageMoney(levelYear.metrics.averageWc)
+);
+assert.strictEqual(
+  moneyInAverageLabel(chartAverageLabel(engine.meanEndingSoh(mixedWeeks))),
+  pageMoney(mixed.averageWc)
+);
+const noisyYear = engine.runYear(
+  Object.assign({}, engine.DEFAULT_CONTROLS, {
+    demandVariability: "medium",
+    leadTimeVariability: "small",
+    shock: true,
+  }),
+  7
+);
+const noisyMean = engine.meanEndingSoh(noisyYear.weeks);
+assert.strictEqual(noisyYear.metrics.averageWc, noisyMean * engine.PRICES.cost);
+assert.strictEqual(
+  moneyInAverageLabel(chartAverageLabel(noisyMean)),
+  pageMoney(noisyYear.metrics.averageWc)
+);
+assert.match(ui, /function averageSohLabel\(mean\)/);
+assert.match(ui, /renderChart\(result\.weeks\)/);
+assert.match(ui, /engine\.meanEndingSoh\(weeks\)/);
+assert.match(ui, /formatCount\(mean\)/);
+assert.match(ui, /formatMoney\(mean \* rate\)/);
+assert.match(ui, /engine\.PRICES\.cost/);
+const averageLabelSource = ui.slice(
+  ui.indexOf("function averageSohLabel"),
+  ui.indexOf("function formatBand")
+);
+assert.doesNotMatch(averageLabelSource, /PRICES\.gp/);
+assert.doesNotMatch(averageLabelSource, /\$30/);
+assert.match(ui, /Avg SOH /);
+assert.match(ui, /class: "sim-chart__avg"/);
+assert.match(ui, /stroke: "#6d28d9"/);
+assert.match(ui, /"stroke-dasharray": "4 3"/);
+assert.match(page, /class="sim-legend__avg">Average SOH</);
+assert.match(page, /id="sim-chart-avg"/);
 
 const patternSummaries = {
   level: "The same forecast every week: 40 units.",
@@ -854,6 +928,10 @@ assert.match(
 );
 
 const css = fs.readFileSync(path.join(ROOT, "assets", "styles.css"), "utf8");
+assert.match(css, /\.sim-chart__avg\s*\{[^}]*stroke:\s*#6d28d9/);
+assert.match(css, /\.sim-chart__avg\s*\{[^}]*stroke-dasharray:\s*4 3/);
+assert.match(css, /\.sim-legend__avg\s*\{[^}]*color:\s*#6d28d9/);
+assert.match(css, /\.sim-legend li\.sim-legend__avg::before\s*\{[^}]*border-top-style:\s*dashed/);
 assert.match(css, /\.sim-details\s*\{[^}]*border:\s*1px solid var\(--color-border\)/);
 assert.match(css, /\.sim-details\s*\{[^}]*margin:\s*0 0 1\.5rem/);
 assert.match(css, /\.sim-details\[open\] > summary::before/);
