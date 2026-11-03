@@ -1995,10 +1995,6 @@
           {
             "type": "p",
             "text": "In many planning environments, forecasts are gradually replaced by actual customer orders as demand becomes known."
-          },
-          {
-            "type": "p",
-            "text": "This simplified logic demonstrates how planning systems often continue recognizing forecast demand until actual demand fully replaces it."
           }
         ],
         "heading": "Forecast Consumption",
@@ -2079,86 +2075,19 @@
             "text": "The quality of the forecast is heavily influenced by the quality of the Sales History used as input. Reviewing exceptions and maintaining representative Sales History will generally improve forecast quality more than changing forecasting parameters."
           }
         ]
-      },
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "Forecast reliability is influenced by the variability of historical demand."
-          },
-          {
-            "type": "p",
-            "text": "Products with relatively consistent demand are generally easier to forecast than products with highly variable demand, even when the average demand is the same."
-          },
-          {
-            "type": "p",
-            "text": "For example, the following sales histories both average **100 units per week**:"
-          },
-          {
-            "type": "p",
-            "text": "**Low Variability**"
-          },
-          {
-            "type": "p",
-            "text": "100, 110, 90, 100, 80, 120"
-          },
-          {
-            "type": "p",
-            "text": "**High Variability**"
-          },
-          {
-            "type": "p",
-            "text": "50, 200, 120, 80, 0, 150"
-          },
-          {
-            "type": "p",
-            "text": "Although both examples have the same average demand, the first is likely to produce a more reliable short-term forecast because demand varies less from week to week."
-          },
-          {
-            "type": "p",
-            "text": "Over longer forecasting horizons, the impact of this variability is generally reduced as short-term fluctuations tend to average out."
-          }
-        ],
-        "heading": "Forecast Reliability",
-        "level": 3
       }
     ]
   },
   "forecast-horizon": {
-    "definition": "The forecast horizon is how far ahead the forecast runs. 6, 12, and 18 months are 26, 52, and 78 weeks.",
+    "definition": "The forecast horizon is how far ahead the forecast runs.",
     "sections": [
       {
         "blocks": [
           {
             "type": "p",
-            "text": "The forecast horizon is how far ahead the forecast runs. 6, 12, and 18 months are 26, 52, and 78 weeks."
+            "text": "The forecast horizon is how far ahead the forecast runs."
           }
         ]
-      },
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "The Forecast Horizon determines how many future months will be generated for each item and location. Typical horizons range from 6 to 24 months depending on business requirements."
-          },
-          {
-            "type": "p",
-            "text": "A forecast horizon should be appropriate for both the available Sales History and the planning objective."
-          },
-          {
-            "type": "p",
-            "text": "As a general guide:"
-          },
-          {
-            "type": "ul",
-            "items": [
-              "Forecast horizons of **12 months or more** are recommended when seasonal demand patterns need to be identified and visualised.",
-              "Avoid generating forecasts that extend well beyond the available Sales History. For example, a 12-month forecast based on only 6 months of Sales History is unlikely to produce reliable results."
-            ]
-          }
-        ],
-        "heading": "Forecast Horizon",
-        "level": 3
       }
     ]
   },
@@ -2210,29 +2139,15 @@
     ]
   },
   "intermittent-demand": {
-    "definition": "Intermittent demand has many weeks with no sales. The forecast uses the average quantity of the weeks that sold in the last 26 weeks, rounded up. The average demand interval (ADI), also rounded up, sets which future weeks get that quantity. If there was no sale in the last 26 weeks, the forecast is zero.",
+    "definition": "Intermittent demand has many weeks with no sales.",
     "sections": [
       {
         "blocks": [
           {
             "type": "p",
-            "text": "Intermittent demand has many weeks with no sales. The forecast uses the average quantity of the weeks that sold in the last 26 weeks, rounded up. The average demand interval (ADI), also rounded up, sets which future weeks get that quantity. If there was no sale in the last 26 weeks, the forecast is zero."
+            "text": "Intermittent demand has many weeks with no sales."
           }
         ]
-      },
-      {
-        "blocks": [
-          {
-            "type": "p",
-            "text": "Intermittent products have many weeks with no recorded sales."
-          },
-          {
-            "type": "p",
-            "text": "The forecast uses the average quantity of the weeks that sold in the last 26 weeks, rounded up. The average demand interval (ADI), also rounded up, sets which future weeks get that quantity. If there was no sale in the last 26 weeks, the forecast is zero."
-          }
-        ],
-        "heading": "Intermittent",
-        "level": 3
       }
     ]
   },
@@ -2274,8 +2189,7 @@
               "Dates are valid",
               "Quantities are numeric",
               "Duplicate records are identified",
-              "SKU and Location values are populated",
-              "Products exist in the SKU Master"
+              "SKU and Location values are populated"
             ]
           }
         ],
