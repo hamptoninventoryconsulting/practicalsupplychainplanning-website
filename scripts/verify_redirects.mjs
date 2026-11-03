@@ -93,6 +93,42 @@ const cases = [
     "https://practicalsupplychainplanning.com/products/practical-stock-planner/",
     null,
   ],
+  [
+    "https://practicalsupplychainplanning.com/start/plan-ahead/?utm_source=outreach&utm_medium=email&utm_campaign=plan-ahead&utm_content=intro-v1&ref=token",
+    null,
+  ],
+  [
+    "https://practicalsupplychainplanning.com/start/planning-guides/?utm_source=outreach&utm_medium=email&utm_campaign=planning-guides&utm_content=intro-v1&ref=token",
+    null,
+  ],
+  [
+    "https://practicalsupplychainplanning.com/start/plan-ahead?utm_source=outreach&utm_medium=email&utm_campaign=plan-ahead&utm_content=intro-v1&ref=token",
+    "https://practicalsupplychainplanning.com/start/plan-ahead/?utm_source=outreach&utm_medium=email&utm_campaign=plan-ahead&utm_content=intro-v1&ref=token",
+  ],
+  [
+    "https://practicalsupplychainplanning.com/start/plan-ahead/index.html?utm_source=outreach&ref=token",
+    "https://practicalsupplychainplanning.com/start/plan-ahead/?utm_source=outreach&ref=token",
+  ],
+  [
+    "https://practicalsupplychainplanning.com/start/planning-guides/index?utm_content=intro-v1&ref=abc",
+    "https://practicalsupplychainplanning.com/start/planning-guides/?utm_content=intro-v1&ref=abc",
+  ],
+  [
+    "https://practicalsupplychainplanning.com/start/planning-guides?ref=token&utm_campaign=planning-guides",
+    "https://practicalsupplychainplanning.com/start/planning-guides/?ref=token&utm_campaign=planning-guides",
+  ],
+  [
+    "https://www.practicalsupplychainplanning.com/start/plan-ahead?utm_source=outreach&ref=token",
+    "https://practicalsupplychainplanning.com/start/plan-ahead/?utm_source=outreach&ref=token",
+  ],
+  [
+    "https://www.practicalsupplychainplanning.com/start/planning-guides/?utm_medium=email&ref=token",
+    "https://practicalsupplychainplanning.com/start/planning-guides/?utm_medium=email&ref=token",
+  ],
+  [
+    "https://practicalsupplychainplanning.com/start/other?utm_source=outreach&ref=token",
+    null,
+  ],
 ];
 
 for (const [input, expected] of cases) {

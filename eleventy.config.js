@@ -29,6 +29,33 @@ module.exports = function (eleventyConfig) {
   });
   eleventyConfig.addWatchTarget("assets");
 
+  // Hidden by path. Any built page under /start/ is noindex, nofollow, with
+  // no per-page robots front matter. The sitemap is a hand-written list and
+  // does not include these URLs. robots.txt is left unchanged.
+  eleventyConfig.addTransform("startPathNoindex", function (content) {
+    const outputPath = String((this.page && this.page.outputPath) || this.outputPath || "");
+    if (!outputPath.endsWith(".html") && !outputPath.endsWith(".HTML")) {
+      return content;
+    }
+    const url = String((this.page && this.page.url) || "");
+    const normalizedOutput = outputPath.replace(/\\/g, "/");
+    const byUrl = url === "/start" || url.startsWith("/start/");
+    const byPath = /\/_site\/start\//.test(normalizedOutput);
+    if (!byUrl && !byPath) {
+      return content;
+    }
+    const meta = '<meta name="robots" content="noindex, nofollow" />';
+    const existing = /<meta\s+name=(["'])robots\1[^>]*>/i;
+    if (existing.test(content)) {
+      return content.replace(existing, meta);
+    }
+    const viewport = /<meta\s+name=(["'])viewport\1[^>]*>/i;
+    if (viewport.test(content)) {
+      return content.replace(viewport, (match) => `${match}\n    ${meta}`);
+    }
+    return content.replace(/<head(\s[^>]*)?>/i, (match) => `${match}\n    ${meta}`);
+  });
+
   // One beacon on every rendered HTML page, including layouts that do not
   // extend base.njk. Passthrough copies are not HTML pages.
   eleventyConfig.addTransform("cloudflareWebAnalytics", function (content) {
