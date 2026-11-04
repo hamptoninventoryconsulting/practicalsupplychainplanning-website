@@ -846,13 +846,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "In supplier relationships, your Purchase Order (PO) is often entered into the supplier's system as a:"
-          },
-          {
-            "type": "ul",
-            "items": [
-              "Sales Order (SO)"
-            ]
+            "text": "Your purchase order (PO) is usually entered into the supplier's system as a sales order (SO)."
           },
           {
             "type": "p",
