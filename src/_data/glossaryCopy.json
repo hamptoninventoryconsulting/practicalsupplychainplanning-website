@@ -392,6 +392,10 @@
           },
           {
             "type": "p",
+            "text": "Large ERP systems usually calculate in daily buckets, while simpler planning tools often use weekly or monthly buckets."
+          },
+          {
+            "type": "p",
             "text": "Each location is planned on its own. Stock at one warehouse doesn't cover demand at another unless it's moved there with a transfer order."
           },
           {
