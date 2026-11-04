@@ -917,6 +917,10 @@
           {
             "type": "p",
             "text": "Your unit of measure and your supplier's may not match. You might count stock in single units while your supplier sells by the carton or the box. An order for \"100\" could mean 100 units or 100 cartons, so always say which unit you mean on the purchase order. Then check that the supplier's confirmation uses the same one."
+          },
+          {
+            "type": "p",
+            "text": "Your own units may not match inside the business either. You might buy and store a liquid in drums but use it in manufacturing in fluid ounces, or buy and store steel in set lengths but use it in linear metres. The planning system needs a conversion between each unit so stock, usage and orders all line up."
           }
         ],
         "heading": "Why It Matters",
