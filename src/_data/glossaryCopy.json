@@ -1164,7 +1164,7 @@
           },
           {
             "type": "p",
-            "text": "Achieving very high availability levels may require disproportionately larger increases in safety stock and working capital."
+            "text": "Achieving very high availability levels will probably require disproportionately larger increases in safety stock and working capital. A 100% customer service level would need infinite inventory, because you can't plan for every outlier."
           }
         ],
         "heading": "Example",
