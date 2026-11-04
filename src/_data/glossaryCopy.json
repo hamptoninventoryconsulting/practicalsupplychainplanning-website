@@ -1076,13 +1076,13 @@
     ]
   },
   "customer-service-level": {
-    "definition": "Customer service level refers to the ability to satisfy customer demand within the expected timeframe and availability requirements.",
+    "definition": "Customer service level measures whether stock is available when the customer wants it, against the service standard you've set. If the standard is a 2-week lead time, the question is whether the stock was there within 2 weeks. If the standard is supply from stock, the question is whether it was on hand the day the customer ordered. It is measured as the share of orders, lines or units supplied in full and on time against that standard.",
     "sections": [
       {
         "blocks": [
           {
             "type": "p",
-            "text": "Customer service level refers to the ability to satisfy customer demand within the expected timeframe and availability requirements."
+            "text": "Customer service level measures whether stock is available when the customer wants it, against the service standard you've set. If the standard is a 2-week lead time, the question is whether the stock was there within 2 weeks. If the standard is supply from stock, the question is whether it was on hand the day the customer ordered. It is measured as the share of orders, lines or units supplied in full and on time against that standard."
           }
         ]
       },
