@@ -7,9 +7,9 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/",
   "scripts": [
-    "/assets/safety-stock-engine.js?v=9",
+    "/assets/safety-stock-engine.js?v=10",
     "/assets/sim-results-form.js?v=7",
-    "/assets/safety-stock-simulator.js?v=10"
+    "/assets/safety-stock-simulator.js?v=11"
   ]
 }
 ---
@@ -185,17 +185,17 @@
           </div>
           <p id="sim-formula-note" class="sim-meta" hidden></p>
           <p class="sim-help">
-            An order is placed when calculated stock on hand is at or below
-            safety stock. Calculated stock is beginning stock, minus this
-            week's base forecast demand, plus receipts already due this week.
-            Demand is taken from opening stock first, so those receipts do not
-            cover this week's demand. Pre-receipt stock is that position.
-            The receipt is then added to give the ending stock. With safety
-            stock at zero, the line is zero, so touching zero orders. The order
-            is one lot unless that lot would not lift calculated stock above
-            zero, in which case it is two lots. That rule looks at calculated
-            stock against zero, not at whether last week ended negative, and
-            it does not keep ordering until safety stock is rebuilt.
+            Each week's demand is split evenly across seven days, and those
+            seven days add up to the week. Each day, demand comes off the
+            opening stock and then any receipt due that day is added. An
+            order is placed when the next day would finish at or below safety
+            stock. The order arrives the next day, after that day's demand.
+            With safety stock at zero, the line is zero. The order is one lot
+            unless that lot would not lift the projected finish above zero,
+            in which case it is two lots. The base lead time does not delay
+            the receipt while supply-timing variability is off. It only
+            scales the extra delay, in whole weeks, when that variability is
+            on.
           </p>
           <p class="sim-help">
             Fixed lots are a whole number from 1 to 1000. Fixed safety stock is
@@ -337,10 +337,9 @@
               </ul>
               <p id="sim-chart-avg" class="visually-hidden"></p>
               <p class="sim-meta">
-                One year only. A week with no receipt is one point, the stock
-                after demand. A receipt week also draws the stock after the
-                receipt, so the line drops to the trough and then rises.
-                Monte Carlo does not draw this chart.
+                One year, one point per day: the stock after that day's demand.
+                A receipt day also draws the stock after the receipt. Week
+                numbers mark the chart. Monte Carlo does not draw this chart.
               </p>
             </figcaption>
           </figure>
@@ -370,23 +369,25 @@
           </details>
           </div>
           <p class="sim-note">
-            Inventory turns, average stock, and working capital use the points
-            drawn on the chart. A week with no receipt contributes its
-            pre-receipt stock. A receipt week contributes that point and the
-            ending stock. A plotted point below zero counts as zero in that
-            average, for the chart label, for turns, and for working capital.
-            A stockout does not improve turns or reduce working capital. If
-            the average is zero, turns are not applicable. Working capital is
-            that average times the $70 cost. Gross profit is simulated demand times
+            Inventory turns, average stock, and working capital use the daily
+            points drawn on the chart. A day with no receipt contributes the
+            stock after demand. A receipt day contributes that point and the
+            stock after the receipt. A plotted point below zero counts as zero
+            in that average, for the chart label, for turns, and for working
+            capital. A stockout does not improve turns or reduce working
+            capital. If the average is zero, turns are not applicable. Working
+            capital is that average times the $70 cost. The weekly table is
+            still one row per week. Its pre-receipt column is the lowest
+            stock after demand in that week. Gross profit is simulated demand times
             $30 and does not change because of backorders.
           </p>
           <p class="sim-help">
             High turns with weak service is a poor outcome. The warning appears
             when turns are at least 8 and either customer service is below 95%
-            or three or more weeks are out of stock. Out-of-stock means the
-            pre-receipt stock is below zero. Touching zero before a receipt is
-            not a stockout. Customer service is the share of the 52 weeks that
-            are not out of stock.
+            or three or more weeks are out of stock. A week is out of stock
+            if any of its days is below zero before that day's receipt.
+            Touching zero is not a stockout. Customer service is the share of
+            the 52 weeks that are not out of stock.
           </p>
         </section>
 

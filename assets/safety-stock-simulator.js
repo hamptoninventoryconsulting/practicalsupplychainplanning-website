@@ -510,9 +510,10 @@
       }
     }
     [1, 13, 26, 39, 52].forEach(function (weekNo) {
+      var labelIndex = weeks.length > 52 ? (weekNo === 52 ? weeks.length - 1 : (weekNo - 1) * 7) : weekNo - 1;
       var label = add("text", {
         class: "sim-chart__label",
-        x: x(weekNo - 1).toFixed(2),
+        x: x(labelIndex).toFixed(2),
         y: String(height - 10),
         "text-anchor": "middle",
       });
@@ -620,7 +621,7 @@
     renderFormula(result);
     renderMetrics(result);
     renderShock(result);
-    renderChart(result.weeks);
+    renderChart(result.days);
     renderWeeks(result.weeks);
   }
 

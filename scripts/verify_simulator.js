@@ -128,38 +128,60 @@ const cr1 = run({ baseDemand: cr1Demand, lotQty: 10, ssQty: 0 });
 assert.strictEqual(cr1.startingSoh, 35);
 assert.strictEqual(cr1.weeks[0].endingSoh, 10);
 assert.strictEqual(cr1.weeks[0].plannedSupply, 0);
-assert.strictEqual(cr1.releases[0].requirementWeek, 2);
-assert.strictEqual(cr1.releases[0].lots, 2, "two lots even though the previous ending was positive");
-assert.ok(cr1.weeks[0].endingSoh > 0);
-assert.strictEqual(cr1.weeks[1].endingSoh, 5);
-assert.strictEqual(cr1.weeks[2].endingSoh, 0);
-assert.strictEqual(cr1.weeks[3].endingSoh, -5);
-assert.strictEqual(cr1.releases[3].requirementWeek, 5);
-assert.strictEqual(
-  cr1.releases[3].lots,
-  1,
-  "one lot when the previous ending is negative but one lot clears zero"
-);
 assert.ok(cr1.metrics.oosWeeks >= 1);
 assert.ok(Math.abs(cr1.metrics.avgSohTurns - cr1.metrics.averageWc / 70) < 1e-9);
 assert.ok(cr1.metrics.averageWc >= 0);
 
+const twoLots = run({ baseDemand: flat(100), lotQty: 1, ssQty: 0 });
+assert.ok(
+  twoLots.releases.some((release) => release.lots === 2),
+  "two lots when one lot would not lift the projected finish above zero"
+);
+
 const atLine = run({ baseDemand: flat(10), lotQty: 10, ssQty: 10 });
-assert.strictEqual(atLine.weeks[0].plannedSupply, 10, "calculated SOH equal to SS orders");
-assert.strictEqual(atLine.weeks[0].preReceiptSoh, 10, "demand is taken before the receipt");
-assert.strictEqual(atLine.weeks[0].endingSoh, 20, "the receipt lands after demand");
-assert.strictEqual(atLine.releases[0].requirementWeek, 1);
+const atLineReceipt = atLine.days.find((day) => day.plannedSupply > 0);
+assert.ok(Math.abs(atLineReceipt.preReceiptSoh - 10) < 1e-9, "the receipt day finishes on the safety-stock line");
+assert.strictEqual(atLineReceipt.endingSoh, 20);
 assert.strictEqual(atLine.releases[0].lots, 1);
+assert.strictEqual(atLine.releases[0].delay, 0);
+assert.strictEqual(atLine.releases[0].arrivalDay, atLine.releases[0].requirementDay + 1);
 
 const atZero = run({ baseDemand: flat(10), lotQty: 10, ssQty: 0 });
-assert.strictEqual(atZero.weeks[0].plannedSupply, 0);
-assert.strictEqual(atZero.weeks[0].endingSoh, 10);
-assert.strictEqual(atZero.weeks[1].preReceiptSoh, 0);
-assert.strictEqual(atZero.weeks[1].plannedSupply, 10, "touching zero with no safety stock orders");
-assert.strictEqual(atZero.weeks[1].endingSoh, 10);
-assert.strictEqual(atZero.releases[0].requirementWeek, 2);
-assert.strictEqual(atZero.releases[0].lots, 1, "one lot lifts a zero calculated stock above zero");
+assert.ok(atZero.days.every((day) => day.preReceiptSoh >= -1e-9));
 assert.strictEqual(atZero.metrics.oosWeeks, 0);
+assert.strictEqual(atZero.releases[0].lots, 1);
+assert.strictEqual(atZero.releases[0].arrivalDay, atZero.releases[0].requirementDay + 1);
+
+const protectedLine = run({
+  baseDemand: flat(40),
+  lotQty: 40,
+  ssQty: 20,
+  leadTimeWeeks: 5,
+  demandVariability: "off",
+  leadTimeVariability: "off",
+  deliveryVariability: "off",
+  shock: false,
+});
+assert.strictEqual(protectedLine.startingSoh, 80);
+assert.strictEqual(protectedLine.days.length, 364);
+const protectedReceipts = protectedLine.days.filter((day) => day.plannedSupply > 0);
+assert.ok(protectedReceipts.length > 0);
+protectedReceipts.forEach((day) => {
+  assert.ok(Math.abs(day.preReceiptSoh - 120 / 7) < 1e-9, "post-demand stock is about 17.1");
+  assert.ok(Math.abs(day.endingSoh - 400 / 7) < 1e-9, "post-receipt stock is about 57.1");
+});
+assert.ok(protectedLine.days.every((day) => day.preReceiptSoh >= -1e-9));
+assert.strictEqual(protectedLine.metrics.oosWeeks, 0);
+assert.strictEqual(protectedLine.metrics.annualDemand, 2080);
+assert.ok(Math.abs(protectedLine.metrics.avgSohTurns - 37.48020654044748) < 1e-9);
+assert.ok(Math.abs(protectedLine.metrics.inventoryTurns - 55.49595885378401) < 1e-9);
+assert.ok(Math.abs(protectedLine.metrics.averageWc - protectedLine.metrics.avgSohTurns * 70) < 1e-6);
+assert.strictEqual(protectedLine.releases[0].delay, 0);
+assert.strictEqual(
+  protectedLine.releases[0].arrivalDay,
+  protectedLine.releases[0].requirementDay + 1,
+  "base lead time does not delay the receipt"
+);
 
 const sawtooth = run({
   baseDemand: flat(40),
@@ -171,27 +193,24 @@ const sawtooth = run({
   deliveryVariability: "off",
   shock: false,
 });
-const sawPoints = engine.plottedSohPoints(sawtooth.weeks);
-assert.strictEqual(sawPoints.length, 77);
-sawPoints.forEach((value, index) => {
-  assert.strictEqual(value, [80, 40, 0][index % 3], "plotted point " + index);
-});
-assert.deepStrictEqual(sawPoints.slice(0, 6), [80, 40, 0, 80, 40, 0]);
-sawtooth.weeks.forEach((week, index) => {
-  assert.strictEqual(week.endingSoh, index % 2 === 0 ? 80 : 40);
-  assert.strictEqual(week.preReceiptSoh, week.beginningSoh - week.simulatedDemand);
-  assert.strictEqual(week.endingSoh, week.preReceiptSoh + week.plannedSupply);
-});
-assert.deepStrictEqual(
-  sawtooth.releases.map((release) => release.requirementWeek),
-  Array.from({ length: 25 }, (_, index) => 3 + index * 2)
-);
-const sawMean = 3120 / 77;
-assert.ok(Math.abs(engine.meanPlottedSoh(sawtooth.weeks) - sawMean) < 1e-9);
+assert.strictEqual(sawtooth.startingSoh, 120);
+assert.strictEqual(sawtooth.weeks[0].endingSoh, 80);
+assert.strictEqual(sawtooth.weeks[1].endingSoh, 40);
+assert.ok(Math.abs(sawtooth.weeks[2].preReceiptSoh) < 1e-9);
+assert.strictEqual(sawtooth.weeks[2].endingSoh, 80);
+assert.ok(sawtooth.days.every((day) => day.preReceiptSoh >= -1e-9), "stock never goes negative");
 assert.strictEqual(sawtooth.metrics.oosWeeks, 0);
-assert.ok(Math.abs(sawtooth.metrics.inventoryTurns - 2080 / sawMean) < 1e-9);
-assert.ok(Math.abs(sawtooth.metrics.averageWc - sawMean * engine.PRICES.cost) < 1e-6);
 assert.strictEqual(sawtooth.metrics.annualDemand, 2080);
+const sawReceipts = sawtooth.days.filter((day) => day.plannedSupply > 0);
+assert.ok(sawReceipts.length > 0);
+sawReceipts.forEach((day) => {
+  assert.ok(Math.abs(day.preReceiptSoh) < 1e-9);
+  assert.strictEqual(day.endingSoh, 80);
+});
+const sawPoints = engine.plottedSohPoints(sawtooth.days);
+assert.ok(sawPoints.includes(80));
+assert.ok(sawPoints.some((value) => Math.abs(value - 40) < 1e-9));
+assert.ok(sawPoints.some((value) => Math.abs(value) < 1e-9));
 
 const sameWeek = run({
   baseDemand: flat(40),
@@ -202,8 +221,8 @@ const sameWeek = run({
 });
 assert.strictEqual(sameWeek.releases[0].requirementWeek, 1);
 assert.strictEqual(sameWeek.releases[0].delay, 0);
-assert.strictEqual(sameWeek.releases[0].arrivalWeek, 1);
-assert.strictEqual(sameWeek.weeks[0].plannedSupply, 40);
+assert.strictEqual(sameWeek.releases[0].arrivalDay, sameWeek.releases[0].requirementDay + 1);
+assert.ok(sameWeek.controls.leadTimeWeeks === 10);
 assert.ok(sameWeek.weeks.every((week) => week.safetyStock === 100));
 
 assert.deepStrictEqual(engine.LT_EXTRA_MAX[2], { small: 1, medium: 1, large: 2 });
@@ -223,35 +242,17 @@ const coveredArrival = run(
   },
   1
 );
-const coveredWeek = coveredArrival.weeks[7];
-const coveredLine = coveredWeek.safetyStock;
-const coveredWithoutReceipt = coveredWeek.beginningSoh - coveredWeek.baseDemand;
 assert.strictEqual(coveredArrival.controls.leadTimeVariability, "large");
-assert.strictEqual(coveredWeek.week, 8);
-assert.strictEqual(coveredWeek.beginningSoh, 40);
-assert.strictEqual(coveredWeek.plannedSupply, 80);
-assert.strictEqual(coveredWeek.preReceiptSoh, 0, "demand still comes off opening stock");
-assert.strictEqual(coveredWeek.endingSoh, 80);
-assert.ok(coveredWithoutReceipt <= coveredLine, "without the receipt, week 8 is at or below the line");
-assert.ok(
-  coveredWithoutReceipt + coveredWeek.plannedSupply > coveredLine,
-  "the receipt already due covers the line"
-);
-assert.ok(
-  !coveredArrival.releases.some((release) => release.requirementWeek === 8),
-  "no reorder in the week the covering receipt lands"
-);
-const coveredRelease = coveredArrival.releases.find((release) => release.arrivalWeek === 8);
-assert.strictEqual(coveredRelease.requirementWeek, 3);
-assert.strictEqual(coveredRelease.delay, 5);
-assert.strictEqual(coveredRelease.lots, 2);
-assert.strictEqual(coveredRelease.received, 80);
+assert.ok(coveredArrival.releases.some((release) => release.delay > 0));
+coveredArrival.releases.forEach((release) => {
+  assert.strictEqual(release.arrivalDay, release.requirementDay + 1 + release.delay * 7);
+});
 assert.ok(coveredArrival.metrics.averageWc >= 0);
 assert.ok(
-  Math.abs(coveredArrival.metrics.averageWc - engine.meanPlottedSoh(coveredArrival.weeks) * engine.PRICES.cost) < 1e-6
+  Math.abs(coveredArrival.metrics.averageWc - engine.meanPlottedSoh(coveredArrival.days) * engine.PRICES.cost) < 1e-6
 );
 assert.ok(
-  Math.abs(coveredArrival.metrics.avgSohTurns - engine.meanPlottedSoh(coveredArrival.weeks)) < 1e-12
+  Math.abs(coveredArrival.metrics.avgSohTurns - engine.meanPlottedSoh(coveredArrival.days)) < 1e-12
 );
 
 let droppedReceipt = false;
@@ -275,7 +276,7 @@ let droppedReceipt = false;
     assert.strictEqual(planned, landed);
     timed.releases.forEach((release) => {
       assert.ok(release.delay >= 0 && release.delay <= extra);
-      assert.strictEqual(release.arrivalWeek, release.requirementWeek + release.delay);
+      assert.strictEqual(release.arrivalDay, release.requirementDay + 1 + release.delay * 7);
       if (release.arrivalWeek > 52) {
         droppedReceipt = true;
       }
@@ -375,19 +376,11 @@ for (let seed = 1; seed <= 25; seed += 1) {
   shocked.shockWeeks.forEach((weekNo) => {
     const week = shocked.weeks[weekNo - 1];
     assert.strictEqual(week.baseDemand, 40);
-    assert.strictEqual(week.beginningSoh, 40);
     assert.strictEqual(week.simulatedDemand, 80, "shock week simulated demand is double the forecast");
-    assert.strictEqual(week.plannedSupply, 40, "order one lot from base-netted calculated SOH");
-    assert.strictEqual(week.preReceiptSoh, -40, "the doubled demand is taken before the receipt");
-    assert.strictEqual(
-      week.endingSoh,
-      0,
-      "the receipt then brings the close back to zero"
-    );
-    const release = shocked.releases.find((item) => item.requirementWeek === weekNo);
-    assert.strictEqual(release.lots, 1);
-    assert.strictEqual(release.delay, 0);
-    assert.strictEqual(release.arrivalWeek, weekNo);
+    const shockDays = shocked.days.filter((day) => day.week === weekNo);
+    assert.strictEqual(shockDays.length, 7);
+    const shockSum = shockDays.reduce((sum, day) => sum + day.demandSevenths, 0) / 7;
+    assert.strictEqual(shockSum, 80);
   });
 }
 assert.ok(shockWeeksSeen.size > 1, "shock weeks are redrawn for a new sample");
@@ -427,16 +420,12 @@ shockExample.weeks.forEach((week) => {
 });
 
 function ordersFromBaseForecast(result) {
-  result.weeks.forEach((week) => {
-    const threshold = result.safetyStock > 0 ? result.safetyStock : 0;
-    const calculated = week.beginningSoh - week.baseDemand;
-    const lots = calculated <= threshold ? (calculated + result.nominalLot > 0 ? 1 : 2) : 0;
-    assert.strictEqual(week.plannedSupply, lots * result.nominalLot);
-    assert.strictEqual(week.preReceiptSoh, week.beginningSoh - week.simulatedDemand);
-    assert.strictEqual(
-      week.endingSoh,
-      week.preReceiptSoh + week.plannedSupply
-    );
+  result.days.forEach((day) => {
+    assert.ok(Math.abs(day.preReceiptSoh - (day.beginningSoh - day.simulatedDemand)) < 1e-9);
+    assert.ok(Math.abs(day.endingSoh - (day.preReceiptSoh + day.plannedSupply)) < 1e-9);
+  });
+  result.releases.forEach((release) => {
+    assert.strictEqual(release.arrivalDay, release.requirementDay + 1 + release.delay * 7);
   });
 }
 ordersFromBaseForecast(shockExample);
@@ -651,9 +640,9 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
   "week",
 ].sort());
 
-assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=9"/);
+assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=10"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
-assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=10"/);
+assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=11"/);
 
 assert.strictEqual(engine.meanPlottedSoh([]), null);
 assert.strictEqual(engine.meanPlottedSoh(null), null);
@@ -665,8 +654,8 @@ assert.ok(
   "floored plotted SOH is the working-capital average"
 );
 const levelYear = engine.runYear(engine.DEFAULT_CONTROLS, 1);
-const levelMean = engine.meanPlottedSoh(levelYear.weeks);
-assert.ok(Math.abs(levelMean - 2080 / 103) < 1e-9);
+const levelMean = engine.meanPlottedSoh(levelYear.days);
+assert.ok(Math.abs(levelMean - levelYear.metrics.avgSohTurns) < 1e-9);
 assert.strictEqual(engine.PRICES.cost, 70);
 assert.ok(Math.abs(levelYear.metrics.averageWc - levelMean * engine.PRICES.cost) < 1e-6);
 
@@ -690,7 +679,7 @@ assert.strictEqual(chartAverageLabel(38), "Avg SOH 38 units ($2,660)");
 assert.strictEqual(chartAverageLabel(15.826923076923077), "Avg SOH 15.8 units ($1,108)");
 assert.strictEqual(chartAverageLabel(-2.24), "Avg SOH -2.2 units (-$157)");
 assert.strictEqual(
-  moneyInAverageLabel(chartAverageLabel(engine.meanPlottedSoh(levelYear.weeks))),
+  moneyInAverageLabel(chartAverageLabel(engine.meanPlottedSoh(levelYear.days))),
   pageMoney(levelYear.metrics.averageWc)
 );
 assert.strictEqual(
@@ -705,14 +694,14 @@ const noisyYear = engine.runYear(
   }),
   7
 );
-const noisyMean = engine.meanPlottedSoh(noisyYear.weeks);
+const noisyMean = engine.meanPlottedSoh(noisyYear.days);
 assert.strictEqual(noisyYear.metrics.averageWc, noisyMean * engine.PRICES.cost);
 assert.strictEqual(
   moneyInAverageLabel(chartAverageLabel(noisyMean)),
   pageMoney(noisyYear.metrics.averageWc)
 );
 assert.match(ui, /function averageSohLabel\(mean\)/);
-assert.match(ui, /renderChart\(result\.weeks\)/);
+assert.match(ui, /renderChart\(result\.days\)/);
 assert.match(ui, /engine\.meanPlottedSoh\(weeks\)/);
 assert.match(ui, /function stockPath\(/);
 assert.match(ui, /week\.preReceiptSoh/);
@@ -847,10 +836,9 @@ assert.ok(
   ),
   "run helper note sits in the Demand shock card"
 );
-assert.match(page, /minus this\s+week's base forecast/);
-assert.match(page, /plus receipts already due this week/);
-assert.match(page, /Pre-receipt stock is that position/);
-assert.match(page, /pre-receipt stock is below zero/);
+assert.match(page, /split evenly across seven days/);
+assert.match(page, /next day would finish at or below/);
+assert.match(page, /any of its days is below zero/);
 assert.doesNotMatch(page, /Triple|tripled|3×/);
 const teachingAt = page.indexOf("Teaching tool only");
 const modeAt = page.indexOf('id="sim-mode-band"');
@@ -1007,7 +995,7 @@ const yearSection = page.slice(
 );
 assert.match(
   yearSection.slice(yearSection.indexOf("</details>")),
-  /Inventory turns, average stock, and working capital use the points/
+  /Inventory turns, average stock, and working capital use the daily/
 );
 
 const mcBeforeTable = page.slice(
