@@ -1194,7 +1194,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "Appropriate customer service levels often depend heavily on the industry and market environment."
+            "text": "The industry and market shape what customers expect: supply from stock, or within an agreed lead time."
           },
           {
             "type": "p",
@@ -1203,14 +1203,14 @@
           {
             "type": "ul",
             "items": [
-              "FMCG (Fast-Moving Consumer Goods, called CPG in the US) environments often require very high service levels due to strong customer availability expectations",
-              "Industrial or specialized products may tolerate longer replenishment times",
-              "Spare parts businesses may prioritize availability for critical items only"
+              "FMCG (Fast-Moving Consumer Goods, called CPG in the US) customers expect products on the shelf, supplied from stock",
+              "Industrial or specialised product customers often accept an agreed replenishment lead time",
+              "Spare parts customers expect critical items from stock, while non-critical items can be supplied to a lead time"
             ]
           },
           {
             "type": "p",
-            "text": "Customer expectations, competitive pressure, and product criticality all influence appropriate inventory and service level strategies."
+            "text": "Once the expectation is set, the customer service level target is how many times out of 100 you choose to meet it."
           }
         ],
         "heading": "Industry and Market Expectations",
