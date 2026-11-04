@@ -108,7 +108,7 @@ const floored = (10 * 50) / 52;
 const raw = (-20 + 10 * 50) / 52;
 assert.ok(Math.abs(mixed.avgSohTurns - floored) < 1e-9);
 assert.ok(Math.abs(mixed.inventoryTurns - 520 / floored) < 1e-6);
-assert.ok(Math.abs(mixed.averageWc - raw * 70) < 1e-6);
+assert.ok(Math.abs(mixed.averageWc - floored * 70) < 1e-6);
 assert.ok(raw > 0 && raw < floored);
 assert.ok(
   mixed.inventoryTurns < 520 / raw,
@@ -116,7 +116,8 @@ assert.ok(
 );
 assert.strictEqual(mixed.oosWeeks, 1);
 assert.strictEqual(mixed.annualGp, 520 * 30);
-assert.notStrictEqual(mixed.averageWc, mixed.avgSohTurns * 70);
+assert.ok(Math.abs(mixed.averageWc - mixed.avgSohTurns * 70) < 1e-9);
+assert.ok(mixed.averageWc >= 0);
 
 const cr1Demand = flat(1);
 cr1Demand[0] = 25;
@@ -140,7 +141,8 @@ assert.strictEqual(
   "one lot when the previous ending is negative but one lot clears zero"
 );
 assert.ok(cr1.metrics.oosWeeks >= 1);
-assert.ok(cr1.metrics.avgSohTurns > cr1.metrics.averageWc / 70);
+assert.ok(Math.abs(cr1.metrics.avgSohTurns - cr1.metrics.averageWc / 70) < 1e-9);
+assert.ok(cr1.metrics.averageWc >= 0);
 
 const atLine = run({ baseDemand: flat(10), lotQty: 10, ssQty: 10 });
 assert.strictEqual(atLine.weeks[0].plannedSupply, 10, "calculated SOH equal to SS orders");
@@ -244,6 +246,13 @@ assert.strictEqual(coveredRelease.requirementWeek, 3);
 assert.strictEqual(coveredRelease.delay, 5);
 assert.strictEqual(coveredRelease.lots, 2);
 assert.strictEqual(coveredRelease.received, 80);
+assert.ok(coveredArrival.metrics.averageWc >= 0);
+assert.ok(
+  Math.abs(coveredArrival.metrics.averageWc - engine.meanPlottedSoh(coveredArrival.weeks) * engine.PRICES.cost) < 1e-6
+);
+assert.ok(
+  Math.abs(coveredArrival.metrics.avgSohTurns - engine.meanPlottedSoh(coveredArrival.weeks)) < 1e-12
+);
 
 let droppedReceipt = false;
 [2, 5, 10].forEach((leadTime) => {
@@ -618,7 +627,8 @@ assert.strictEqual(
 );
 const thin = run({ baseDemand: flat(40), lotQty: 5, ssQty: 0 });
 assert.strictEqual(engine.needsPedagogyCallout(thin.metrics), true);
-assert.ok(thin.metrics.averageWc < thin.metrics.avgSohTurns * engine.PRICES.cost);
+assert.ok(Math.abs(thin.metrics.averageWc - thin.metrics.avgSohTurns * engine.PRICES.cost) < 1e-6);
+assert.ok(thin.metrics.averageWc >= 0);
 
 assert.deepStrictEqual(engine.VISIBLE_WEEK_COLUMNS, [
   "Week",
@@ -641,18 +651,18 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
   "week",
 ].sort());
 
-assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=8"/);
+assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=9"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
 assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=10"/);
 
 assert.strictEqual(engine.meanPlottedSoh([]), null);
 assert.strictEqual(engine.meanPlottedSoh(null), null);
-assert.strictEqual(engine.meanPlottedSoh([{ endingSoh: -4 }, { endingSoh: 10 }]), 3);
+assert.strictEqual(engine.meanPlottedSoh([{ endingSoh: -4 }, { endingSoh: 10 }]), 5);
 assert.strictEqual(engine.meanPlottedSoh([{ endingSoh: NaN }]), null);
-assert.ok(Math.abs(engine.meanPlottedSoh(mixedWeeks) - raw) < 1e-12);
+assert.ok(Math.abs(engine.meanPlottedSoh(mixedWeeks) - floored) < 1e-12);
 assert.ok(
   Math.abs(engine.meanPlottedSoh(mixedWeeks) * engine.PRICES.cost - mixed.averageWc) < 1e-6,
-  "mean plotted SOH is the working-capital average, negatives included"
+  "floored plotted SOH is the working-capital average"
 );
 const levelYear = engine.runYear(engine.DEFAULT_CONTROLS, 1);
 const levelMean = engine.meanPlottedSoh(levelYear.weeks);

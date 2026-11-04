@@ -56,10 +56,11 @@
  *
  * Average stock, turns, and working capital use the points drawn on the
  * chart. A week with no receipt contributes its pre-receipt stock. A
- * receipt week contributes that point and the close. Turns use Method A
- * on those points: a negative point counts as zero. Working capital keeps
- * the negatives. Those are different on purpose (CR2). Monte Carlo
- * summaries are median and P10–P90, with median only for gross profit (CR3).
+ * receipt week contributes that point and the close. Each plotted point
+ * is floored at zero before the average, for the chart label, for turns,
+ * and for working capital. A negative point does not reduce that average,
+ * so working capital is not negative. Monte Carlo summaries are median
+ * and P10–P90, with median only for gross profit (CR3).
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
@@ -607,8 +608,8 @@
     return points;
   }
 
-  // Arithmetic mean of the plotted stock points. Negatives stay in.
-  // Turns use a different, floored average of the same points.
+  // Mean of the plotted stock points after flooring each point at zero.
+  // The chart label, turns, and working capital all use this mean.
   function meanPlottedSoh(weeks) {
     var points = plottedSohPoints(weeks);
     if (!points.length) {
@@ -619,24 +620,14 @@
       if (!isFinite(points[i])) {
         return null;
       }
-      sum += points[i];
+      sum += points[i] > 0 ? points[i] : 0;
     }
     return sum / points.length;
   }
 
   function computeMetrics(weeks) {
     var oosWeeks = 0;
-    var sumPlotted = 0;
-    var sumFloored = 0;
-    var plottedCount = 0;
     var annualDemand = 0;
-    var points = plottedSohPoints(weeks);
-    for (var p = 0; p < points.length; p += 1) {
-      var point = points[p];
-      sumPlotted += point;
-      sumFloored += point > 0 ? point : 0;
-      plottedCount += 1;
-    }
     for (var i = 0; i < weeks.length; i += 1) {
       var pre = weeks[i].preReceiptSoh;
       if (pre == null || pre === "") {
@@ -648,16 +639,18 @@
       annualDemand += weeks[i].simulatedDemand;
     }
     var n = weeks.length || HORIZON;
-    var avgSohTurns = plottedCount ? sumFloored / plottedCount : 0;
+    var avgSohTurns = meanPlottedSoh(weeks);
+    if (avgSohTurns == null) {
+      avgSohTurns = 0;
+    }
     var inventoryTurns = avgSohTurns === 0 ? null : annualDemand / avgSohTurns;
-    var meanPlotted = plottedCount ? sumPlotted / plottedCount : 0;
     return {
       oosWeeks: oosWeeks,
       csl: ((n - oosWeeks) / n) * 100,
       annualDemand: annualDemand,
       avgSohTurns: avgSohTurns,
       inventoryTurns: inventoryTurns,
-      averageWc: meanPlotted * UNIT_COST,
+      averageWc: avgSohTurns * UNIT_COST,
       annualGp: annualDemand * UNIT_GP,
     };
   }
@@ -1130,9 +1123,6 @@
     }
     if (ctx.lotMode === "weeks" && ctx.lotWeeks >= 6 && turns != null && isFinite(turns) && turns < 6) {
       rules.push("In the scenario you ran, big lots raise average stock and working capital, which lowers turns.");
-    }
-    if (ctx.averageWc != null && isFinite(ctx.averageWc) && ctx.averageWc < 0) {
-      rules.push("In the scenario you ran, negative average stock means backorders outweighed stock on hand.");
     }
     if (ctx.mode === "monte-carlo" && ctx.oosSpread != null && ctx.oosSpread >= 4) {
       rules.push("In the scenario you ran, the results vary a lot from year to year under the same settings.");

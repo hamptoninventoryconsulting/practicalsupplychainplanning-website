@@ -7,7 +7,7 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/",
   "scripts": [
-    "/assets/safety-stock-engine.js?v=8",
+    "/assets/safety-stock-engine.js?v=9",
     "/assets/sim-results-form.js?v=7",
     "/assets/safety-stock-simulator.js?v=10"
   ]
@@ -373,11 +373,11 @@
             Inventory turns, average stock, and working capital use the points
             drawn on the chart. A week with no receipt contributes its
             pre-receipt stock. A receipt week contributes that point and the
-            ending stock. A negative point counts as zero in the turns average.
-            A stockout does not improve turns. If the average is zero, turns
-            are not applicable. Working capital is different on purpose: it
-            averages those same points with the negatives still in, then
-            multiplies by the $70 cost. Gross profit is simulated demand times
+            ending stock. A plotted point below zero counts as zero in that
+            average, for the chart label, for turns, and for working capital.
+            A stockout does not improve turns or reduce working capital. If
+            the average is zero, turns are not applicable. Working capital is
+            that average times the $70 cost. Gross profit is simulated demand times
             $30 and does not change because of backorders.
           </p>
           <p class="sim-help">

@@ -122,11 +122,11 @@
     return sign + "$" + Math.abs(rounded).toLocaleString("en-US");
   }
 
-  // Chart label for the mean of the plotted stock points. A quiet week is
-  // one point. A receipt week is the pre-receipt point and the close.
-  // Units use the page's count formatting. Dollars are that same mean times
-  // the $70 unit cost (PRICES.cost), the cost working capital uses, then
-  // the page's money formatting.
+  // Chart label for the floored mean of the plotted stock points. A quiet
+  // week is one point. A receipt week is the pre-receipt point and the close.
+  // Each point below zero counts as zero, the same average working capital
+  // uses. Units use the page's count formatting. Dollars are that mean times
+  // the $70 unit cost (PRICES.cost).
   function averageSohLabel(mean) {
     var rate = engine.PRICES && engine.PRICES.cost;
     if (mean == null || !isFinite(mean) || rate == null || !isFinite(rate)) {

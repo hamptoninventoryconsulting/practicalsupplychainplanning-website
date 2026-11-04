@@ -7,7 +7,7 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/own-data/",
   "scripts": [
-    "/assets/own-data-engine.js?v=6",
+    "/assets/own-data-engine.js?v=7",
     "/assets/sim-results-form.js?v=7",
     "/assets/own-data-simulator.js?v=5"
   ]
@@ -330,8 +330,8 @@
               so it does not cover a stockout in the arrival week. Inventory
               turns and working capital use the points drawn on the chart: the
               pre-receipt stock, and the close as well when a receipt lands.
-              A negative point counts as zero for turns and stays negative for
-              working capital.
+              A plotted point below zero counts as zero in that average, so
+              working capital is not negative.
             </p>
             <figure class="sim-figure">
               <svg id="own-chart" class="sim-chart" role="img" aria-label="Stock on hand, safety stock, and zero"></svg>

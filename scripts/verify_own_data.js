@@ -399,7 +399,7 @@ assert.deepStrictEqual(
   idsOf({ lotMode: "weeks", lotWeeks: 6, inventoryTurns: 4, oosWeeks: 2, safetyStock: 10 }),
   [6, 9]
 );
-assert.deepStrictEqual(idsOf({ averageWc: -25, oosWeeks: 3, safetyStock: 0 }), [7, 9]);
+assert.deepStrictEqual(idsOf({ averageWc: -25, oosWeeks: 3, safetyStock: 0 }), [9]);
 assert.deepStrictEqual(
   idsOf({ mode: "monte-carlo", oosSpread: 5, oosWeeks: 2, safetyStock: 4 }),
   [8, 9]
@@ -426,7 +426,6 @@ const phrases = {
   4: /doubled-demand/,
   5: /textbook formula/,
   6: /working capital/,
-  7: /backorders/,
   8: /year to year/,
   9: /one setting at a time/,
 };
@@ -437,8 +436,7 @@ Object.keys(phrases).forEach(function (id) {
         : id === "3" ? { oosWeeks: 2, deliveryVariability: "medium", safetyStock: 0 }
           : id === "4" ? { oosWeeks: 2, shock: true, shockStockout: true }
             : id === "5" ? { ssMode: "formula", leadTimeVariability: "small", oosWeeks: 0, csl: 100, safetyStock: 4 }
-              : id === "6" ? { lotMode: "weeks", lotWeeks: 10, inventoryTurns: 3, oosWeeks: 1 }
-                : id === "7" ? { averageWc: -1, oosWeeks: 4 }
+                : id === "6" ? { lotMode: "weeks", lotWeeks: 10, inventoryTurns: 3, oosWeeks: 1 }
                   : id === "8" ? { mode: "monte-carlo", oosSpread: 6, oosWeeks: 3 }
                     : {}
   ));
@@ -550,7 +548,7 @@ own.commentaryFromYear(bigLots, globals(), bigLotsRun).rules.forEach(function (r
   assertClean(rule.text, "big lots");
 });
 assert.ok(bigLotsRun.metrics.inventoryTurns < 6);
-[1, 2, 3, 4, 5, 6, 7, 9].forEach(function (id) {
+[1, 2, 3, 4, 5, 6, 9].forEach(function (id) {
   assert.ok(seen[id], "matrix did not fire rule " + id);
 });
 
@@ -818,7 +816,7 @@ assert.match(flat, /SOH means stock on hand/);
 assert.match(flat, /In 8 out of 10 simulated years, the result falls inside it/);
 assert.match(flat, /Z comes from the service level you pick/);
 assert.match(flat, /square root of L spreads that weekly variation/);
-assert.match(page, /src="\/assets\/own-data-engine\.js\?v=6"/);
+assert.match(page, /src="\/assets\/own-data-engine\.js\?v=7"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
 assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=5"/);
 assert.ok(page.indexOf("own-data-engine.js") < page.indexOf("own-data-simulator.js"));

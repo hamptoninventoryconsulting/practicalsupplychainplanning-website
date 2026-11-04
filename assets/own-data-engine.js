@@ -430,7 +430,6 @@
 
   function computeMetrics(weeks, unitCost, sellingPrice) {
     var oosWeeks = 0;
-    var sumPlotted = 0;
     var sumFloored = 0;
     var plottedCount = 0;
     var annualDemand = 0;
@@ -438,7 +437,6 @@
     var points = plottedSohPoints(weeks);
     for (var p = 0; p < points.length; p += 1) {
       var point = points[p];
-      sumPlotted += point;
       sumFloored += point > 0 ? point : 0;
       plottedCount += 1;
     }
@@ -456,7 +454,6 @@
     var n = weeks.length || HORIZON;
     var avgSohTurns = plottedCount ? sumFloored / plottedCount : 0;
     var inventoryTurns = avgSohTurns === 0 ? null : annualDemand / avgSohTurns;
-    var meanPlotted = plottedCount ? sumPlotted / plottedCount : 0;
     var gpEach = sellingPrice - unitCost;
     return {
       oosWeeks: oosWeeks,
@@ -466,7 +463,7 @@
       unmetDemand: annualDemand - unitsSold,
       avgSohTurns: avgSohTurns,
       inventoryTurns: inventoryTurns,
-      averageWc: meanPlotted * unitCost,
+      averageWc: avgSohTurns * unitCost,
       annualGp: unitsSold * gpEach,
       unitCost: unitCost,
       sellingPrice: sellingPrice,
@@ -1579,12 +1576,6 @@
         text: "In the scenario you ran, big lots raise average stock and working capital, which lowers turns.",
       });
     }
-    if (ctx.averageWc != null && isFinite(ctx.averageWc) && ctx.averageWc < 0) {
-      rules.push({
-        id: 7,
-        text: "In the scenario you ran, negative average stock means backorders outweighed stock on hand.",
-      });
-    }
     if (ctx.mode === "monte-carlo" && ctx.oosSpread != null && ctx.oosSpread >= 4) {
       rules.push({
         id: 8,
@@ -1856,7 +1847,6 @@
       [1, 2],
       [2, 3],
       [2, 4],
-      [2, 7],
       [1, 6],
     ],
   };
