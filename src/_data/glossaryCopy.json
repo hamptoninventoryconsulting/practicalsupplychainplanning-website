@@ -13,13 +13,13 @@
     "why": "The week the projected balance falls below safety stock is the week a planned order has to cover. Adding up all stock and all demand can hide that week, because supply that arrives later does not help an earlier bucket."
   },
   "expedite-reschedule": {
-    "definition": "Expedite and reschedule concepts are commonly used in MRP and supply planning systems to identify when supply timing may no longer properly align with projected demand requirements.",
+    "definition": "MRP uses expedite and reschedule messages to show when open supply no longer matches when it's needed.",
     "sections": [
       {
         "blocks": [
           {
             "type": "p",
-            "text": "Expedite and reschedule concepts are commonly used in MRP and supply planning systems to identify when supply timing may no longer properly align with projected demand requirements."
+            "text": "MRP uses expedite and reschedule messages to show when open supply no longer matches when it's needed."
           }
         ]
       },
@@ -31,7 +31,7 @@
           },
           {
             "type": "p",
-            "text": "As projected supply and demand conditions change over time, existing supply orders may no longer arrive at the most appropriate time."
+            "text": "As projected supply and demand conditions change over time, some open supply orders will no longer arrive when they're needed."
           },
           {
             "type": "p",
@@ -438,7 +438,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "MRP calculations are typically performed across repeating time buckets."
+            "text": "MRP calculates across repeating time buckets."
           },
           {
             "type": "p",
@@ -474,7 +474,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "MRP commonly generates:"
+            "text": "MRP generates:"
           },
           {
             "type": "ul",
