@@ -20,6 +20,9 @@
   }
 
   function readUtm() {
+    if (window.pscpVisit && typeof window.pscpVisit.forSignup === "function") {
+      return window.pscpVisit.forSignup();
+    }
     var params = new URLSearchParams(window.location.search);
     function pick(name) {
       var value = params.get(name);
