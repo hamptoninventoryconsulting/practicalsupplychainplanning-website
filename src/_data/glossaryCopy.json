@@ -1,6 +1,6 @@
 {
   "planned-order": {
-    "definition": "A planned order is an MRP output: a recommended quantity and date to buy from a supplier or make, calculated from projected stock, lead times, MOQ, lot size and other order rules. It isn't placed yet. The plan raises one so the projected balance stays at or above safety stock. Also called a planned supply order. Why it matters: planned orders show your future buying and production ahead of time, which is very useful for supplier forecasts, cash and capacity planning, and confirming lead times early. Review them before they become supply orders."
+    "definition": "A planned order is an MRP output: a recommended quantity and date to buy from a supplier or make, calculated from projected stock, lead times, MOQ, lot size and other order rules. It isn't placed yet. In larger ERP systems, a planner releases a planned order, which turns it into an open order such as a purchase order or production order. The plan raises one so the projected balance stays at or above safety stock. Also called a planned supply order. Why it matters: planned orders show your future buying and production ahead of time, which is very useful for supplier forecasts, cash and capacity planning, and confirming lead times early. Review them before they become supply orders."
   },
   "time-phased-planning": {
     "definition": "Time-phased planning projects stock forward, bucket by bucket, against the forecast, open orders and lead times, and times a planned order so it arrives before the projected balance falls below safety stock.",
