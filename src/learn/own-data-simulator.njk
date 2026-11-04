@@ -7,7 +7,7 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/own-data/",
   "scripts": [
-    "/assets/own-data-engine.js?v=8",
+    "/assets/own-data-engine.js?v=9",
     "/assets/sim-results-form.js?v=7",
     "/assets/own-data-simulator.js?v=6"
   ]
@@ -35,7 +35,7 @@
             <ul>
               <li>A single average weekly forecast stands in for the whole year.</li>
               <li>Demand, lead time, and delivery quantity move inside fixed variability bands.</li>
-              <li>Each week's forecast is split evenly across seven days. An order is placed when the next day would finish at or below safety stock, and it arrives the next day after that day's demand.</li>
+              <li>Each week's forecast is split evenly across seven days. An order is placed one day before the stock would finish at or below safety stock, and it arrives the next day after that day's demand.</li>
             </ul>
             <p id="own-storage-off">
               The calculation runs in this browser. SKU names, forecasts, stock,
@@ -229,8 +229,9 @@
             Each week's forecast is split evenly across seven days, and those
             days add up to the week. Demand comes off that day's opening
             stock, then any receipt due that day is added. An order is placed
-            when the next day would finish at or below safety stock. The
-            order arrives the next day, after that day's demand. One lot is
+            when the day after tomorrow would finish at or below safety stock.
+            The order arrives tomorrow, after tomorrow's demand, so
+            deterministic demand stays on or above the line. One lot is
             ordered, or two if that lot would not lift the projected finish
             above zero. The base lead time is any whole number of weeks from
             1 to 26. It is not added onto the arrival while supply-timing

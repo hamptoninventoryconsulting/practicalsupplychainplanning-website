@@ -31,12 +31,13 @@
  * seven daily amounts add up to the week's demand, with no remainder.
  * Each day, demand is taken from the opening stock, then receipts due
  * that day are added.
- * An order is placed when the next day would finish at or below safety
- * stock (or at or below zero when safety stock is 0). The finish used
- * for that test is the next day's opening, minus the next day's base
- * forecast, plus receipts already due that day. Simulated demand is not
- * an input to the order. The order arrives the next day, after that
- * day's demand, when supply-timing variability is off. The base lead
+ * An order is placed one day earlier than the day that would finish at
+ * or below safety stock (or at or below zero when safety stock is 0).
+ * The test looks at the day after tomorrow: that day's opening, minus
+ * its base forecast. Receipts already due before that demand count.
+ * Simulated demand is not an input to the order. The order arrives
+ * tomorrow, after tomorrow's demand, when supply-timing variability is
+ * off, so the stock stays on or above the line. The base lead
  * time is not added. It only scales the extra delay, in whole weeks,
  * when that variability is on. Each extra week is 7 days.
  * One nominal lot is ordered, unless that lot would not lift the
@@ -814,7 +815,13 @@
 
       if (t + 1 < DAY_COUNT) {
         var nextBase7 = base[Math.floor((t + 1) / DAYS_PER_WEEK)];
-        var projected7 = open7 - base7 + existing7 - nextBase7 + due[t + 1];
+        var projected7;
+        if (t + 2 < DAY_COUNT) {
+          var dayAfterBase7 = base[Math.floor((t + 2) / DAYS_PER_WEEK)];
+          projected7 = open7 - base7 + existing7 - nextBase7 + due[t + 1] - dayAfterBase7;
+        } else {
+          projected7 = open7 - base7 + existing7 - nextBase7;
+        }
         if (projected7 <= threshold7) {
           var lots = projected7 + lot7 > 0 ? 1 : 2;
           var lotReceipts = [];

@@ -643,7 +643,13 @@
 
       if (t + 1 < DAY_COUNT) {
         var nextBase7 = base[Math.floor((t + 1) / DAYS_PER_WEEK)];
-        var projected7 = open7 - base7 + existing7 - nextBase7 + due[t + 1];
+        var projected7;
+        if (t + 2 < DAY_COUNT) {
+          var dayAfterBase7 = base[Math.floor((t + 2) / DAYS_PER_WEEK)];
+          projected7 = open7 - base7 + existing7 - nextBase7 + due[t + 1] - dayAfterBase7;
+        } else {
+          projected7 = open7 - base7 + existing7 - nextBase7;
+        }
         if (projected7 <= threshold7) {
           var lots = projected7 + lot7 > 0 ? 1 : 2;
           var lotReceipts = [];

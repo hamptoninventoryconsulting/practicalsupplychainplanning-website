@@ -7,7 +7,7 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/",
   "scripts": [
-    "/assets/safety-stock-engine.js?v=10",
+    "/assets/safety-stock-engine.js?v=11",
     "/assets/sim-results-form.js?v=7",
     "/assets/safety-stock-simulator.js?v=11"
   ]
@@ -188,8 +188,9 @@
             Each week's demand is split evenly across seven days, and those
             seven days add up to the week. Each day, demand comes off the
             opening stock and then any receipt due that day is added. An
-            order is placed when the next day would finish at or below safety
-            stock. The order arrives the next day, after that day's demand.
+            order is placed one day before the stock would finish at or below
+            safety stock. The order arrives the next day, after that day's
+            demand, so deterministic demand stays on or above the line.
             With safety stock at zero, the line is zero. The order is one lot
             unless that lot would not lift the projected finish above zero,
             in which case it is two lots. The base lead time does not delay
