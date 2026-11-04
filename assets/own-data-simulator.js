@@ -482,9 +482,10 @@
       d: stockPath(),
     });
     [1, 13, 26, 39, 52].forEach(function (weekNo) {
+      var labelIndex = weeks.length > 52 ? (weekNo === 52 ? weeks.length - 1 : (weekNo - 1) * 7) : weekNo - 1;
       var label = add("text", {
         class: "sim-chart__label",
-        x: x(weekNo - 1).toFixed(2),
+        x: x(labelIndex).toFixed(2),
         y: String(height - 10),
         "text-anchor": "middle",
       });
@@ -568,7 +569,7 @@
     host.appendChild(metricCard("Inventory turns", formatTurns(metrics.inventoryTurns)));
     host.appendChild(metricCard("Average working capital", formatMoney(metrics.averageWc)));
     host.appendChild(metricCard("Annual gross profit (units sold)", formatMoney(metrics.annualGp)));
-    renderChart(result.weeks);
+    renderChart(result.days);
     renderWeeks(result.weeks);
   }
 
@@ -1045,7 +1046,7 @@
         var chain = Promise.resolve();
         state.yearRows.forEach(function (row) {
           chain = chain.then(function () {
-            renderChart(row.result.weeks);
+            renderChart(row.result.days);
             return window.SimResultsForm.snapshotChart($("own-chart")).then(function (png) {
               if (!png) {
                 throw new Error("chart");
@@ -1056,7 +1057,7 @@
         });
         return chain.then(function () {
           if (state.yearRows[saved]) {
-            renderChart(state.yearRows[saved].result.weeks);
+            renderChart(state.yearRows[saved].result.days);
           }
           summary.charts = charts;
           return summary;
