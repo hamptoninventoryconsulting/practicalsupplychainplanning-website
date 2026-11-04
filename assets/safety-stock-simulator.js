@@ -122,9 +122,11 @@
     return sign + "$" + Math.abs(rounded).toLocaleString("en-US");
   }
 
-  // Chart label for the mean ending SOH. Units use the page's count formatting.
-  // Dollars are that same mean times the $70 unit cost (PRICES.cost), the
-  // cost working capital uses, then the page's money formatting.
+  // Chart label for the mean of the plotted stock points. A quiet week is
+  // one point. A receipt week is the pre-receipt point and the close.
+  // Units use the page's count formatting. Dollars are that same mean times
+  // the $70 unit cost (PRICES.cost), the cost working capital uses, then
+  // the page's money formatting.
   function averageSohLabel(mean) {
     var rate = engine.PRICES && engine.PRICES.cost;
     if (mean == null || !isFinite(mean) || rate == null || !isFinite(rate)) {
@@ -363,6 +365,12 @@
     var minValue = 0;
     var maxValue = 0;
     weeks.forEach(function (week) {
+      if (week.preReceiptSoh < minValue) {
+        minValue = week.preReceiptSoh;
+      }
+      if (week.preReceiptSoh > maxValue) {
+        maxValue = week.preReceiptSoh;
+      }
       if (week.endingSoh < minValue) {
         minValue = week.endingSoh;
       }
@@ -399,6 +407,21 @@
         })
         .join(" ");
     }
+    function stockPath() {
+      var commands = [];
+      var started = false;
+      weeks.forEach(function (week, index) {
+        var values = [week.preReceiptSoh];
+        if (week.plannedSupply > 0) {
+          values.push(week.endingSoh);
+        }
+        values.forEach(function (value) {
+          commands.push((started ? "L" : "M") + x(index).toFixed(2) + " " + y(value).toFixed(2));
+          started = true;
+        });
+      });
+      return commands.join(" ");
+    }
     function add(name, attrs) {
       var node = document.createElementNS("http://www.w3.org/2000/svg", name);
       Object.keys(attrs).forEach(function (key) {
@@ -431,9 +454,9 @@
       fill: "none",
       stroke: "#0e7490",
       "stroke-width": "2",
-      d: seriesPath(function (week) { return week.endingSoh; }),
+      d: stockPath(),
     });
-    var mean = engine.meanEndingSoh(weeks);
+    var mean = engine.meanPlottedSoh(weeks);
     var avgLabel = averageSohLabel(mean);
     var avgCaption = $("sim-chart-avg");
     if (avgCaption) {
@@ -498,8 +521,8 @@
     var dataMax = 0;
     var dataMin = 0;
     weeks.forEach(function (week) {
-      dataMax = Math.max(dataMax, week.endingSoh, week.safetyStock);
-      dataMin = Math.min(dataMin, week.endingSoh, week.safetyStock);
+      dataMax = Math.max(dataMax, week.preReceiptSoh, week.endingSoh, week.safetyStock);
+      dataMin = Math.min(dataMin, week.preReceiptSoh, week.endingSoh, week.safetyStock);
     });
     var yTicks = dataMax === 0 ? [0] : [dataMax, 0];
     if (dataMin < 0) {
@@ -525,6 +548,7 @@
         week.baseDemand,
         week.simulatedDemand,
         week.beginningSoh,
+        week.preReceiptSoh,
         week.plannedSupply,
         week.endingSoh,
         week.safetyStock,
@@ -535,7 +559,7 @@
           cell.scope = "row";
         }
         cell.textContent = String(value);
-        if (index === 5 && value < 0) {
+        if ((index === 4 || index === 6) && value < 0) {
           cell.className = "sim-negative";
         }
         tr.appendChild(cell);

@@ -155,9 +155,9 @@ lostSales.weeks.forEach(function (week, index) {
   assert.strictEqual(week.plannedSupply, 2, "supply " + (index + 1));
 });
 assert.strictEqual(lostSales.metrics.annualDemand, 520);
-assert.strictEqual(lostSales.metrics.unitsSold, 108, "opening stock plus two units a week");
-assert.strictEqual(lostSales.metrics.unmetDemand, 412);
-assert.strictEqual(lostSales.metrics.annualGp, 108 * 30);
+assert.strictEqual(lostSales.metrics.unitsSold, 4, "only opening stock can be sold; the receipt is after demand");
+assert.strictEqual(lostSales.metrics.unmetDemand, 516);
+assert.strictEqual(lostSales.metrics.annualGp, 4 * 30);
 assert.ok(lostSales.metrics.annualGp < lostSales.metrics.annualDemand * 30);
 
 const ownBig = own.runYear(sku({ lotQty: 2500, demandVariability: "off", currentStock: 80 }), globals(), 1);
@@ -208,7 +208,7 @@ function parityControls(controls) {
 
 function soldFromWeeks(weeks) {
   return weeks.reduce(function (sum, week) {
-    const available = Math.max(0, week.beginningSoh) + Math.max(0, week.plannedSupply);
+    const available = Math.max(0, week.beginningSoh);
     return sum + Math.min(week.simulatedDemand, available);
   }, 0);
 }
@@ -218,6 +218,7 @@ function assertSameYear(left, right, label) {
   assert.strictEqual(left.safetyStock, right.safetyStock, label + " ss");
   assert.deepStrictEqual(left.shockWeeks, right.shockWeeks, label + " shock");
   for (let week = 0; week < 52; week += 1) {
+    assert.strictEqual(left.weeks[week].preReceiptSoh, right.weeks[week].preReceiptSoh, label + " pre " + (week + 1));
     assert.strictEqual(left.weeks[week].endingSoh, right.weeks[week].endingSoh, label + " end " + (week + 1));
     assert.strictEqual(left.weeks[week].simulatedDemand, right.weeks[week].simulatedDemand, label + " demand " + (week + 1));
     assert.strictEqual(left.weeks[week].plannedSupply, right.weeks[week].plannedSupply, label + " supply " + (week + 1));
@@ -810,14 +811,15 @@ assert.match(page, /Inventory turns/);
 assert.match(page, /Average working capital/);
 assert.match(page, /Annual gross profit \(units sold\)/);
 assert.match(flat, /only units actually sold/);
-assert.match(flat, /could not be filled in a stockout is left out/);
+assert.match(flat, /Demand that opening stock/);
+assert.match(flat, /could not fill is left out/);
 assert.match(flat, /SOH means stock on hand/);
 assert.match(flat, /In 8 out of 10 simulated years, the result falls inside it/);
 assert.match(flat, /Z comes from the service level you pick/);
 assert.match(flat, /square root of L spreads that weekly variation/);
-assert.match(page, /src="\/assets\/own-data-engine\.js\?v=4"/);
+assert.match(page, /src="\/assets\/own-data-engine\.js\?v=5"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
-assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=4"/);
+assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=5"/);
 assert.ok(page.indexOf("own-data-engine.js") < page.indexOf("own-data-simulator.js"));
 assert.match(page, /id="own-results-email" hidden/);
 assert.match(page, /data-results-email="on"/);

@@ -7,9 +7,9 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/own-data/",
   "scripts": [
-    "/assets/own-data-engine.js?v=4",
+    "/assets/own-data-engine.js?v=5",
     "/assets/sim-results-form.js?v=7",
-    "/assets/own-data-simulator.js?v=4"
+    "/assets/own-data-simulator.js?v=5"
   ]
 }
 ---
@@ -35,7 +35,7 @@
             <ul>
               <li>A single average weekly forecast stands in for the whole year.</li>
               <li>Demand, lead time, and delivery quantity move inside fixed variability bands.</li>
-              <li>The reorder rule places an order only when calculated stock is strictly below safety stock.</li>
+              <li>The reorder rule places an order when opening stock minus the forecast is at or below safety stock. The receipt arrives after that week's demand.</li>
             </ul>
             <p id="own-storage-off">
               The calculation runs in this browser. SKU names, forecasts, stock,
@@ -226,13 +226,16 @@
           </div>
           <p id="own-formula-note" class="sim-meta" hidden></p>
           <p class="sim-help">
-            An order is placed only when calculated stock on hand is strictly
-            below safety stock. Calculated stock is beginning stock, plus
-            supply already due this week, minus this week's forecast. One lot
-            is ordered, or two if that lot would not lift calculated stock
-            above zero. The base lead time is any whole number of weeks from
-            1 to 26. It is not added onto the arrival week. It scales the
-            formula and the extra delay when lead-time variability is on.
+            An order is placed when calculated stock on hand is at or below
+            safety stock. Calculated stock is beginning stock minus this
+            week's forecast. Supply already due this week is not included,
+            because the receipt arrives after demand. Demand is taken from
+            opening stock first. Pre-receipt stock is that position, and the
+            receipt is then added to give the ending stock. One lot is
+            ordered, or two if that lot would not lift calculated stock above
+            zero. The base lead time is any whole number of weeks from 1 to
+            26. It is not added onto the arrival week. It scales the formula
+            and the extra delay when lead-time variability is on.
           </p>
           <p class="sim-help">
             Formula safety stock is round(Z × σD × √L). Z comes from the
@@ -322,25 +325,35 @@
             <div id="own-commentary" class="own-commentary"></div>
             <div class="sim-metrics" id="own-metrics"></div>
             <p class="sim-note">
-              Annual gross profit counts only units actually sold. Demand
-              that could not be filled in a stockout is left out.
+              Annual gross profit counts only units actually sold. Demand is
+              filled from opening stock. A receipt arrives after that demand,
+              so it does not cover a stockout in the arrival week. Inventory
+              turns and working capital use the points drawn on the chart: the
+              pre-receipt stock, and the close as well when a receipt lands.
+              A negative point counts as zero for turns and stays negative for
+              working capital.
             </p>
             <figure class="sim-figure">
-              <svg id="own-chart" class="sim-chart" role="img" aria-label="Ending stock, safety stock, and zero"></svg>
+              <svg id="own-chart" class="sim-chart" role="img" aria-label="Stock on hand, safety stock, and zero"></svg>
               <figcaption>
                 <ul class="sim-legend">
-                  <li class="sim-legend__ending">Ending SOH</li>
+                  <li class="sim-legend__ending">Stock on hand</li>
                   <li class="sim-legend__ss">Safety stock</li>
                   <li class="sim-legend__zero">Zero</li>
                 </ul>
-                <p class="sim-meta">One year only. Monte Carlo does not draw this chart.</p>
+                <p class="sim-meta">
+                  One year only. A week with no receipt is one point, the stock
+                  after demand. A receipt week also draws the stock after the
+                  receipt. Monte Carlo does not draw this chart.
+                </p>
               </figcaption>
             </figure>
             <p class="sim-help">
               SOH means stock on hand, the units in stock. Beginning SOH is
-              the stock at the start of the week. Ending SOH is the stock
-              after this week's supply and demand. Ending below zero is a
-              stockout.
+              the stock at the start of the week. Pre-receipt SOH is opening
+              stock after this week's demand and before the receipt. Ending
+              SOH adds the receipt. Out-of-stock means the pre-receipt stock
+              is below zero. Touching zero is not a stockout.
             </p>
             <details class="sim-details">
               <summary>Weekly table</summary>
@@ -353,6 +366,7 @@
                       <th scope="col">Base demand</th>
                       <th scope="col">Simulated demand</th>
                       <th scope="col">Beginning SOH</th>
+                      <th scope="col">Pre-receipt SOH</th>
                       <th scope="col">Planned supply</th>
                       <th scope="col">Ending SOH</th>
                       <th scope="col">Safety stock</th>
@@ -384,8 +398,8 @@
               Out-of-stock weeks, customer service, inventory turns, and
               average working capital show the median and the P10–P90 band.
               Annual gross profit (units sold) shows the median only. It
-              counts only units actually sold. Demand that could not be
-              filled in a stockout is left out.
+              counts only units actually sold. Demand that opening stock
+              could not fill is left out. A receipt does not cover that week.
             </p>
             <details class="sim-details">
               <summary>Per-run results</summary>

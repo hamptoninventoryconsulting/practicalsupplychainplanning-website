@@ -9,7 +9,8 @@
  * engine, so a level forecast of 40, prices of $100 and $70, a lead time of
  * 2, 5, or 10, and the teaching starting stock reproduce that engine's stock
  * path. Annual gross profit does not: it counts units actually sold.
- * Demand that cannot be filled from stock on hand and receipts that week
+ * Demand is taken from opening stock. A receipt lands after that demand, so
+ * it does not fill this week's sales. Demand that opening stock cannot fill
  * is unmet and is left out. The teaching engine multiplies all simulated
  * demand by $30.
  *
@@ -402,31 +403,60 @@
 
   function unitsSoldInWeek(week) {
     var onHand = week.beginningSoh > 0 ? week.beginningSoh : 0;
-    var supply = week.plannedSupply > 0 ? week.plannedSupply : 0;
     var demand = week.simulatedDemand > 0 ? week.simulatedDemand : 0;
-    var available = onHand + supply;
-    return demand < available ? demand : available;
+    return demand < onHand ? demand : onHand;
+  }
+
+  // Same plotted points as the teaching engine. No receipt: pre-receipt
+  // stock only. A receipt: that point, then the close.
+  function plottedSohPoints(weeks) {
+    if (!weeks || !weeks.length) {
+      return [];
+    }
+    var points = [];
+    for (var i = 0; i < weeks.length; i += 1) {
+      var week = weeks[i] || {};
+      var pre = week.preReceiptSoh;
+      if (pre == null || pre === "") {
+        pre = week.endingSoh;
+      }
+      points.push(Number(pre));
+      if (Number(week.plannedSupply) > 0) {
+        points.push(Number(week.endingSoh));
+      }
+    }
+    return points;
   }
 
   function computeMetrics(weeks, unitCost, sellingPrice) {
     var oosWeeks = 0;
-    var sumEnding = 0;
+    var sumPlotted = 0;
     var sumFloored = 0;
+    var plottedCount = 0;
     var annualDemand = 0;
     var unitsSold = 0;
+    var points = plottedSohPoints(weeks);
+    for (var p = 0; p < points.length; p += 1) {
+      var point = points[p];
+      sumPlotted += point;
+      sumFloored += point > 0 ? point : 0;
+      plottedCount += 1;
+    }
     for (var i = 0; i < weeks.length; i += 1) {
-      var ending = weeks[i].endingSoh;
-      if (ending < 0) {
+      var pre = weeks[i].preReceiptSoh;
+      if (pre == null || pre === "") {
+        pre = weeks[i].endingSoh;
+      }
+      if (pre < 0) {
         oosWeeks += 1;
       }
-      sumEnding += ending;
-      sumFloored += ending > 0 ? ending : 0;
       annualDemand += weeks[i].simulatedDemand;
       unitsSold += unitsSoldInWeek(weeks[i]);
     }
     var n = weeks.length || HORIZON;
-    var avgSohTurns = sumFloored / n;
+    var avgSohTurns = plottedCount ? sumFloored / plottedCount : 0;
     var inventoryTurns = avgSohTurns === 0 ? null : annualDemand / avgSohTurns;
+    var meanPlotted = plottedCount ? sumPlotted / plottedCount : 0;
     var gpEach = sellingPrice - unitCost;
     return {
       oosWeeks: oosWeeks,
@@ -436,7 +466,7 @@
       unmetDemand: annualDemand - unitsSold,
       avgSohTurns: avgSohTurns,
       inventoryTurns: inventoryTurns,
-      averageWc: (sumEnding / n) * unitCost,
+      averageWc: meanPlotted * unitCost,
       annualGp: unitsSold * gpEach,
       unitCost: unitCost,
       sellingPrice: sellingPrice,
@@ -548,11 +578,11 @@
       var existing = due[w];
       var weekBase = base[w];
       var weekDemand = demand.simulatedDemand[w];
-      var calculated = beginning + existing - weekBase;
+      var calculated = beginning - weekBase;
       var threshold = safetyStock > 0 ? safetyStock : 0;
       var newReceipt = 0;
 
-      if (calculated < threshold) {
+      if (calculated <= threshold) {
         var lots = calculated + nominalLot > 0 ? 1 : 2;
         var lotReceipts = [];
         var received = 0;
@@ -587,13 +617,15 @@
       }
 
       var plannedSupply = existing + newReceipt;
-      var endingSoh = beginning + plannedSupply - weekDemand;
+      var preReceiptSoh = beginning - weekDemand;
+      var endingSoh = preReceiptSoh + plannedSupply;
       weeks.push({
         week: w + 1,
         baseDemand: base[w],
         simulatedDemand: weekDemand,
         beginningSoh: beginning,
         plannedSupply: plannedSupply,
+        preReceiptSoh: preReceiptSoh,
         endingSoh: endingSoh,
         safetyStock: safetyStock,
       });
@@ -1422,7 +1454,11 @@
       }
     }
     for (var w = 0; w < result.weeks.length; w += 1) {
-      if (result.weeks[w].endingSoh < 0 && result.weeks[w].week >= earliest) {
+      var position = result.weeks[w].preReceiptSoh;
+      if (position == null || position === "") {
+        position = result.weeks[w].endingSoh;
+      }
+      if (position < 0 && result.weeks[w].week >= earliest) {
         return true;
       }
     }

@@ -408,8 +408,8 @@
     var minValue = 0;
     var maxValue = 0;
     weeks.forEach(function (week) {
-      minValue = Math.min(minValue, week.endingSoh, week.safetyStock);
-      maxValue = Math.max(maxValue, week.endingSoh, week.safetyStock);
+      minValue = Math.min(minValue, week.preReceiptSoh, week.endingSoh, week.safetyStock);
+      maxValue = Math.max(maxValue, week.preReceiptSoh, week.endingSoh, week.safetyStock);
     });
     if (minValue === maxValue) {
       minValue -= 1;
@@ -432,6 +432,21 @@
           return (index === 0 ? "M" : "L") + x(index).toFixed(2) + " " + y(read(week)).toFixed(2);
         })
         .join(" ");
+    }
+    function stockPath() {
+      var commands = [];
+      var started = false;
+      weeks.forEach(function (week, index) {
+        var values = [week.preReceiptSoh];
+        if (week.plannedSupply > 0) {
+          values.push(week.endingSoh);
+        }
+        values.forEach(function (value) {
+          commands.push((started ? "L" : "M") + x(index).toFixed(2) + " " + y(value).toFixed(2));
+          started = true;
+        });
+      });
+      return commands.join(" ");
     }
     function add(name, attrs) {
       var node = document.createElementNS("http://www.w3.org/2000/svg", name);
@@ -464,7 +479,7 @@
       fill: "none",
       stroke: "#0e7490",
       "stroke-width": "2",
-      d: seriesPath(function (week) { return week.endingSoh; }),
+      d: stockPath(),
     });
     [1, 13, 26, 39, 52].forEach(function (weekNo) {
       var label = add("text", {
@@ -482,13 +497,13 @@
     body.innerHTML = "";
     weeks.forEach(function (week) {
       var tr = document.createElement("tr");
-      [week.week, week.baseDemand, week.simulatedDemand, week.beginningSoh, week.plannedSupply, week.endingSoh, week.safetyStock].forEach(function (value, index) {
+      [week.week, week.baseDemand, week.simulatedDemand, week.beginningSoh, week.preReceiptSoh, week.plannedSupply, week.endingSoh, week.safetyStock].forEach(function (value, index) {
         var cell = document.createElement(index === 0 ? "th" : "td");
         if (index === 0) {
           cell.scope = "row";
         }
         cell.textContent = String(value);
-        if (index === 5 && value < 0) {
+        if ((index === 4 || index === 6) && value < 0) {
           cell.className = "sim-negative";
         }
         tr.appendChild(cell);
