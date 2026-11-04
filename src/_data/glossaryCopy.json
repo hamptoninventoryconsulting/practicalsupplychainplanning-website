@@ -35,7 +35,7 @@
           },
           {
             "type": "p",
-            "text": "Exception messages are typically generated when projected inventory positions violate planning rules or thresholds."
+            "text": "Exception messages are generated when the MRP calculation finds that open supply no longer matches what the plan needs, for example an order that should be brought in, pushed out or cancelled."
           },
           {
             "type": "p",
@@ -59,7 +59,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "An expedite recommendation is triggered when projected inventory falls below the planning threshold before an existing open supply order arrives."
+            "text": "An expedite recommendation is triggered when projected inventory falls below safety stock before an existing open supply order arrives."
           },
           {
             "type": "p",
@@ -68,7 +68,7 @@
           {
             "type": "ul",
             "items": [
-              "Projected inventory drops below the threshold",
+              "Projected inventory drops below safety stock",
               "An open supply order is due in a later period",
               "MRP recommends bringing that order forward"
             ]
@@ -90,9 +90,9 @@
           {
             "type": "ul",
             "items": [
-              "Projected inventory stays above the threshold without that order",
+              "Projected inventory stays above safety stock without that order",
               "An open supply order is due in an earlier period than needed",
-              "MRP recommends moving that order out to the period when projected inventory would otherwise drop below the threshold"
+              "MRP recommends moving that order out to the period when projected inventory would otherwise drop below safety stock"
             ]
           }
         ],
@@ -113,7 +113,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "Expedite and reschedule recommendations are generally outputs generated from the MRP calculation itself."
+            "text": "Expedite and reschedule recommendations are outputs of the MRP calculation."
           },
           {
             "type": "p",
