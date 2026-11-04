@@ -449,19 +449,13 @@
       "stroke-dasharray": "6 4",
       d: seriesPath(function (week) { return week.safetyStock; }),
     });
-    add("path", {
-      class: "sim-chart__ending",
-      fill: "none",
-      stroke: "#0e7490",
-      "stroke-width": "2",
-      d: stockPath(),
-    });
     var mean = engine.meanPlottedSoh(weeks);
     var avgLabel = averageSohLabel(mean);
     var avgCaption = $("sim-chart-avg");
     if (avgCaption) {
       avgCaption.textContent = avgLabel;
     }
+    var labelY = 0;
     if (avgLabel) {
       var avgY = y(mean);
       add("line", {
@@ -475,39 +469,34 @@
         y1: avgY.toFixed(2),
         y2: avgY.toFixed(2),
       });
-      var textY = avgY - 10;
-      if (textY < top + 12) {
-        textY = avgY + 16;
+      labelY = avgY - 10;
+      if (labelY < top + 12) {
+        labelY = avgY + 16;
       }
+    }
+    add("path", {
+      class: "sim-chart__ending",
+      fill: "none",
+      stroke: "#0e7490",
+      "stroke-width": "2",
+      d: stockPath(),
+    });
+    if (avgLabel) {
       var label = add("text", {
         class: "sim-chart__avg-label",
         x: String(width - right - 6),
-        y: textY.toFixed(2),
+        y: labelY.toFixed(2),
         "text-anchor": "end",
         fill: "#6d28d9",
+        stroke: "#ffffff",
+        "stroke-width": "3",
+        "stroke-linejoin": "round",
+        "paint-order": "stroke",
         "font-size": "12",
         "font-family": "system-ui, sans-serif",
         "font-weight": "600",
       });
       label.textContent = avgLabel;
-      var box = null;
-      try {
-        box = label.getBBox();
-      } catch (err) {
-        box = null;
-      }
-      if (box && isFinite(box.width) && box.width > 0 && isFinite(box.height) && box.height > 0) {
-        var bg = add("rect", {
-          class: "sim-chart__avg-label-bg",
-          fill: "#ffffff",
-          x: (box.x - 4).toFixed(2),
-          y: (box.y - 2).toFixed(2),
-          width: (box.width + 8).toFixed(2),
-          height: (box.height + 4).toFixed(2),
-          rx: "2",
-        });
-        svg.insertBefore(bg, label);
-      }
     }
     [1, 13, 26, 39, 52].forEach(function (weekNo) {
       var labelIndex = weeks.length > 52 ? (weekNo === 52 ? weeks.length - 1 : (weekNo - 1) * 7) : weekNo - 1;
@@ -539,6 +528,39 @@
     });
   }
 
+  function weeksCsv(weeks) {
+    var lines = [
+      "Week,Base demand,Simulated demand,Beginning SOH,Pre-receipt SOH,Planned supply,Ending SOH,Safety stock",
+    ];
+    weeks.forEach(function (week) {
+      lines.push(
+        [
+          String(week.week),
+          formatCount(week.baseDemand),
+          formatCount(week.simulatedDemand),
+          formatCount(week.beginningSoh),
+          formatCount(week.preReceiptSoh),
+          formatCount(week.plannedSupply),
+          formatCount(week.endingSoh),
+          formatCount(week.safetyStock),
+        ].join(",")
+      );
+    });
+    return lines.join("\r\n");
+  }
+
+  function downloadCsv(name, text) {
+    var blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   function renderWeeks(weeks) {
     var body = $("sim-weeks-body");
     body.innerHTML = "";
@@ -559,7 +581,7 @@
         if (index === 0) {
           cell.scope = "row";
         }
-        cell.textContent = String(value);
+        cell.textContent = index === 0 ? String(value) : formatCount(value);
         if ((index === 4 || index === 6) && value < 0) {
           cell.className = "sim-negative";
         }
@@ -844,6 +866,12 @@
       setMode("monte-carlo");
     });
     $("sim-run-year").addEventListener("click", runYearClicked);
+    $("sim-download-weeks").addEventListener("click", function () {
+      if (!state.result || !state.result.weeks) {
+        return;
+      }
+      downloadCsv("safety-stock-weekly.csv", weeksCsv(state.result.weeks));
+    });
     $("sim-run-mc").addEventListener("click", runMonteCarloClicked);
   }
 

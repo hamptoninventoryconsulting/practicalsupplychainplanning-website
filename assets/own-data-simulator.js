@@ -493,6 +493,39 @@
     });
   }
 
+  function weeksCsv(weeks) {
+    var lines = [
+      "Week,Base demand,Simulated demand,Beginning SOH,Pre-receipt SOH,Planned supply,Ending SOH,Safety stock",
+    ];
+    weeks.forEach(function (week) {
+      lines.push(
+        [
+          String(week.week),
+          formatCount(week.baseDemand),
+          formatCount(week.simulatedDemand),
+          formatCount(week.beginningSoh),
+          formatCount(week.preReceiptSoh),
+          formatCount(week.plannedSupply),
+          formatCount(week.endingSoh),
+          formatCount(week.safetyStock),
+        ].join(",")
+      );
+    });
+    return lines.join("\r\n");
+  }
+
+  function downloadCsv(name, text) {
+    var blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   function renderWeeks(weeks) {
     var body = $("own-weeks-body");
     body.innerHTML = "";
@@ -503,7 +536,7 @@
         if (index === 0) {
           cell.scope = "row";
         }
-        cell.textContent = String(value);
+        cell.textContent = index === 0 ? String(value) : formatCount(value);
         if ((index === 4 || index === 6) && value < 0) {
           cell.className = "sim-negative";
         }
@@ -996,6 +1029,13 @@
     $("own-copy").addEventListener("click", copyLink);
     $("own-preview-btn").addEventListener("click", previewPaste);
     $("own-apply").addEventListener("click", applyPaste);
+    $("own-download-weeks").addEventListener("click", function () {
+      var row = state.yearRows ? state.yearRows[state.selected] : null;
+      if (!row || !row.result || !row.result.weeks) {
+        return;
+      }
+      downloadCsv("own-data-weekly.csv", weeksCsv(row.result.weeks));
+    });
     $("own-run-year").addEventListener("click", function () {
       state.mode = "year";
       applyMode();

@@ -1345,10 +1345,6 @@ a.sim-button--secondary:is(:link, :visited, :hover, :focus, :focus-visible, :act
   font-weight: 600;
 }
 
-.sim-chart__avg-label-bg {
-  fill: #ffffff;
-}
-
 .sim-chart__label {
   fill: var(--color-text-muted);
   font-size: 11px;
