@@ -486,7 +486,10 @@
               "Planned supply recommendations",
               "Inventory projections",
               "Shortage visibility",
-              "Time-phased supply and demand views"
+              "Time-phased supply views",
+              "Inputs to capacity planning",
+              "Inputs to cash planning",
+              "Inputs to working capital planning"
             ]
           }
         ],
