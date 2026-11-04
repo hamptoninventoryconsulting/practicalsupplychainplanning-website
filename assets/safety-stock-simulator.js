@@ -455,6 +455,7 @@
     if (avgCaption) {
       avgCaption.textContent = avgLabel;
     }
+    var labelY = 0;
     if (avgLabel) {
       var avgY = y(mean);
       add("line", {
@@ -468,21 +469,10 @@
         y1: avgY.toFixed(2),
         y2: avgY.toFixed(2),
       });
-      var textY = avgY - 10;
-      if (textY < top + 12) {
-        textY = avgY + 16;
+      labelY = avgY - 10;
+      if (labelY < top + 12) {
+        labelY = avgY + 16;
       }
-      var label = add("text", {
-        class: "sim-chart__avg-label",
-        x: String(width - right - 6),
-        y: textY.toFixed(2),
-        "text-anchor": "end",
-        fill: "#6d28d9",
-        "font-size": "12",
-        "font-family": "system-ui, sans-serif",
-        "font-weight": "600",
-      });
-      label.textContent = avgLabel;
     }
     add("path", {
       class: "sim-chart__ending",
@@ -491,6 +481,23 @@
       "stroke-width": "2",
       d: stockPath(),
     });
+    if (avgLabel) {
+      var label = add("text", {
+        class: "sim-chart__avg-label",
+        x: String(width - right - 6),
+        y: labelY.toFixed(2),
+        "text-anchor": "end",
+        fill: "#6d28d9",
+        stroke: "#ffffff",
+        "stroke-width": "3",
+        "stroke-linejoin": "round",
+        "paint-order": "stroke",
+        "font-size": "12",
+        "font-family": "system-ui, sans-serif",
+        "font-weight": "600",
+      });
+      label.textContent = avgLabel;
+    }
     [1, 13, 26, 39, 52].forEach(function (weekNo) {
       var labelIndex = weeks.length > 52 ? (weekNo === 52 ? weeks.length - 1 : (weekNo - 1) * 7) : weekNo - 1;
       var label = add("text", {

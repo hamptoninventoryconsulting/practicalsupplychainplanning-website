@@ -651,7 +651,7 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
 
 assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=11"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
-assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=13"/);
+assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=14"/);
 
 assert.strictEqual(engine.meanPlottedSoh([]), null);
 assert.strictEqual(engine.meanPlottedSoh(null), null);
@@ -714,6 +714,9 @@ assert.match(ui, /renderChart\(result\.days\)/);
 assert.match(ui, /engine\.meanPlottedSoh\(weeks\)/);
 assert.match(ui, /function stockPath\(/);
 assert.doesNotMatch(ui, /sim-chart__avg-label-bg/);
+assert.match(ui, /"paint-order": "stroke"/);
+assert.match(ui, /stroke: "#ffffff"/);
+assert.match(ui, /"stroke-width": "3"/);
 assert.match(ui, /formatCount\(value\)/);
 assert.match(ui, /function weeksCsv\(/);
 assert.match(ui, /week\.preReceiptSoh/);
