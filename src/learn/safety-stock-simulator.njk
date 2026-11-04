@@ -7,7 +7,7 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/",
   "scripts": [
-    "/assets/safety-stock-engine.js?v=7",
+    "/assets/safety-stock-engine.js?v=8",
     "/assets/sim-results-form.js?v=7",
     "/assets/safety-stock-simulator.js?v=10"
   ]
@@ -186,10 +186,10 @@
           <p id="sim-formula-note" class="sim-meta" hidden></p>
           <p class="sim-help">
             An order is placed when calculated stock on hand is at or below
-            safety stock. Calculated stock is beginning stock minus this
-            week's base forecast demand. Supply already due this week is not
-            included, because the receipt arrives after demand. Demand is
-            taken from opening stock first. Pre-receipt stock is that position.
+            safety stock. Calculated stock is beginning stock, minus this
+            week's base forecast demand, plus receipts already due this week.
+            Demand is taken from opening stock first, so those receipts do not
+            cover this week's demand. Pre-receipt stock is that position.
             The receipt is then added to give the ending stock. With safety
             stock at zero, the line is zero, so touching zero orders. The order
             is one lot unless that lot would not lift calculated stock above

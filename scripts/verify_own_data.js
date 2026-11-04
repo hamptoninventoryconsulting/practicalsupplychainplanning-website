@@ -801,6 +801,7 @@ assert.match(flat, /not a forecast, a recommendation, or advice for your busines
 assert.match(flat, /single average weekly forecast/);
 assert.match(flat, /variability bands/);
 assert.match(flat, /reorder rule/);
+assert.match(flat, /receipts already due this week/);
 assert.match(flat, /does not calculate safety stock/);
 assert.match(page, /#d=/);
 assert.match(page, /href="\/assets\/simulator-example\.csv"/);
@@ -817,7 +818,7 @@ assert.match(flat, /SOH means stock on hand/);
 assert.match(flat, /In 8 out of 10 simulated years, the result falls inside it/);
 assert.match(flat, /Z comes from the service level you pick/);
 assert.match(flat, /square root of L spreads that weekly variation/);
-assert.match(page, /src="\/assets\/own-data-engine\.js\?v=5"/);
+assert.match(page, /src="\/assets\/own-data-engine\.js\?v=6"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
 assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=5"/);
 assert.ok(page.indexOf("own-data-engine.js") < page.indexOf("own-data-simulator.js"));

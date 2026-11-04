@@ -7,7 +7,7 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/own-data/",
   "scripts": [
-    "/assets/own-data-engine.js?v=5",
+    "/assets/own-data-engine.js?v=6",
     "/assets/sim-results-form.js?v=7",
     "/assets/own-data-simulator.js?v=5"
   ]
@@ -35,7 +35,7 @@
             <ul>
               <li>A single average weekly forecast stands in for the whole year.</li>
               <li>Demand, lead time, and delivery quantity move inside fixed variability bands.</li>
-              <li>The reorder rule places an order when opening stock minus the forecast is at or below safety stock. The receipt arrives after that week's demand.</li>
+              <li>The reorder rule places an order when opening stock minus the forecast plus receipts already due this week is at or below safety stock. Demand is taken before that receipt.</li>
             </ul>
             <p id="own-storage-off">
               The calculation runs in this browser. SKU names, forecasts, stock,
@@ -227,10 +227,10 @@
           <p id="own-formula-note" class="sim-meta" hidden></p>
           <p class="sim-help">
             An order is placed when calculated stock on hand is at or below
-            safety stock. Calculated stock is beginning stock minus this
-            week's forecast. Supply already due this week is not included,
-            because the receipt arrives after demand. Demand is taken from
-            opening stock first. Pre-receipt stock is that position, and the
+            safety stock. Calculated stock is beginning stock, minus this
+            week's forecast, plus receipts already due this week. Demand is
+            taken from opening stock first, so those receipts do not cover
+            this week's demand. Pre-receipt stock is that position, and the
             receipt is then added to give the ending stock. One lot is
             ordered, or two if that lot would not lift calculated stock above
             zero. The base lead time is any whole number of weeks from 1 to

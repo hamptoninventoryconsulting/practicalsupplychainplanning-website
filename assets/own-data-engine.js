@@ -578,7 +578,7 @@
       var existing = due[w];
       var weekBase = base[w];
       var weekDemand = demand.simulatedDemand[w];
-      var calculated = beginning - weekBase;
+      var calculated = beginning - weekBase + existing;
       var threshold = safetyStock > 0 ? safetyStock : 0;
       var newReceipt = 0;
 

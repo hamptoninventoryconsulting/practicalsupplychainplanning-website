@@ -208,6 +208,43 @@ assert.deepStrictEqual(engine.LT_EXTRA_MAX[2], { small: 1, medium: 1, large: 2 }
 assert.deepStrictEqual(engine.LT_EXTRA_MAX[5], { small: 1, medium: 2, large: 3 });
 assert.deepStrictEqual(engine.LT_EXTRA_MAX[10], { small: 1, medium: 3, large: 5 });
 
+const coveredArrival = run(
+  {
+    baseDemand: flat(40),
+    lotQty: 40,
+    ssQty: 20,
+    leadTimeWeeks: 10,
+    demandVariability: "off",
+    leadTimeVariability: "large",
+    deliveryVariability: "off",
+    shock: false,
+  },
+  1
+);
+const coveredWeek = coveredArrival.weeks[7];
+const coveredLine = coveredWeek.safetyStock;
+const coveredWithoutReceipt = coveredWeek.beginningSoh - coveredWeek.baseDemand;
+assert.strictEqual(coveredArrival.controls.leadTimeVariability, "large");
+assert.strictEqual(coveredWeek.week, 8);
+assert.strictEqual(coveredWeek.beginningSoh, 40);
+assert.strictEqual(coveredWeek.plannedSupply, 80);
+assert.strictEqual(coveredWeek.preReceiptSoh, 0, "demand still comes off opening stock");
+assert.strictEqual(coveredWeek.endingSoh, 80);
+assert.ok(coveredWithoutReceipt <= coveredLine, "without the receipt, week 8 is at or below the line");
+assert.ok(
+  coveredWithoutReceipt + coveredWeek.plannedSupply > coveredLine,
+  "the receipt already due covers the line"
+);
+assert.ok(
+  !coveredArrival.releases.some((release) => release.requirementWeek === 8),
+  "no reorder in the week the covering receipt lands"
+);
+const coveredRelease = coveredArrival.releases.find((release) => release.arrivalWeek === 8);
+assert.strictEqual(coveredRelease.requirementWeek, 3);
+assert.strictEqual(coveredRelease.delay, 5);
+assert.strictEqual(coveredRelease.lots, 2);
+assert.strictEqual(coveredRelease.received, 80);
+
 let droppedReceipt = false;
 [2, 5, 10].forEach((leadTime) => {
   ["small", "medium", "large"].forEach((level) => {
@@ -604,7 +641,7 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
   "week",
 ].sort());
 
-assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=7"/);
+assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=8"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
 assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=10"/);
 
@@ -801,6 +838,7 @@ assert.ok(
   "run helper note sits in the Demand shock card"
 );
 assert.match(page, /minus this\s+week's base forecast/);
+assert.match(page, /plus receipts already due this week/);
 assert.match(page, /Pre-receipt stock is that position/);
 assert.match(page, /pre-receipt stock is below zero/);
 assert.doesNotMatch(page, /Triple|tripled|3×/);

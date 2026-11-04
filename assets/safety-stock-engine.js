@@ -29,14 +29,16 @@
  * -------------
  * Demand is taken from opening stock first. Receipts due this week,
  * including a same-week release, land after that demand.
- * calculated SOH = opening − base forecast. Supply already due is not
- * included, because it cannot cover this week's demand. Order when
- * calculated SOH is at or below safety stock (or at or below zero when
- * safety stock is 0).
+ * calculated SOH = opening − base forecast + receipts already due this
+ * week. Order when calculated SOH is at or below safety stock (or at or
+ * below zero when safety stock is 0). Receipts already due count toward
+ * the order, but they arrive after demand, so they do not cover this
+ * week's demand and do not clear an out-of-stock. A same-week release is
+ * not already due when the order is decided.
  * One nominal lot is ordered, unless that lot would not lift calculated
- * SOH above zero — then two lots. That test uses the base-netted calculated
- * value and the nominal lot, not the previous ending balance and not the
- * safety-stock line.
+ * SOH above zero — then two lots. That test uses the calculated value,
+ * including receipts already due, and the nominal lot. It does not use the
+ * previous ending balance or the safety-stock line.
  * Pre-receipt SOH = opening − simulated demand. Out of stock means that
  * position is below zero. Touching zero is not an out-of-stock.
  * Ending SOH = pre-receipt SOH + planned supply.
@@ -759,7 +761,7 @@
       var existing = due[w];
       var weekBase = base[w];
       var weekDemand = demand.simulatedDemand[w];
-      var calculated = beginning - weekBase;
+      var calculated = beginning - weekBase + existing;
       var threshold = safetyStock > 0 ? safetyStock : 0;
       var newReceipt = 0;
 
