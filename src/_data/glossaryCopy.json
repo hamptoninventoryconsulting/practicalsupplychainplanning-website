@@ -2,11 +2,6 @@
   "planned-order": {
     "definition": "A planned order is an MRP output: a recommended quantity and date to buy from a supplier or make, calculated from projected stock, lead times, MOQ, lot size and other order rules. It isn't placed yet. In larger ERP systems, a planner releases a planned order, which turns it into an open order such as a purchase order or production order. The plan raises one so the projected balance stays at or above safety stock. Also called a planned supply order. Why it matters: planned orders show your future buying and production ahead of time, which is very useful for supplier forecasts, cash and capacity planning, and confirming lead times early. Review them before they become supply orders."
   },
-  "projected-stock": {
-    "definition": "Projected stock, also called the projected balance, is the on-hand quantity carried forward through each time bucket after that bucket's forecast and open supply orders.",
-    "example": "Opening stock is 100. The week 1 forecast is 30 and nothing is due in, so the projected balance finishes week 1 at 70. Week 2 opens at 70. Its forecast is 40 and a supply order of 100 is due, so the projected balance finishes week 2 at 130.",
-    "why": "The week the projected balance falls below safety stock is the week a planned order has to cover. Adding up all stock and all demand can hide that week, because supply that arrives later does not help an earlier bucket."
-  },
   "expedite-reschedule": {
     "definition": "MRP uses expedite and reschedule messages to show when open supply no longer matches when it's needed.",
     "sections": [
@@ -383,7 +378,7 @@
           },
           {
             "type": "p",
-            "text": "The projected ending inventory from one period then becomes the starting inventory for the next period."
+            "text": "The projected ending inventory from one period then becomes the starting inventory for the next period. That ending figure is the projected stock, also called the projected balance."
           },
           {
             "type": "p",
@@ -1243,7 +1238,7 @@
     ]
   },
   "inventory-turns": {
-    "definition": "Stockturns: how many times a year your average stock is used up and replaced to meet customer demand. For example, if your cost of goods sold for the year is $600,000 and you hold $100,000 of stock on average, that's 6 turns a year.",
+    "definition": "Stockturns show how much working capital is needed to support your sales.",
     "sections": [
       {
         "blocks": [

@@ -1411,7 +1411,7 @@ def verify_glossary(errors: list[str]) -> None:
     ids = [item[0] for item in blocks]
     if len(ids) != len(set(ids)):
         fail("/learn/glossary/ term ids are not unique", errors)
-    for needed in ("projected-stock", "planned-order", "mrp"):
+    for needed in ("planned-order", "mrp"):
         if needed not in ids:
             fail(f"/learn/glossary/ is missing the term anchor {needed}", errors)
     if "function openFromHash" not in text:
