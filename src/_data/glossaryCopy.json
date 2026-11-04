@@ -549,11 +549,11 @@
         "blocks": [
           {
             "type": "p",
-            "text": "MRP outputs are only as reliable as the underlying data."
+            "text": "MRP outputs are only as good as the input data, so it's worth making sure that data is as accurate as possible."
           },
           {
             "type": "p",
-            "text": "Incorrect inventory balances, lead times, supply dates, forecasts, or transaction timing can significantly affect planning results."
+            "text": "Wrong stock balances, lead times, supply dates, forecasts or transaction timing flow straight through into wrong order recommendations."
           }
         ],
         "heading": "Important Operational Consideration",
