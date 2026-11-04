@@ -713,6 +713,10 @@
           {
             "type": "p",
             "text": "Terms like these are often based on Incoterms, the international rules that set out who pays for and manages each step of shipping. To learn more, see the [ICC Incoterms rules](https://iccwbo.org/business-solutions/incoterms-rules/)."
+          },
+          {
+            "type": "p",
+            "text": "The date on the PO isn't always the date stock arrives in your warehouse. For example, on FOB terms with 1 month to manufacture and get to port, then 1 month on the vessel, the PO date is the FOB date at the port, but the MRP lead time to your warehouse is 2 months. Plan on the date the stock is due into your warehouse, not the PO date."
           }
         ],
         "heading": "Supplier Agreement Differences",
