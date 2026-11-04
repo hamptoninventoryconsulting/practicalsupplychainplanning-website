@@ -1249,11 +1249,11 @@
         "blocks": [
           {
             "type": "p",
-            "text": "Stockturns: how many times a year your average stock is used up and replaced to meet customer demand. For example, if your cost of goods sold for the year is $600,000 and you hold $100,000 of stock on average, that's 6 turns a year."
+            "text": "Stockturns show how much working capital is needed to support your sales. More turns means less cash tied up in stock for the same sales. Fewer turns means more cash tied up in stock."
           },
           {
             "type": "p",
-            "text": "Stockturns show how much working capital is tied up in stock to meet customer demand at the service level you've chosen. More turns means less cash tied up in stock. Fewer turns means more cash tied up in stock."
+            "text": "Stockturns measure how many times a year your average stock is used up and replaced to meet customer demand, at the service level you've chosen. For example, if your cost of goods sold for the year is $600,000 and you hold $100,000 of stock on average, that's 6 turns a year."
           }
         ],
         "heading": "Inventory Turns / Stockturns",
@@ -1281,7 +1281,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "Faster inventory turns often reduce:"
+            "text": "Faster inventory turns reduce:"
           },
           {
             "type": "ul",
