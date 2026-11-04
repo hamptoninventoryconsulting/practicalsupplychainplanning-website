@@ -2,11 +2,6 @@
   "planned-order": {
     "definition": "A planned order is an MRP output: a recommended quantity and date to buy from a supplier or make, calculated from projected stock, lead times, MOQ, lot size and other order rules. It isn't placed yet. In larger ERP systems, a planner releases a planned order, which turns it into an open order such as a purchase order or production order. The plan raises one so the projected balance stays at or above safety stock. Also called a planned supply order. Why it matters: planned orders show your future buying and production ahead of time, which is very useful for supplier forecasts, cash and capacity planning, and confirming lead times early. Review them before they become supply orders."
   },
-  "time-phased-planning": {
-    "definition": "Time-phased planning projects stock forward, bucket by bucket, against the forecast, open orders and lead times, and times a planned order so it arrives before the projected balance falls below safety stock.",
-    "example": "The supply lead time is 6 weeks and the projected balance goes below safety stock in week 9. The plan shows the order in week 3, while the balance today can still look comfortable.",
-    "why": "Today's balance only says whether you are short now. The projection shows a shortage that is already inside the lead time, and it shows an open order that arrives too late to cover it."
-  },
   "projected-stock": {
     "definition": "Projected stock, also called the projected balance, is the on-hand quantity carried forward through each time bucket after that bucket's forecast and open supply orders.",
     "example": "Opening stock is 100. The week 1 forecast is 30 and nothing is due in, so the projected balance finishes week 1 at 70. Week 2 opens at 70. Its forecast is 40 and a supply order of 100 is due, so the projected balance finishes week 2 at 130.",

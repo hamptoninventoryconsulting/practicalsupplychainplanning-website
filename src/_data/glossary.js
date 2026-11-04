@@ -44,7 +44,7 @@ const GROUPS = [
         id: "mrp",
         term: "MRP",
         usedIn: ["Stock Planner"],
-        seeAlso: ["time-phased-planning", "projected-stock", "planned-order"],
+        seeAlso: ["projected-stock", "planned-order"],
       },
       {
         id: "past-due",
@@ -62,19 +62,13 @@ const GROUPS = [
         id: "supply-lead-time",
         term: "Supply lead time",
         usedIn: ["Stock Planner"],
-        seeAlso: ["planned-order", "time-phased-planning", "supply-order"],
+        seeAlso: ["planned-order", "mrp", "supply-order"],
       },
       {
         id: "supply-order",
         term: "Supply order",
         usedIn: ["Stock Planner"],
         seeAlso: ["planned-order", "past-due", "projected-stock"],
-      },
-      {
-        id: "time-phased-planning",
-        term: "Time-phased planning",
-        usedIn: ["Stock Planner"],
-        seeAlso: ["projected-stock", "planned-order", "mrp"],
       },
       {
         id: "unit-of-measure",
@@ -104,7 +98,7 @@ const GROUPS = [
         id: "projected-stock",
         term: "Projected stock",
         usedIn: ["Stock Planner"],
-        seeAlso: ["time-phased-planning", "planned-order", "safety-stock"],
+        seeAlso: ["mrp", "planned-order", "safety-stock"],
       },
       {
         id: "safety-stock",
@@ -140,7 +134,7 @@ const GROUPS = [
         id: "forecast-horizon",
         term: "Forecast horizon",
         usedIn: ["Demand Planner"],
-        seeAlso: ["forecast", "supply-lead-time", "time-phased-planning"],
+        seeAlso: ["forecast", "supply-lead-time", "mrp"],
       },
       {
         id: "forecast-reliability",
