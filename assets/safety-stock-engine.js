@@ -25,19 +25,26 @@
  * 3. MRP, week by week. Each release draws delivery-quantity noise for
  *    each lot, then one lead-time delay (only when that variability is on).
  *
- * Replenishment (B1 / CR1)
- * ------------------------
- * calculated SOH = beginning + supply already due this week − base forecast
- * demand. Order only when calculated SOH is strictly below safety stock
- * (or strictly below zero when safety stock is 0).
+ * Replenishment
+ * -------------
+ * Demand is taken from opening stock first. Receipts due this week,
+ * including a same-week release, land after that demand.
+ * calculated SOH = opening − base forecast + receipts already due this
+ * week. Order when calculated SOH is at or below safety stock (or at or
+ * below zero when safety stock is 0). Receipts already due count toward
+ * the order, but they arrive after demand, so they do not cover this
+ * week's demand and do not clear an out-of-stock. A same-week release is
+ * not already due when the order is decided.
  * One nominal lot is ordered, unless that lot would not lift calculated
- * SOH above zero — then two lots. That test uses the base-netted calculated
- * value and the nominal lot, not the previous ending balance and not the
- * safety-stock line.
- * Ending SOH = beginning + planned supply − simulated demand.
+ * SOH above zero — then two lots. That test uses the calculated value,
+ * including receipts already due, and the nominal lot. It does not use the
+ * previous ending balance or the safety-stock line.
+ * Pre-receipt SOH = opening − simulated demand. Out of stock means that
+ * position is below zero. Touching zero is not an out-of-stock.
+ * Ending SOH = pre-receipt SOH + planned supply.
  * Same-week simulated demand is not an input to the order.
  * Base lead time is not added to the arrival week. Delay is 0 unless
- * lead-time variability is on.
+ * lead-time variability is on. A delay of 0 means the end of the order week.
  *
  * Demand shock (when on) doubles pre-shock normal demand on exactly three
  * weeks in 21–52, successive gaps at least 4, then rounds. The base demand
@@ -47,9 +54,13 @@
  * Monte Carlo freezes one safety-stock quantity for all 50 runs (the
  * caller passes the single-run value; otherwise a reference stream is used).
  *
- * Turns use Method A. Working capital keeps negatives. Those are different
- * on purpose (CR2). Monte Carlo summaries are median and P10–P90, with
- * median only for gross profit (CR3).
+ * Average stock, turns, and working capital use the points drawn on the
+ * chart. A week with no receipt contributes its pre-receipt stock. A
+ * receipt week contributes that point and the close. Each plotted point
+ * is floored at zero before the average, for the chart label, for turns,
+ * and for working capital. A negative point does not reduce that average,
+ * so working capital is not negative. Monte Carlo summaries are median
+ * and P10–P90, with median only for gross profit (CR3).
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
@@ -108,6 +119,7 @@
     "Base demand",
     "Simulated demand",
     "Beginning SOH",
+    "Pre-receipt SOH",
     "Planned supply",
     "Ending SOH",
     "Safety stock",
@@ -574,39 +586,63 @@
     };
   }
 
-  // Arithmetic mean of ending SOH across the simulated weeks.
-  // Negatives stay in the average. Turns use a different, floored average.
-  function meanEndingSoh(weeks) {
+  // Points drawn for one week. No receipt: the pre-receipt stock only.
+  // A receipt: that point, then the close after the receipt. A missing
+  // pre-receipt falls back to the close so a one-point week still averages.
+  function plottedSohPoints(weeks) {
     if (!weeks || !weeks.length) {
+      return [];
+    }
+    var points = [];
+    for (var i = 0; i < weeks.length; i += 1) {
+      var week = weeks[i] || {};
+      var pre = week.preReceiptSoh;
+      if (pre == null || pre === "") {
+        pre = week.endingSoh;
+      }
+      points.push(Number(pre));
+      if (Number(week.plannedSupply) > 0) {
+        points.push(Number(week.endingSoh));
+      }
+    }
+    return points;
+  }
+
+  // Mean of the plotted stock points after flooring each point at zero.
+  // The chart label, turns, and working capital all use this mean.
+  function meanPlottedSoh(weeks) {
+    var points = plottedSohPoints(weeks);
+    if (!points.length) {
       return null;
     }
     var sum = 0;
-    for (var i = 0; i < weeks.length; i += 1) {
-      var ending = Number(weeks[i].endingSoh);
-      if (!isFinite(ending)) {
+    for (var i = 0; i < points.length; i += 1) {
+      if (!isFinite(points[i])) {
         return null;
       }
-      sum += ending;
+      sum += points[i] > 0 ? points[i] : 0;
     }
-    return sum / weeks.length;
+    return sum / points.length;
   }
 
   function computeMetrics(weeks) {
     var oosWeeks = 0;
-    var sumEnding = 0;
-    var sumFloored = 0;
     var annualDemand = 0;
     for (var i = 0; i < weeks.length; i += 1) {
-      var ending = weeks[i].endingSoh;
-      if (ending < 0) {
+      var pre = weeks[i].preReceiptSoh;
+      if (pre == null || pre === "") {
+        pre = weeks[i].endingSoh;
+      }
+      if (pre < 0) {
         oosWeeks += 1;
       }
-      sumEnding += ending;
-      sumFloored += ending > 0 ? ending : 0;
       annualDemand += weeks[i].simulatedDemand;
     }
     var n = weeks.length || HORIZON;
-    var avgSohTurns = sumFloored / n;
+    var avgSohTurns = meanPlottedSoh(weeks);
+    if (avgSohTurns == null) {
+      avgSohTurns = 0;
+    }
     var inventoryTurns = avgSohTurns === 0 ? null : annualDemand / avgSohTurns;
     return {
       oosWeeks: oosWeeks,
@@ -614,7 +650,7 @@
       annualDemand: annualDemand,
       avgSohTurns: avgSohTurns,
       inventoryTurns: inventoryTurns,
-      averageWc: (sumEnding / n) * UNIT_COST,
+      averageWc: avgSohTurns * UNIT_COST,
       annualGp: annualDemand * UNIT_GP,
     };
   }
@@ -718,11 +754,11 @@
       var existing = due[w];
       var weekBase = base[w];
       var weekDemand = demand.simulatedDemand[w];
-      var calculated = beginning + existing - weekBase;
+      var calculated = beginning - weekBase + existing;
       var threshold = safetyStock > 0 ? safetyStock : 0;
       var newReceipt = 0;
 
-      if (calculated < threshold) {
+      if (calculated <= threshold) {
         var lots = calculated + nominalLot > 0 ? 1 : 2;
         var lotReceipts = [];
         var received = 0;
@@ -757,13 +793,15 @@
       }
 
       var plannedSupply = existing + newReceipt;
-      var endingSoh = beginning + plannedSupply - weekDemand;
+      var preReceiptSoh = beginning - weekDemand;
+      var endingSoh = preReceiptSoh + plannedSupply;
       weeks.push({
         week: w + 1,
         baseDemand: base[w],
         simulatedDemand: weekDemand,
         beginningSoh: beginning,
         plannedSupply: plannedSupply,
+        preReceiptSoh: preReceiptSoh,
         endingSoh: endingSoh,
         safetyStock: safetyStock,
       });
@@ -1035,7 +1073,11 @@
       }
     }
     for (var w = 0; w < result.weeks.length; w += 1) {
-      if (result.weeks[w].endingSoh < 0 && result.weeks[w].week >= earliest) {
+      var position = result.weeks[w].preReceiptSoh;
+      if (position == null || position === "") {
+        position = result.weeks[w].endingSoh;
+      }
+      if (position < 0 && result.weeks[w].week >= earliest) {
         return true;
       }
     }
@@ -1081,9 +1123,6 @@
     }
     if (ctx.lotMode === "weeks" && ctx.lotWeeks >= 6 && turns != null && isFinite(turns) && turns < 6) {
       rules.push("In the scenario you ran, big lots raise average stock and working capital, which lowers turns.");
-    }
-    if (ctx.averageWc != null && isFinite(ctx.averageWc) && ctx.averageWc < 0) {
-      rules.push("In the scenario you ran, negative average stock means backorders outweighed stock on hand.");
     }
     if (ctx.mode === "monte-carlo" && ctx.oosSpread != null && ctx.oosSpread >= 4) {
       rules.push("In the scenario you ran, the results vary a lot from year to year under the same settings.");
@@ -1231,7 +1270,8 @@
     leadTimeExtraMax: leadTimeExtraMax,
     allowedLotReceipts: allowedLotReceipts,
     sampleShockWeeks: sampleShockWeeks,
-    meanEndingSoh: meanEndingSoh,
+    plottedSohPoints: plottedSohPoints,
+    meanPlottedSoh: meanPlottedSoh,
     computeMetrics: computeMetrics,
     needsPedagogyCallout: needsPedagogyCallout,
     summariseMonteCarlo: summariseMonteCarlo,
