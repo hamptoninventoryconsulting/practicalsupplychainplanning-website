@@ -396,7 +396,7 @@
           },
           {
             "type": "p",
-            "text": "Each location is planned on its own. Stock at one warehouse doesn't cover demand at another unless it's moved there with a transfer order."
+            "text": "Each location is planned on its own. Unless a source-destination relationship is set up in MRP, stock at one warehouse doesn't cover demand at another."
           },
           {
             "type": "p",
