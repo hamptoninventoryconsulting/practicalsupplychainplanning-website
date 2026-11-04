@@ -164,10 +164,29 @@
     module.exports = api;
   }
 
-  if (root && root.document && root.sessionStorage && root.location) {
-    root.pscpVisit = createVisit(root.sessionStorage, function () {
+  function readSessionStorage(target) {
+    try {
+      return target.sessionStorage;
+    } catch (error) {
+      /* Some browsers throw on the property itself when storage is blocked. */
+      return null;
+    }
+  }
+
+  if (root && root.document && root.location) {
+    var storage = null;
+    try {
+      storage = readSessionStorage(root);
+    } catch (error) {
+      storage = null;
+    }
+    root.pscpVisit = createVisit(storage, function () {
       return root.location.search;
     });
-    root.pscpVisit.capture();
+    try {
+      root.pscpVisit.capture();
+    } catch (error) {
+      /* The URL is still read when this tab refuses sessionStorage. */
+    }
   }
 })(typeof window !== "undefined" ? window : null);

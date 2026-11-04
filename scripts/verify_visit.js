@@ -155,6 +155,54 @@ assert.strictEqual(refused, true);
 assert.strictEqual(blocked.customData().ref, "abc");
 assert.strictEqual(blocked.customData().campaign, "plan-ahead");
 
+const vm = require("vm");
+const visitSource = fs.readFileSync(path.join(ROOT, "assets", "visit.js"), "utf8");
+
+function bootVisit(defineStorage) {
+  const window = {
+    document: {},
+    location: { search: landing },
+  };
+  defineStorage(window);
+  vm.runInNewContext(visitSource, {
+    window: window,
+    URLSearchParams: URLSearchParams,
+  });
+  return window.pscpVisit;
+}
+
+const storageBlocked = bootVisit(function (window) {
+  Object.defineProperty(window, "sessionStorage", {
+    get() {
+      throw new Error("sessionStorage blocked");
+    },
+  });
+});
+assert.ok(storageBlocked, "visit.js must still install pscpVisit when sessionStorage throws");
+assert.doesNotThrow(function () {
+  storageBlocked.capture();
+  storageBlocked.customData();
+  storageBlocked.forSignup();
+});
+assert.strictEqual(storageBlocked.customData().campaign, "plan-ahead");
+assert.strictEqual(storageBlocked.customData().ref, "abc");
+
+const storageMethodsThrow = bootVisit(function (window) {
+  window.sessionStorage = {
+    getItem() {
+      throw new Error("getItem blocked");
+    },
+    setItem() {
+      throw new Error("setItem blocked");
+    },
+  };
+});
+assert.doesNotThrow(function () {
+  storageMethodsThrow.capture();
+  storageMethodsThrow.read();
+});
+assert.strictEqual(storageMethodsThrow.customData().ref, "abc");
+
 const checkout = fs.readFileSync(path.join(ROOT, "assets", "pricing-checkout.js"), "utf8");
 assert.match(checkout, /window\.pscpVisit\.customData/);
 assert.match(checkout, /campaign:\s*"default"/);
