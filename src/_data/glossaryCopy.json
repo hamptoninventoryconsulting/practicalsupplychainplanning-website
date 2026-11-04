@@ -198,7 +198,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "Suppliers often define lot size increments due to:"
+            "text": "Suppliers define lot size increments due to:"
           },
           {
             "type": "ul",
@@ -219,6 +219,10 @@
           {
             "type": "p",
             "text": "Widgets come in cartons of 24, and you can't buy half a carton. If you need 30, you have to order 48, which is 2 cartons."
+          },
+          {
+            "type": "p",
+            "text": "Lot sizes come in many forms: a full pallet (say 40 cartons), a set number of drums that fit on a truck (say 80 drums of 200 litres), or a full container load (FCL) from an overseas supplier."
           },
           {
             "type": "p",
