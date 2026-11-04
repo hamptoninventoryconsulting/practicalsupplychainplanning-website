@@ -198,7 +198,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "Suppliers define lot size increments due to:"
+            "text": "Suppliers often define lot size increments due to:"
           },
           {
             "type": "ul",
