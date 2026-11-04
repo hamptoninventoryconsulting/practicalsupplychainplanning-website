@@ -407,20 +407,39 @@
         })
         .join(" ");
     }
-    function stockPath() {
+    function stockCommands() {
       var commands = [];
-      var started = false;
       weeks.forEach(function (week, index) {
         var values = [week.preReceiptSoh];
         if (week.plannedSupply > 0) {
           values.push(week.endingSoh);
         }
         values.forEach(function (value) {
-          commands.push((started ? "L" : "M") + x(index).toFixed(2) + " " + y(value).toFixed(2));
-          started = true;
+          commands.push(x(index).toFixed(2) + " " + y(value).toFixed(2));
         });
       });
-      return commands.join(" ");
+      return commands;
+    }
+    // A single path of a few hundred sharp peaks loses the tip of later
+    // peaks in some SVG renderers. Overlapping pieces stay continuous.
+    function stockPathChunks() {
+      var commands = stockCommands();
+      var chunk = 80;
+      var paths = [];
+      var start = 0;
+      while (start < commands.length) {
+        var end = Math.min(commands.length, start + chunk);
+        var parts = [];
+        for (var i = start; i < end; i += 1) {
+          parts.push((i === start ? "M" : "L") + commands[i]);
+        }
+        paths.push(parts.join(" "));
+        if (end >= commands.length) {
+          break;
+        }
+        start = end - 1;
+      }
+      return paths;
     }
     function add(name, attrs) {
       var node = document.createElementNS("http://www.w3.org/2000/svg", name);
@@ -449,12 +468,16 @@
       "stroke-dasharray": "6 4",
       d: seriesPath(function (week) { return week.safetyStock; }),
     });
-    add("path", {
-      class: "sim-chart__ending",
-      fill: "none",
-      stroke: "#0e7490",
-      "stroke-width": "2",
-      d: stockPath(),
+    stockPathChunks().forEach(function (path) {
+      add("path", {
+        class: "sim-chart__ending",
+        fill: "none",
+        stroke: "#0e7490",
+        "stroke-width": "2",
+        "stroke-linejoin": "round",
+        "stroke-linecap": "round",
+        d: path,
+      });
     });
     var mean = engine.meanPlottedSoh(weeks);
     var avgLabel = averageSohLabel(mean);
@@ -539,6 +562,39 @@
     });
   }
 
+  function weeksCsv(weeks) {
+    var lines = [
+      "Week,Base demand,Simulated demand,Beginning SOH,Pre-receipt SOH,Planned supply,Ending SOH,Safety stock",
+    ];
+    weeks.forEach(function (week) {
+      lines.push(
+        [
+          String(week.week),
+          formatCount(week.baseDemand),
+          formatCount(week.simulatedDemand),
+          formatCount(week.beginningSoh),
+          formatCount(week.preReceiptSoh),
+          formatCount(week.plannedSupply),
+          formatCount(week.endingSoh),
+          formatCount(week.safetyStock),
+        ].join(",")
+      );
+    });
+    return lines.join("\r\n");
+  }
+
+  function downloadCsv(name, text) {
+    var blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   function renderWeeks(weeks) {
     var body = $("sim-weeks-body");
     body.innerHTML = "";
@@ -559,7 +615,7 @@
         if (index === 0) {
           cell.scope = "row";
         }
-        cell.textContent = String(value);
+        cell.textContent = index === 0 ? String(value) : formatCount(value);
         if ((index === 4 || index === 6) && value < 0) {
           cell.className = "sim-negative";
         }
@@ -844,6 +900,12 @@
       setMode("monte-carlo");
     });
     $("sim-run-year").addEventListener("click", runYearClicked);
+    $("sim-download-weeks").addEventListener("click", function () {
+      if (!state.result || !state.result.weeks) {
+        return;
+      }
+      downloadCsv("safety-stock-weekly.csv", weeksCsv(state.result.weeks));
+    });
     $("sim-run-mc").addEventListener("click", runMonteCarloClicked);
   }
 
