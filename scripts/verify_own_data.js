@@ -825,7 +825,7 @@ assert.match(flat, /Z comes from the service level you pick/);
 assert.match(flat, /square root of L spreads that weekly variation/);
 assert.match(page, /src="\/assets\/own-data-engine\.js\?v=9"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
-assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=7"/);
+assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=8"/);
 assert.ok(page.indexOf("own-data-engine.js") < page.indexOf("own-data-simulator.js"));
 assert.match(page, /id="own-results-email" hidden/);
 assert.match(page, /data-results-email="on"/);
