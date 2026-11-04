@@ -327,7 +327,11 @@
         "blocks": [
           {
             "type": "p",
-            "text": "A supplier may require all purchase orders to total at least **$5,000**."
+            "text": "A supplier may require each purchase order to total at least **$5,000**."
+          },
+          {
+            "type": "p",
+            "text": "MOV usually applies to each PO on its own, not to several POs added together. This can be a problem if you raise separate POs for different delivery locations but want them to count towards the same MOV. That normally has to be arranged manually with your account manager, and a supplier's system may reject a PO below the MOV."
           }
         ],
         "heading": "Example",
