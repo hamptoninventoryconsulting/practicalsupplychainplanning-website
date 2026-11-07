@@ -1867,13 +1867,13 @@
     ]
   },
   "exception-outlier": {
-    "definition": "An exception is any event that causes recorded sales to differ from normal customer demand.",
+    "definition": "An exception is any event that causes recorded sales to differ from the normal range of customer demand.",
     "sections": [
       {
         "blocks": [
           {
             "type": "p",
-            "text": "An exception is any event that causes recorded sales to differ from normal customer demand."
+            "text": "An exception is any event that causes recorded sales to differ from the normal range of customer demand."
           },
           {
             "type": "p",
@@ -1918,6 +1918,10 @@
           },
           {
             "type": "p",
+            "text": "For example, a customer's usual buyer may be away on holiday, called vacation in the US, with no trained person to cover. Sales that normally run at 40,000 units a month can fall to zero because nobody placed the order, not because the underlying demand disappeared."
+          },
+          {
+            "type": "p",
             "text": "Not every unusual sale should be treated as an exception. The objective is to identify events that are unlikely to occur again under normal trading conditions."
           }
         ],
@@ -1937,7 +1941,7 @@
           },
           {
             "type": "p",
-            "text": "Forecasts help organizations plan inventory, purchasing, production, capacity, and supply requirements before actual customer orders occur."
+            "text": "Forecasts help organizations plan inventory, purchasing, production, capacity, cash flow, and supply requirements before actual customer orders occur."
           }
         ],
         "heading": "Forecasting",
@@ -2030,6 +2034,26 @@
           {
             "type": "p",
             "text": "Repeatedly over-forecasting may create excess inventory, while repeated under-forecasting may increase shortages and expedite activity."
+          },
+          {
+            "type": "p",
+            "text": "Forecast bias is a persistent tendency to forecast above or below actual demand. Over-forecasting leads toward excess stock. Under-forecasting leads toward shortages and expediting. Normal variation is different: it moves in both directions and is not persistently high or low."
+          },
+          {
+            "type": "p",
+            "text": "At an aggregate company level, forecasts are generally more accurate in percentage terms than for an individual SKU at a location. Over-forecasts and under-forecasts can offset. That is not guaranteed. Correlated changes in demand, and systematic bias, may still move the total. An accurate total can also hide errors in the mix or at particular locations."
+          },
+          {
+            "type": "p",
+            "text": "Aggregation is not the same as a longer forecast horizon. Aggregation combines many items or locations. A longer horizon looks further ahead in time."
+          },
+          {
+            "type": "p",
+            "text": "Forecast Value Add (FVA) is how much demand-planning effort improves accuracy compared with a simple baseline, such as a simple moving average. Compare them on the same actual demand, the same periods, and the same forecast horizon, using the same accuracy measure. A positive result means the extra work improved accuracy. A negative result means the baseline did better. FVA shows whether the analysis, the meetings, and the manual adjustments earn their keep."
+          },
+          {
+            "type": "p",
+            "text": "Accuracy measures are generally more stable, and more useful, when volumes are larger and there are enough observations. At low volumes, a miss of one or two units can create a very large percentage error, and zeros can make some percentage measures undefined. Read the percentage with the unit error, any bias, and the effect on stock and customer service. A small number of sales does not make every accuracy measure meaningless."
           }
         ],
         "heading": "Forecast Accuracy",
@@ -2124,26 +2148,42 @@
     ]
   },
   "forecast-horizon": {
-    "definition": "The forecast horizon is how far ahead the forecast runs.",
+    "definition": "The forecast horizon is how far ahead the forecast runs. Near-term forecasts support replenishment and scheduling, while longer-term forecasts support supplier commitments, capacity, budgets, and cash flow.",
     "sections": [
       {
         "blocks": [
           {
             "type": "p",
-            "text": "The forecast horizon is how far ahead the forecast runs."
+            "text": "The forecast horizon is how far ahead the forecast runs. Near-term forecasts support replenishment and scheduling, while longer-term forecasts support supplier commitments, capacity, budgets, and cash flow."
+          },
+          {
+            "type": "p",
+            "text": "The horizon needs to be long enough to cover lead times and those commitments."
+          },
+          {
+            "type": "p",
+            "text": "A nearer-term forecast is generally more accurate, because there is less time for conditions to change and the information is fresher. That is not an absolute guarantee."
+          },
+          {
+            "type": "p",
+            "text": "Further out, uncertainty usually grows. Update the forecast as those periods get closer."
           }
         ]
       }
     ]
   },
   "forecast-reliability": {
-    "definition": "Forecast reliability is influenced by the variability of historical demand.",
+    "definition": "Sales history variability is how far recorded sales fluctuate around their usual level. The same average can sit inside a narrow range or a wide one.",
     "sections": [
       {
         "blocks": [
           {
             "type": "p",
-            "text": "Forecast reliability is influenced by the variability of historical demand."
+            "text": "Sales history variability is how far recorded sales fluctuate around their usual level. The same average can sit inside a narrow range or a wide one."
+          },
+          {
+            "type": "p",
+            "text": "An observation that is unusual for a steady SKU may still fall inside the normal range of a more volatile SKU."
           },
           {
             "type": "p",
@@ -2171,36 +2211,60 @@
           },
           {
             "type": "p",
-            "text": "Although both examples have the same average demand, the first is likely to produce a more reliable short-term forecast because demand varies less from week to week."
+            "text": "Although both examples have the same average demand, the first has a tighter normal range. A week that looks unusual in that steady pattern may still sit inside the range of the more volatile pattern."
           },
           {
             "type": "p",
-            "text": "Over longer forecasting horizons, the impact of this variability is generally reduced as short-term fluctuations tend to average out."
+            "text": "With the lead time and the service target unchanged, higher demand variability generally needs more safety stock."
+          },
+          {
+            "type": "p",
+            "text": "Historical sales are used to estimate that variability, but stockouts and exception events can distort what the history shows."
           }
         ],
-        "heading": "Forecast Reliability",
+        "heading": "Sales history variability",
         "level": 3
       }
     ]
   },
   "intermittent-demand": {
-    "definition": "Intermittent demand has many weeks with no sales.",
+    "definition": "Intermittent demand has many weeks with no sales. The demand is irregular, and the size of each order may vary.",
     "sections": [
       {
         "blocks": [
           {
             "type": "p",
-            "text": "Intermittent demand has many weeks with no sales."
+            "text": "Intermittent demand has many weeks with no sales. The demand is irregular, and the size of each order may vary."
+          },
+          {
+            "type": "p",
+            "text": "An average of 10 a week might really be an order of 100 every 10 weeks. The smooth average hides that pattern. Stock can sit idle between orders, then run short when the order arrives."
+          },
+          {
+            "type": "p",
+            "text": "Look at both the gaps and the order quantities, particularly the demand during the supply lead time. A run of weeks with no sales does not automatically mean the product is obsolete."
+          },
+          {
+            "type": "p",
+            "text": "Percentage accuracy measures may mislead when actual demand is zero."
           }
         ]
       }
     ]
   },
   "sales-history": {
-    "definition": "Historical sales are imported from your accounting, sales or warehouse system and converted into a standard format suitable for forecasting.",
+    "definition": "Sales history for forecasting is net customer sales: customer sales less credits and returns, in units. It excludes production consumption and internal stock transfers.",
     "sections": [
       {
         "blocks": [
+          {
+            "type": "p",
+            "text": "Sales history for forecasting is net customer sales: customer sales less credits and returns, in units. It excludes production consumption and internal stock transfers."
+          },
+          {
+            "type": "p",
+            "text": "Those are movements of stock, not customer sales. Mixing them into the history distorts demand and can double-count it."
+          },
           {
             "type": "p",
             "text": "Historical sales are imported from your accounting, sales or warehouse system and converted into a standard format suitable for forecasting."
@@ -2249,7 +2313,7 @@
           },
           {
             "type": "p",
-            "text": "Some systems provide individual invoice transactions, while others export daily, weekly or monthly summaries. Depending on the system, exports may also include returns, cancelled orders or stock transfers."
+            "text": "Some systems provide individual invoice transactions, while others export daily, weekly or monthly summaries. Depending on the system, an export may also include returns, cancelled orders, or stock transfers. Use returns and credits to reach net customer sales. Leave out stock transfers and production consumption, even when the file contains them. They are stock movements, not customer sales."
           }
         ],
         "heading": "What should I expect from my source system?",
@@ -2258,17 +2322,21 @@
     ]
   },
   "sku-forecasting-group": {
-    "definition": "The SKU Forecasting Group allows related products to be analysed together.",
+    "definition": "A SKU can sit in more than one grouping, such as brand, category, or product manager. Each grouping is another way to slice the same sales and forecasts.",
     "sections": [
       {
         "blocks": [
           {
             "type": "p",
-            "text": "The SKU Forecasting Group allows related products to be analysed together."
+            "text": "A SKU can sit in more than one grouping, such as brand, category, or product manager. Each grouping is another way to slice the same sales and forecasts."
           },
           {
             "type": "p",
             "text": "Rather than reviewing forecasts one SKU at a time, products can be grouped into meaningful business categories to simplify reporting and identify trends."
+          },
+          {
+            "type": "p",
+            "text": "These groupings are alternative views of the same sales. Do not add the views together where they overlap, or the same sale is counted more than once. This is a general planning idea. It does not mean a planning system provides an unlimited number of grouping fields."
           }
         ],
         "heading": "SKU Forecasting Group",
