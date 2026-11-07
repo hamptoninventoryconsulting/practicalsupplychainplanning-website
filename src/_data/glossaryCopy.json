@@ -1,6 +1,24 @@
 {
   "planned-order": {
-    "definition": "A planned order is an MRP output: a recommended quantity and date to buy from a supplier or make, calculated from projected stock, lead times, MOQ, lot size and other order rules. It isn't placed yet. In larger ERP systems, a planner releases a planned order, which turns it into an open order such as a purchase order or production order. The plan raises one so the projected balance stays at or above safety stock. Also called a planned supply order. Why it matters: planned orders show your future buying and production ahead of time, which is very useful for supplier forecasts, cash and capacity planning, and confirming lead times early. Review them before they become supply orders."
+    "definition": "A planned order is an MRP output: a recommended quantity and date to buy, make or transfer, depending on the supply source set up. It is calculated from projected stock, lead times, MOQ, lot size and other order rules. It isn't placed yet. The plan raises it so the projected balance stays at or above safety stock. Also called a planned supply order.",
+    "sections": [
+      {
+        "blocks": [
+          {
+            "type": "p",
+            "text": "A planned order is an MRP output: a recommended quantity and date to buy, make or transfer, depending on the supply source set up. It is calculated from projected stock, lead times, MOQ, lot size and other order rules. It isn't placed yet. The plan raises it so the projected balance stays at or above safety stock. Also called a planned supply order."
+          },
+          {
+            "type": "p",
+            "text": "In larger ERP systems, a planner releases a planned order, turning it into an open purchase, production or transfer order."
+          },
+          {
+            "type": "p",
+            "text": "Why it matters: planned orders show future buying, production and transfers ahead of time, helping with supplier forecasts, cash and capacity planning, and confirming lead times early. Review them before they become supply orders."
+          }
+        ]
+      }
+    ]
   },
   "expedite-reschedule": {
     "definition": "MRP uses expedite and reschedule messages to show when open supply no longer matches when it's needed.",
@@ -356,6 +374,14 @@
           {
             "type": "p",
             "text": "MRP is a time-phased inventory planning process that projects future inventory balances over time."
+          },
+          {
+            "type": "p",
+            "text": "Manufacturing ERP systems often include MRP that also explodes bills of materials (BoMs), calculating the components needed for finished products."
+          },
+          {
+            "type": "p",
+            "text": "Some modules and apps advertised as \"MRP\" only perform BoM explosions, without time-phased planning. Check whether yours also projects stock against dated demand and supply to calculate what to order and when."
           }
         ],
         "heading": "MRP (Material Requirements Planning)",
@@ -717,6 +743,10 @@
           {
             "type": "p",
             "text": "The planned lead time is what the supplier quotes or what's set in your system. The actual lead time is how long orders really take to arrive. These can differ a lot. If the planned lead time is 20 days but orders take 35 days on average, plans built on 20 days will keep running short. It's worth tracking actual arrival times and deciding which number to plan with. You can also ask the supplier whether the quoted time is realistic."
+          },
+          {
+            "type": "p",
+            "text": "DIFOT (Delivered In Full, On Time) helps check whether planned lead times are realistic. The \"On Time\" part measures whether deliveries arrive by the agreed date. If orders placed with the planned lead time regularly arrive late, compare actual lead times with the planned figure and discuss the difference with your supplier."
           }
         ],
         "heading": "Planned vs Actual Lead Time",
@@ -1071,13 +1101,13 @@
     ]
   },
   "customer-service-level": {
-    "definition": "Customer service level measures whether stock is available when the customer wants it, against the service standard you've set. If the standard is a 2-week lead time, the question is whether the stock was there within 2 weeks. If the standard is supply from stock, the question is whether it was on hand the day the customer ordered. It is measured as the share of orders, lines or units supplied in full and on time against that standard.",
+    "definition": "Customer service level measures whether stock is available for the sales order when the customer wants it, against the service standard you've set. If the standard is a 2-week lead time, the question is whether the stock was available for the sales order within 2 weeks. If the standard is supply from stock, the question is whether it was available for the sales order on the day the customer ordered, not merely physically present and still awaiting processing. It is measured as the share of orders, lines or units supplied in full and on time against that standard.",
     "sections": [
       {
         "blocks": [
           {
             "type": "p",
-            "text": "Customer service level measures whether stock is available when the customer wants it, against the service standard you've set. If the standard is a 2-week lead time, the question is whether the stock was there within 2 weeks. If the standard is supply from stock, the question is whether it was on hand the day the customer ordered. It is measured as the share of orders, lines or units supplied in full and on time against that standard."
+            "text": "Customer service level measures whether stock is available for the sales order when the customer wants it, against the service standard you've set. If the standard is a 2-week lead time, the question is whether the stock was available for the sales order within 2 weeks. If the standard is supply from stock, the question is whether it was available for the sales order on the day the customer ordered, not merely physically present and still awaiting processing. It is measured as the share of orders, lines or units supplied in full and on time against that standard."
           }
         ]
       },
@@ -1122,7 +1152,11 @@
           },
           {
             "type": "p",
-            "text": "Customer expectations set the standard: supply from stock today, or within an agreed lead time. The customer service level target is separate. It is how many times out of 100 you choose to meet that standard, for example 95 out of 100. Setting that target is a business decision, weighed against the extra working capital each step up requires."
+            "text": "Customer expectations influence your company's service policy, but customer service level measures performance against the rules your company has set. If a customer wants same-day supply but your policy is next-day supply, you measure whether the sales order was supplied in full by the next day—not the same day."
+          },
+          {
+            "type": "p",
+            "text": "That policy might cost you customers who need faster service, but that is separate from meeting your service standard. Your service level target sets how often you aim to meet that standard—for example, 95 times out of 100."
           }
         ],
         "heading": "Customer Expectations Can Differ",
@@ -1323,14 +1357,18 @@
         "blocks": [
           {
             "type": "p",
-            "text": "Assuming the same annual demand:"
+            "text": "With the same annual demand, and other factors unchanged:"
           },
           {
             "type": "ul",
             "items": [
-              "Ordering weekly generally requires less average inventory than ordering monthly",
-              "Ordering monthly generally requires less average inventory than ordering twice per year"
+              "Receiving one week's demand each week generally needs less average cycle stock than receiving one month's demand each month",
+              "Receiving one month's demand each month generally needs less average cycle stock than receiving six months' demand twice a year"
             ]
+          },
+          {
+            "type": "p",
+            "text": "The difference is how much stock is received each time, not how often a purchase order is placed on its own. The schedule of receipts can differ from how often purchase orders are raised."
           },
           {
             "type": "p",
