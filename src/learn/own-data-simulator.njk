@@ -7,9 +7,9 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/own-data/",
   "scripts": [
-    "/assets/own-data-engine.js?v=11",
+    "/assets/own-data-engine.js?v=13",
     "/assets/sim-results-form.js?v=7",
-    "/assets/own-data-simulator.js?v=8"
+    "/assets/own-data-simulator.js?v=9"
   ]
 }
 ---
@@ -35,7 +35,7 @@
             <ul>
               <li>A single average weekly forecast stands in for the whole year.</li>
               <li>Demand, lead time, and delivery quantity move inside fixed variability bands.</li>
-              <li>Each week's forecast is split evenly across seven days. An order is placed one day before the stock would finish at or below safety stock, and it arrives the next day after that day's demand.</li>
+              <li>Each week's forecast is split evenly across seven days. Once a week the plan is rebuilt from the forecast and from orders already released. A new receipt cannot arrive until the full lead time has passed, and the plan keeps the normal lot quantity until the goods actually arrive.</li>
             </ul>
             <p id="own-storage-off">
               The calculation runs in this browser. SKU names, forecasts, stock,
@@ -228,15 +228,25 @@
           <p class="sim-help">
             Each week's forecast is split evenly across seven days, and those
             days add up to the week. Demand comes off that day's opening
-            stock, then any receipt due that day is added. An order is placed
-            when the day after tomorrow would finish at or below safety stock.
-            The order arrives tomorrow, after tomorrow's demand, so
-            deterministic demand stays on or above the line. One lot is
-            ordered, or two if that lot would not lift the projected finish
-            above zero. The base lead time is any whole number of weeks from
-            1 to 26. It is not added onto the arrival while supply-timing
-            variability is off. It scales the formula and the extra delay,
-            in whole weeks, when that variability is on.
+            stock, then any receipt due that day is added. At the start of
+            each week the plan is rebuilt from the forecast and from orders
+            already released, counted on the date they are still expected. A
+            new receipt cannot arrive until the full lead time has passed.
+            An order released in week 1 with a 5-week lead time is due on the
+            first day of week 6, after that day's demand.             Until the goods
+            arrive the plan keeps the normal lot quantity. A miss is
+            recognised when that day passes with no receipt. The plan then
+            expects that same quantity one week later, and moves the
+            expectation forward again if the goods still have not arrived.
+            It does not learn the actual arrival date in advance. A short
+            shipment is recognised only when the goods arrive. The release is
+            as many normal lots as the forecast needs to finish the week at
+            or above safety stock. An order already on the way is counted on
+            its expected date, and another lot can be due that same week if
+            the forecast still finishes below safety stock. Lead time is any
+            whole number of weeks from 1 to 26.
+            Lead-time variability adds whole extra weeks after that lead time
+            and cannot bring the receipt forward.
           </p>
           <p class="sim-help">
             Formula safety stock is round(Z × σD × √L). Z comes from the
@@ -375,7 +385,7 @@
                       <th scope="col">Simulated demand</th>
                       <th scope="col">Beginning SOH</th>
                       <th scope="col">Pre-receipt SOH</th>
-                      <th scope="col">Planned supply</th>
+                      <th scope="col">Receipts</th>
                       <th scope="col">Ending SOH</th>
                       <th scope="col">Safety stock</th>
                     </tr>

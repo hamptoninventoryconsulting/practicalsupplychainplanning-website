@@ -150,6 +150,42 @@ const lostSales = own.runYear(
 );
 assert.ok(lostSales.days[0].preReceiptSoh < 0, "day 1 demand is taken before any receipt");
 assert.ok(lostSales.metrics.oosWeeks > 0);
+
+const recoverySku = own.runYear(
+  sku({
+    forecast: 40,
+    currentStock: 80,
+    lotQty: 40,
+    ssQty: 0,
+    demandVariability: "off",
+    leadTimeVariability: "large",
+    leadTimeWeeks: 1,
+  }),
+  globals({ deliveryVariability: "off" }),
+  1
+);
+const weekFour = recoverySku.reviews[3];
+assert.ok(weekFour.outstanding.length > 0);
+assert.ok(weekFour.releasedNow.some((order) => order.plannedDueWeek === 5));
+assert.ok(
+  weekFour.releasedNow.every((order) => order.plannedDueWeek >= 4 + 1),
+  "lead time 1 still cannot receipt inside the fence"
+);
+const sharedSpec = {
+  weekIndex: 3,
+  onHand: -80,
+  base: Array.from({ length: 52 }, function () { return 40; }),
+  safetyStock: 0,
+  nominalLot: 40,
+  leadTimeWeeks: 1,
+  outstanding: [
+    { nominalQuantity: 40, knownDueDay: 29, actualArrivalDay: 36, privateQuantity: 10 },
+    { nominalQuantity: 40, knownDueDay: 29, actualArrivalDay: 99, privateQuantity: 40 },
+  ],
+};
+assert.deepStrictEqual(own.planReview(sharedSpec), teaching.planReview(sharedSpec));
+const recovered = own.planReview(sharedSpec);
+assert.ok(recovered.suggestions.some(function (item) { return item.dueWeekIndex === 4; }));
 lostSales.weeks.forEach(function (week, index) {
   assert.strictEqual(week.simulatedDemand, 10, "demand " + (index + 1));
 });
@@ -823,7 +859,9 @@ assert.ok((page.match(/Illustrative estimate/g) || []).length >= 4);
 assert.match(flat, /not a forecast, a recommendation, or advice for your business/);
 assert.match(flat, /single average weekly forecast/);
 assert.match(flat, /variability bands/);
-assert.match(flat, /one day before the stock would finish at or below safety stock/);
+assert.match(flat, /full lead time has passed/);
+assert.match(flat, /normal lot quantity until the goods actually arrive/);
+assert.match(flat, /expects that same quantity one week later/);
 assert.match(flat, /split evenly across seven days/);
 assert.match(flat, /The forecast is the expected mean/);
 assert.match(flat, /One year's realized mean can sit above or below it/);
@@ -844,9 +882,9 @@ assert.match(flat, /SOH means stock on hand/);
 assert.match(flat, /In 8 out of 10 simulated years, the result falls inside it/);
 assert.match(flat, /Z comes from the service level you pick/);
 assert.match(flat, /square root of L spreads that weekly variation/);
-assert.match(page, /src="\/assets\/own-data-engine\.js\?v=11"/);
+assert.match(page, /src="\/assets\/own-data-engine\.js\?v=13"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
-assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=8"/);
+assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=9"/);
 assert.ok(page.indexOf("own-data-engine.js") < page.indexOf("own-data-simulator.js"));
 assert.match(page, /id="own-results-email" hidden/);
 assert.match(page, /data-results-email="on"/);
