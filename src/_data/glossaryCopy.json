@@ -1918,7 +1918,7 @@
           },
           {
             "type": "p",
-            "text": "For example, a customer's usual buyer may be away on holiday, called vacation in the US, with no trained person to cover. Sales that normally run at 40,000 units a month can fall to zero because nobody placed the order, not because the underlying demand disappeared."
+            "text": "For example, a customer's usual buyer may be away on holiday or vacation, with no trained person to cover. Sales that normally run at 40,000 units a month can fall to zero because nobody placed the order, not because the underlying demand disappeared."
           },
           {
             "type": "p",
@@ -2322,17 +2322,17 @@
     ]
   },
   "sku-forecasting-group": {
-    "definition": "A SKU can sit in more than one grouping, such as brand, category, or product manager. Each grouping is another way to slice the same sales and forecasts.",
+    "definition": "Rather than reviewing forecasts one SKU at a time, products can be grouped into meaningful business categories to simplify reporting and identify trends.",
     "sections": [
       {
         "blocks": [
           {
             "type": "p",
-            "text": "A SKU can sit in more than one grouping, such as brand, category, or product manager. Each grouping is another way to slice the same sales and forecasts."
+            "text": "Rather than reviewing forecasts one SKU at a time, products can be grouped into meaningful business categories to simplify reporting and identify trends."
           },
           {
             "type": "p",
-            "text": "Rather than reviewing forecasts one SKU at a time, products can be grouped into meaningful business categories to simplify reporting and identify trends."
+            "text": "A SKU can sit in more than one grouping, such as brand, category, or product manager. Each grouping is another way to slice the same sales and forecasts."
           },
           {
             "type": "p",
