@@ -7,9 +7,9 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/",
   "scripts": [
-    "/assets/safety-stock-engine.js?v=13",
+    "/assets/safety-stock-engine.js?v=14",
     "/assets/sim-results-form.js?v=7",
-    "/assets/safety-stock-simulator.js?v=14"
+    "/assets/safety-stock-simulator.js?v=15"
   ]
 }
 ---
@@ -187,16 +187,19 @@
           <p class="sim-help">
             Each week's demand is split evenly across seven days, and those
             seven days add up to the week. Each day, demand comes off the
-            opening stock and then any receipt due that day is added. An
-            order is placed one day before the stock would finish at or below
-            safety stock. The order arrives the next day, after that day's
-            demand, so deterministic demand stays on or above the line.
-            With safety stock at zero, the line is zero. The order is one lot
-            unless that lot would not lift the projected finish above zero,
-            in which case it is two lots. The base lead time does not delay
-            the receipt while supply-timing variability is off. It only
-            scales the extra delay, in whole weeks, when that variability is
-            on.
+            opening stock and then any receipt due that day is added. At the
+            start of each week the plan is rebuilt from the forecast and from
+            orders already released, counted on the date they are still
+            expected. A new receipt cannot arrive until the full base lead
+            time has passed. An order released in week 1 with a 5-week lead
+            time is due on the first day of week 6, after that day's demand.
+            Until the goods arrive the plan keeps the normal lot quantity. A
+            miss is recognised when that day passes with no receipt, and a
+            short shipment is recognised only when the goods arrive. The
+            order is one lot unless that lot would not lift the projected
+            week above zero, in which case it is two lots. Lead-time
+            variability adds whole extra weeks after the base lead time. It
+            cannot bring the receipt forward.
           </p>
           <p class="sim-help">
             Fixed lots are a whole number from 1 to 1000. Fixed safety stock is
@@ -235,8 +238,9 @@
             and before any shock. L is the base lead time: short 2, medium 5,
             or long 10. The result is constant across the 52 weeks. Monte
             Carlo keeps that same quantity for every year in the batch. The
-            base lead time is not added onto the arrival week. It is used for
-            √L and for the maximum extra delay when lead-time variability is on.
+            base lead time is the earliest gap between releasing an order and
+            receiving it. It is also used for √L and for the maximum extra
+            delay when lead-time variability is on.
           </p>
         </section>
 
@@ -355,8 +359,8 @@
             <div class="sim-table-wrap sim-scroll--weeks">
               <table class="sim-table">
                 <caption>
-                  Weekly results for this year. Planned order quantity and planned
-                  arrival week are not shown.
+                  Weekly results for this year. Receipts are the stock that arrived
+                  during the week. Planned orders are not listed here.
                 </caption>
                 <thead>
                   <tr>
@@ -365,7 +369,7 @@
                     <th scope="col">Simulated demand</th>
                     <th scope="col">Beginning SOH</th>
                     <th scope="col">Pre-receipt SOH</th>
-                    <th scope="col">Planned supply</th>
+                    <th scope="col">Receipts</th>
                     <th scope="col">Ending SOH</th>
                     <th scope="col">Safety stock</th>
                   </tr>

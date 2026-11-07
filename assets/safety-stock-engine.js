@@ -27,21 +27,21 @@
  *
  * Replenishment
  * -------------
- * Each week's demand is split evenly across 7 days. The split is exact:
- * seven daily amounts add up to the week's demand, with no remainder.
- * Each day, demand is taken from the opening stock, then receipts due
- * that day are added.
- * An order is placed one day earlier than the day that would finish at
- * or below safety stock (or at or below zero when safety stock is 0).
- * The test looks at the day after tomorrow: that day's opening, minus
- * its base forecast. Receipts already due before that demand count.
- * Simulated demand is not an input to the order. The order arrives
- * tomorrow, after tomorrow's demand, when supply-timing variability is
- * off, so the stock stays on or above the line. The base lead
- * time is not added. It only scales the extra delay, in whole weeks,
- * when that variability is on. Each extra week is 7 days.
- * One nominal lot is ordered, unless that lot would not lift the
- * projected finish above zero — then two lots.
+ * Planning is a weekly rolling review. Execution stays daily.
+ * At the start of each week the plan is rebuilt from on-hand stock, the
+ * base forecast, and released orders at the due date the planner still
+ * expects. Unreleased suggestions are discarded and calculated again.
+ * A released order keeps its normal lot quantity in that plan until the
+ * goods actually arrive. A short shipment is private until that day.
+ * The planned due day is the first day of the week that is the base lead
+ * time after the release week: a week-1 release with a 5-week lead time
+ * is due on day 36 (week 6). Extra delay adds whole weeks after that and
+ * is recognised only when the planned day passes with no receipt. The
+ * planner then keeps the normal quantity and counts the order on the
+ * revised due date. Nothing arrives before release + base lead time.
+ * Each day, demand is taken from the opening stock, then a receipt due
+ * that day is added. One nominal lot is ordered, unless that lot would
+ * not lift the projected week above zero — then two lots.
  * A day below zero before the receipt marks its week out of stock.
  * Touching zero does not. The chart draws each day's post-demand stock,
  * and the post-receipt stock as well when a receipt lands.
@@ -130,7 +130,7 @@
     "Simulated demand",
     "Beginning SOH",
     "Pre-receipt SOH",
-    "Planned supply",
+    "Receipts",
     "Ending SOH",
     "Safety stock",
   ];
@@ -787,6 +787,254 @@
     };
   }
 
+  // Weekly plan, then seven execution days. Planning reads nominal
+  // quantities and known due dates only. Private delay and private
+  // quantity are drawn at release and are not planning inputs.
+  function simulateReplenishment(gen, controls, base, demand, nominalLot, safetyStock, startingSoh) {
+    var orders = [];
+    var reviews = [];
+    var days = [];
+    var weeks = [];
+    var open7 = startingSoh * DAYS_PER_WEEK;
+    var nextId = 1;
+
+    function dueWeekIndex(dayNumber) {
+      return Math.floor((dayNumber - 1) / DAYS_PER_WEEK);
+    }
+
+    function releaseOrder(suggestion) {
+      var lotReceipts = [];
+      var actualQty = 0;
+      var lot;
+      for (lot = 0; lot < suggestion.lots; lot += 1) {
+        var qty = sampleLotReceipt(gen, controls, base, nominalLot);
+        lotReceipts.push(qty);
+        actualQty += qty;
+      }
+      var delayWeeks = 0;
+      var extraMax = leadTimeExtraMax(controls.leadTimeWeeks, controls.leadTimeVariability);
+      if (extraMax > 0) {
+        delayWeeks = nextInt(gen, 0, extraMax);
+      }
+      var releaseDay = suggestion.releaseWeekIndex * DAYS_PER_WEEK + 1;
+      var plannedDueDay = suggestion.dueWeekIndex * DAYS_PER_WEEK + 1;
+      var actualArrivalDay = plannedDueDay + delayWeeks * DAYS_PER_WEEK;
+      var order = {
+        id: nextId,
+        releaseWeek: suggestion.releaseWeekIndex + 1,
+        releaseDay: releaseDay,
+        lots: suggestion.lots,
+        nominalLot: nominalLot,
+        nominalQuantity: suggestion.nominalQuantity,
+        plannedDueDay: plannedDueDay,
+        plannedDueWeek: suggestion.dueWeekIndex + 1,
+        knownDueDay: plannedDueDay,
+        knownDueWeek: suggestion.dueWeekIndex + 1,
+        delayRecognized: false,
+        delayRecognizedDay: null,
+        privateDelayWeeks: delayWeeks,
+        delay: delayWeeks,
+        lotReceipts: lotReceipts,
+        privateQuantity: actualQty,
+        received: actualQty,
+        actualArrivalDay: actualArrivalDay,
+        arrivalDay: actualArrivalDay,
+        actualArrivalWeek: dueWeekIndex(actualArrivalDay) + 1,
+        arrivalWeek: dueWeekIndex(actualArrivalDay) + 1,
+        hasArrived: false,
+        receivedDay: null,
+        receivedQuantity: null,
+      };
+      nextId += 1;
+      orders.push(order);
+      return order;
+    }
+
+    function snapshotOrder(order) {
+      return {
+        id: order.id,
+        nominalQuantity: order.nominalQuantity,
+        plannerQuantity: order.nominalQuantity,
+        plannedDueDay: order.plannedDueDay,
+        plannedDueWeek: order.plannedDueWeek,
+        knownDueDay: order.knownDueDay,
+        knownDueWeek: dueWeekIndex(order.knownDueDay) + 1,
+        delayRecognized: order.delayRecognized,
+        privateQuantity: order.privateQuantity,
+        privateDelayWeeks: order.privateDelayWeeks,
+        actualArrivalDay: order.actualArrivalDay,
+      };
+    }
+
+    function weeklyReview(weekIndex, onHand) {
+      var suggestions = [];
+      var projection = [];
+      var start = onHand;
+      var w;
+      for (w = weekIndex; w < HORIZON; w += 1) {
+        var forecast = base[w];
+        var incoming = 0;
+        var i;
+        for (i = 0; i < orders.length; i += 1) {
+          var order = orders[i];
+          if (!order.hasArrived && dueWeekIndex(order.knownDueDay) === w) {
+            incoming += order.nominalQuantity;
+          }
+        }
+        for (i = 0; i < suggestions.length; i += 1) {
+          if (suggestions[i].dueWeekIndex === w) {
+            incoming += suggestions[i].nominalQuantity;
+          }
+        }
+        var end = start + incoming - forecast;
+        var added = 0;
+        if (end < safetyStock - 1e-9) {
+          var earliest = weekIndex + controls.leadTimeWeeks;
+          var last = -1;
+          for (i = 0; i < orders.length; i += 1) {
+            if (!orders[i].hasArrived) {
+              var knownWeek = dueWeekIndex(orders[i].knownDueDay);
+              if (knownWeek > last) {
+                last = knownWeek;
+              }
+            }
+          }
+          for (i = 0; i < suggestions.length; i += 1) {
+            if (suggestions[i].dueWeekIndex > last) {
+              last = suggestions[i].dueWeekIndex;
+            }
+          }
+          if (last >= 0 && last + 1 > earliest) {
+            earliest = last + 1;
+          }
+          if (w >= earliest) {
+            var lots = end + nominalLot <= 1e-9 ? 2 : 1;
+            added = lots * nominalLot;
+            suggestions.push({
+              dueWeekIndex: w,
+              releaseWeekIndex: w - controls.leadTimeWeeks,
+              lots: lots,
+              nominalQuantity: added,
+            });
+            end += added;
+          }
+        }
+        projection.push({
+          week: w + 1,
+          forecast: forecast,
+          knownIncoming: incoming,
+          addedNominal: added,
+          end: end,
+        });
+        start = end;
+      }
+      var releasedNow = [];
+      var futurePlans = [];
+      for (var s = 0; s < suggestions.length; s += 1) {
+        var suggestion = suggestions[s];
+        if (suggestion.releaseWeekIndex === weekIndex) {
+          releasedNow.push(snapshotOrder(releaseOrder(suggestion)));
+        } else {
+          futurePlans.push({
+            releaseWeek: suggestion.releaseWeekIndex + 1,
+            dueWeek: suggestion.dueWeekIndex + 1,
+            nominalQuantity: suggestion.nominalQuantity,
+            lots: suggestion.lots,
+          });
+        }
+      }
+      var outstanding = [];
+      for (var o = 0; o < orders.length; o += 1) {
+        if (!orders[o].hasArrived && releasedNow.every(function (item) { return item.id !== orders[o].id; })) {
+          outstanding.push(snapshotOrder(orders[o]));
+        }
+      }
+      reviews.push({
+        week: weekIndex + 1,
+        onHand: onHand,
+        outstanding: outstanding,
+        releasedNow: releasedNow,
+        futurePlans: futurePlans,
+        projection: projection,
+      });
+    }
+
+    for (var weekIndex = 0; weekIndex < HORIZON; weekIndex += 1) {
+      weeklyReview(weekIndex, open7 / DAYS_PER_WEEK);
+      var baseWeek = base[weekIndex];
+      var sim7 = demand.simulatedDemand[weekIndex];
+      var weekNo = weekIndex + 1;
+      for (var dow = 0; dow < DAYS_PER_WEEK; dow += 1) {
+        var t = weekIndex * DAYS_PER_WEEK + dow;
+        var dayNumber = t + 1;
+        var n;
+        for (n = 0; n < orders.length; n += 1) {
+          var pending = orders[n];
+          if (
+            !pending.hasArrived &&
+            !pending.delayRecognized &&
+            pending.plannedDueDay === dayNumber &&
+            pending.actualArrivalDay !== pending.plannedDueDay
+          ) {
+            pending.delayRecognized = true;
+            pending.delayRecognizedDay = dayNumber;
+            pending.knownDueDay = pending.actualArrivalDay;
+            pending.knownDueWeek = dueWeekIndex(pending.actualArrivalDay) + 1;
+          }
+        }
+        var supplyUnits = 0;
+        for (n = 0; n < orders.length; n += 1) {
+          var arriving = orders[n];
+          if (!arriving.hasArrived && arriving.actualArrivalDay === dayNumber) {
+            supplyUnits += arriving.privateQuantity;
+            arriving.hasArrived = true;
+            arriving.receivedDay = dayNumber;
+            arriving.receivedQuantity = arriving.privateQuantity;
+          }
+        }
+        var existing7 = supplyUnits * DAYS_PER_WEEK;
+        var pre7 = open7 - sim7;
+        var end7 = pre7 + existing7;
+        var pre = pre7 / DAYS_PER_WEEK;
+        var end = end7 / DAYS_PER_WEEK;
+        var supply = supplyUnits;
+        if (dow === 0) {
+          weeks.push({
+            week: weekNo,
+            baseDemand: baseWeek,
+            simulatedDemand: demand.simulatedDemand[weekIndex],
+            beginningSoh: open7 / DAYS_PER_WEEK,
+            plannedSupply: 0,
+            preReceiptSoh: pre,
+            endingSoh: end,
+            safetyStock: safetyStock,
+          });
+        }
+        var weekRow = weeks[weekIndex];
+        if (pre < weekRow.preReceiptSoh) {
+          weekRow.preReceiptSoh = pre;
+        }
+        weekRow.plannedSupply += supply;
+        weekRow.endingSoh = end;
+        days.push({
+          day: dayNumber,
+          week: weekNo,
+          baseDemand: baseWeek / DAYS_PER_WEEK,
+          simulatedDemand: sim7 / DAYS_PER_WEEK,
+          demandSevenths: sim7,
+          beginningSoh: open7 / DAYS_PER_WEEK,
+          plannedSupply: supply,
+          preReceiptSoh: pre,
+          endingSoh: end,
+          safetyStock: safetyStock,
+        });
+        open7 = end7;
+      }
+    }
+
+    return { days: days, weeks: weeks, releases: orders, reviews: reviews };
+  }
+
   function runYear(controlsInput, seed, options) {
     var controls = normalizeControls(controlsInput);
     var opts = options || {};
@@ -805,102 +1053,19 @@
       }
     }
     var startingSoh = roundHalfEven(base[0] + nominalLot);
-    var due = repeat(0, DAY_COUNT);
-    var days = [];
-    var weeks = [];
-    var releases = [];
-    var open7 = startingSoh * DAYS_PER_WEEK;
-    var threshold7 = (safetyStock > 0 ? safetyStock : 0) * DAYS_PER_WEEK;
-    var lot7 = nominalLot * DAYS_PER_WEEK;
-
-    for (var t = 0; t < DAY_COUNT; t += 1) {
-      var weekIndex = Math.floor(t / DAYS_PER_WEEK);
-      var weekNo = weekIndex + 1;
-      var base7 = base[weekIndex];
-      var sim7 = demand.simulatedDemand[weekIndex];
-      var existing7 = due[t];
-
-      if (t + 1 < DAY_COUNT) {
-        var nextBase7 = base[Math.floor((t + 1) / DAYS_PER_WEEK)];
-        var projected7;
-        if (t + 2 < DAY_COUNT) {
-          var dayAfterBase7 = base[Math.floor((t + 2) / DAYS_PER_WEEK)];
-          projected7 = open7 - base7 + existing7 - nextBase7 + due[t + 1] - dayAfterBase7;
-        } else {
-          projected7 = open7 - base7 + existing7 - nextBase7;
-        }
-        if (projected7 <= threshold7) {
-          var lots = projected7 + lot7 > 0 ? 1 : 2;
-          var lotReceipts = [];
-          var received = 0;
-          for (var lot = 0; lot < lots; lot += 1) {
-            var qty = sampleLotReceipt(gen, controls, base, nominalLot);
-            lotReceipts.push(qty);
-            received += qty;
-          }
-          var delay = 0;
-          var extraMax = leadTimeExtraMax(
-            controls.leadTimeWeeks,
-            controls.leadTimeVariability
-          );
-          if (extraMax > 0) {
-            delay = nextInt(gen, 0, extraMax);
-          }
-          var arrivalIndex = t + 1 + delay * DAYS_PER_WEEK;
-          if (arrivalIndex < DAY_COUNT) {
-            due[arrivalIndex] += received * DAYS_PER_WEEK;
-          }
-          releases.push({
-            requirementDay: t + 1,
-            requirementWeek: weekNo,
-            lots: lots,
-            nominalLot: nominalLot,
-            lotReceipts: lotReceipts,
-            received: received,
-            delay: delay,
-            arrivalDay: arrivalIndex + 1,
-            arrivalWeek: Math.floor(arrivalIndex / DAYS_PER_WEEK) + 1,
-          });
-        }
-      }
-
-      var pre7 = open7 - sim7;
-      var end7 = pre7 + existing7;
-      var pre = pre7 / DAYS_PER_WEEK;
-      var end = end7 / DAYS_PER_WEEK;
-      var supply = existing7 / DAYS_PER_WEEK;
-      if (t % DAYS_PER_WEEK === 0) {
-        weeks.push({
-          week: weekNo,
-          baseDemand: base[weekIndex],
-          simulatedDemand: demand.simulatedDemand[weekIndex],
-          beginningSoh: open7 / DAYS_PER_WEEK,
-          plannedSupply: 0,
-          preReceiptSoh: pre,
-          endingSoh: end,
-          safetyStock: safetyStock,
-        });
-      }
-      var weekRow = weeks[weekIndex];
-      if (pre < weekRow.preReceiptSoh) {
-        weekRow.preReceiptSoh = pre;
-      }
-      weekRow.plannedSupply += supply;
-      weekRow.endingSoh = end;
-      days.push({
-        day: t + 1,
-        week: weekNo,
-        baseDemand: base7 / DAYS_PER_WEEK,
-        simulatedDemand: sim7 / DAYS_PER_WEEK,
-        demandSevenths: sim7,
-        beginningSoh: open7 / DAYS_PER_WEEK,
-        plannedSupply: supply,
-        preReceiptSoh: pre,
-        endingSoh: end,
-        safetyStock: safetyStock,
-      });
-      open7 = end7;
-    }
+    var simulated = simulateReplenishment(
+      gen,
+      controls,
+      base,
+      demand,
+      nominalLot,
+      safetyStock,
+      startingSoh
+    );
+    var days = simulated.days;
+    var weeks = simulated.weeks;
+    var releases = simulated.releases;
+    var reviews = simulated.reviews;
 
     var sigma = populationStdev(demand.normalDemand);
     return {
@@ -926,6 +1091,7 @@
       days: days,
       weeks: weeks,
       releases: releases,
+      reviews: reviews,
       metrics: computeMetrics(days),
     };
   }

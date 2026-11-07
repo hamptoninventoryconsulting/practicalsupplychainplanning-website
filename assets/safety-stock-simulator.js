@@ -530,7 +530,7 @@
 
   function weeksCsv(weeks) {
     var lines = [
-      "Week,Base demand,Simulated demand,Beginning SOH,Pre-receipt SOH,Planned supply,Ending SOH,Safety stock",
+      "Week,Base demand,Simulated demand,Beginning SOH,Pre-receipt SOH,Receipts,Ending SOH,Safety stock",
     ];
     weeks.forEach(function (week) {
       lines.push(
