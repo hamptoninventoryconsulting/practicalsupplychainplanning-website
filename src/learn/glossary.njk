@@ -96,6 +96,9 @@
     } catch (error) {
       return null;
     }
+    if (id === "time-phased-planning" || id === "projected-stock") {
+      id = "mrp";
+    }
     if (!id) {
       return null;
     }
@@ -110,6 +113,10 @@
   }
 
   function openFromHash() {
+    var raw = location.hash.replace(/^#/, "");
+    if ((raw === "time-phased-planning" || raw === "projected-stock") && history.replaceState) {
+      history.replaceState(null, "", location.pathname + location.search + "#mrp");
+    }
     var details = detailsForId(location.hash.replace(/^#/, ""));
     if (details) {
       details.open = true;

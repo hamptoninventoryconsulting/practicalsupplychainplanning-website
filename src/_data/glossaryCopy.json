@@ -1,25 +1,15 @@
 {
   "planned-order": {
-    "definition": "A planned order is what we intend to buy from a supplier, or intend to make, and when. It isn't placed yet. The plan raises one so the projected balance stays at or above safety stock. Also called a planned supply order. Why it matters: planned orders show your future buying and production ahead of time, which is very useful for supplier forecasts, cash and capacity planning, and confirming lead times early. Review them before they become supply orders."
-  },
-  "time-phased-planning": {
-    "definition": "Time-phased planning projects stock forward, bucket by bucket, against the forecast, open orders and lead times, and times a planned order so it arrives before the projected balance falls below safety stock.",
-    "example": "The supply lead time is 6 weeks and the projected balance goes below safety stock in week 9. The plan shows the order in week 3, while the balance today can still look comfortable.",
-    "why": "Today's balance only says whether you are short now. The projection shows a shortage that is already inside the lead time, and it shows an open order that arrives too late to cover it."
-  },
-  "projected-stock": {
-    "definition": "Projected stock, also called the projected balance, is the on-hand quantity carried forward through each time bucket after that bucket's forecast and open supply orders.",
-    "example": "Opening stock is 100. The week 1 forecast is 30 and nothing is due in, so the projected balance finishes week 1 at 70. Week 2 opens at 70. Its forecast is 40 and a supply order of 100 is due, so the projected balance finishes week 2 at 130.",
-    "why": "The week the projected balance falls below safety stock is the week a planned order has to cover. Adding up all stock and all demand can hide that week, because supply that arrives later does not help an earlier bucket."
+    "definition": "A planned order is an MRP output: a recommended quantity and date to buy from a supplier or make, calculated from projected stock, lead times, MOQ, lot size and other order rules. It isn't placed yet. In larger ERP systems, a planner releases a planned order, which turns it into an open order such as a purchase order or production order. The plan raises one so the projected balance stays at or above safety stock. Also called a planned supply order. Why it matters: planned orders show your future buying and production ahead of time, which is very useful for supplier forecasts, cash and capacity planning, and confirming lead times early. Review them before they become supply orders."
   },
   "expedite-reschedule": {
-    "definition": "Expedite and reschedule concepts are commonly used in MRP and supply planning systems to identify when supply timing may no longer properly align with projected demand requirements.",
+    "definition": "MRP uses expedite and reschedule messages to show when open supply no longer matches when it's needed.",
     "sections": [
       {
         "blocks": [
           {
             "type": "p",
-            "text": "Expedite and reschedule concepts are commonly used in MRP and supply planning systems to identify when supply timing may no longer properly align with projected demand requirements."
+            "text": "MRP uses expedite and reschedule messages to show when open supply no longer matches when it's needed."
           }
         ]
       },
@@ -31,11 +21,11 @@
           },
           {
             "type": "p",
-            "text": "As projected supply and demand conditions change over time, existing supply orders may no longer arrive at the most appropriate time."
+            "text": "As projected supply and demand conditions change over time, some open supply orders will no longer arrive when they're needed."
           },
           {
             "type": "p",
-            "text": "Exception messages are typically generated when projected inventory positions violate planning rules or thresholds."
+            "text": "Exception messages are generated when the MRP calculation finds that open supply no longer matches what the plan needs, for example an order that should be brought in, pushed out or cancelled."
           },
           {
             "type": "p",
@@ -59,7 +49,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "An expedite recommendation is triggered when projected inventory falls below the planning threshold before an existing open supply order arrives."
+            "text": "An expedite recommendation is triggered when projected inventory falls below safety stock before an existing open supply order arrives."
           },
           {
             "type": "p",
@@ -68,7 +58,7 @@
           {
             "type": "ul",
             "items": [
-              "Projected inventory drops below the threshold",
+              "Projected inventory drops below safety stock",
               "An open supply order is due in a later period",
               "MRP recommends bringing that order forward"
             ]
@@ -90,9 +80,9 @@
           {
             "type": "ul",
             "items": [
-              "Projected inventory stays above the threshold without that order",
+              "Projected inventory stays above safety stock without that order",
               "An open supply order is due in an earlier period than needed",
-              "MRP recommends moving that order out to the period when projected inventory would otherwise drop below the threshold"
+              "MRP recommends moving that order out to the period when projected inventory would otherwise drop below safety stock"
             ]
           }
         ],
@@ -113,7 +103,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "Expedite and reschedule recommendations are generally outputs generated from the MRP calculation itself."
+            "text": "Expedite and reschedule recommendations are outputs of the MRP calculation."
           },
           {
             "type": "p",
@@ -222,6 +212,10 @@
           },
           {
             "type": "p",
+            "text": "Lot sizes come in many forms: a full pallet (say 40 cartons), a set number of drums that fit on a truck (say 80 drums of 200 litres), or a full container load (FCL) from an overseas supplier."
+          },
+          {
+            "type": "p",
             "text": "The key question is how much demand one lot covers. If a carton is a few days' or a week's worth of demand, rounding up makes little difference. If one lot covers months of demand, every order leaves you with extra stock, which ties up cash and space and raises the risk it becomes slow-moving or obsolete."
           },
           {
@@ -323,7 +317,11 @@
         "blocks": [
           {
             "type": "p",
-            "text": "A supplier may require all purchase orders to total at least **$5,000**."
+            "text": "A supplier may require each purchase order to total at least **$5,000**."
+          },
+          {
+            "type": "p",
+            "text": "MOV usually applies to each PO on its own, not to several POs added together. This can be a problem if you raise separate POs for different delivery locations but want them to count towards the same MOV. That normally has to be arranged manually with your account manager, and a supplier's system may reject a PO below the MOV."
           }
         ],
         "heading": "Example",
@@ -380,11 +378,15 @@
           },
           {
             "type": "p",
-            "text": "The projected ending inventory from one period then becomes the starting inventory for the next period."
+            "text": "The projected ending inventory from one period then becomes the starting inventory for the next period. That ending figure is the projected stock, also called the projected balance."
           },
           {
             "type": "p",
-            "text": "Each location is planned on its own. Stock at one warehouse doesn't cover demand at another unless it's moved there with a transfer order."
+            "text": "Large ERP systems usually calculate in daily buckets, while simpler planning tools often use weekly or monthly buckets."
+          },
+          {
+            "type": "p",
+            "text": "Each location is planned on its own. Unless a source-destination relationship is set up in MRP, stock at one warehouse doesn't cover demand at another."
           },
           {
             "type": "p",
@@ -430,7 +432,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "MRP calculations are typically performed across repeating time buckets."
+            "text": "MRP calculates across repeating time buckets."
           },
           {
             "type": "p",
@@ -466,7 +468,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "MRP commonly generates:"
+            "text": "MRP generates:"
           },
           {
             "type": "ul",
@@ -474,7 +476,10 @@
               "Planned supply recommendations",
               "Inventory projections",
               "Shortage visibility",
-              "Time-phased supply and demand views"
+              "Time-phased supply views",
+              "Inputs to capacity planning",
+              "Inputs to cash planning",
+              "Inputs to working capital planning"
             ]
           }
         ],
@@ -534,11 +539,11 @@
         "blocks": [
           {
             "type": "p",
-            "text": "MRP outputs are only as reliable as the underlying data."
+            "text": "MRP outputs are only as good as the input data, so it's worth making sure that data is as accurate as possible."
           },
           {
             "type": "p",
-            "text": "Incorrect inventory balances, lead times, supply dates, forecasts, or transaction timing can significantly affect planning results."
+            "text": "Wrong stock balances, lead times, supply dates, forecasts or transaction timing flow straight through into wrong order recommendations."
           }
         ],
         "heading": "Important Operational Consideration",
@@ -698,6 +703,10 @@
           {
             "type": "p",
             "text": "Terms like these are often based on Incoterms, the international rules that set out who pays for and manages each step of shipping. To learn more, see the [ICC Incoterms rules](https://iccwbo.org/business-solutions/incoterms-rules/)."
+          },
+          {
+            "type": "p",
+            "text": "The date on the PO isn't always the date stock arrives in your warehouse. For example, on FOB terms with 1 month to manufacture and get to port, then 1 month on the vessel, the PO date is the FOB date at the port, but the MRP lead time to your warehouse is 2 months. Plan on the date the stock is due into your warehouse, not the PO date."
           }
         ],
         "heading": "Supplier Agreement Differences",
@@ -827,13 +836,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "In supplier relationships, your Purchase Order (PO) is often entered into the supplier's system as a:"
-          },
-          {
-            "type": "ul",
-            "items": [
-              "Sales Order (SO)"
-            ]
+            "text": "Your purchase order (PO) is usually entered into the supplier's system as a sales order (SO)."
           },
           {
             "type": "p",
@@ -909,6 +912,10 @@
           {
             "type": "p",
             "text": "Your unit of measure and your supplier's may not match. You might count stock in single units while your supplier sells by the carton or the box. An order for \"100\" could mean 100 units or 100 cartons, so always say which unit you mean on the purchase order. Then check that the supplier's confirmation uses the same one."
+          },
+          {
+            "type": "p",
+            "text": "Your own units may not match inside the business either. You might buy and store a liquid in drums but use it in manufacturing in fluid ounces, or buy and store steel in set lengths but use it in linear metres. The planning system needs a conversion between each unit so stock, usage and orders all line up."
           }
         ],
         "heading": "Why It Matters",
@@ -1064,13 +1071,13 @@
     ]
   },
   "customer-service-level": {
-    "definition": "Customer service level refers to the ability to satisfy customer demand within the expected timeframe and availability requirements.",
+    "definition": "Customer service level measures whether stock is available when the customer wants it, against the service standard you've set. If the standard is a 2-week lead time, the question is whether the stock was there within 2 weeks. If the standard is supply from stock, the question is whether it was on hand the day the customer ordered. It is measured as the share of orders, lines or units supplied in full and on time against that standard.",
     "sections": [
       {
         "blocks": [
           {
             "type": "p",
-            "text": "Customer service level refers to the ability to satisfy customer demand within the expected timeframe and availability requirements."
+            "text": "Customer service level measures whether stock is available when the customer wants it, against the service standard you've set. If the standard is a 2-week lead time, the question is whether the stock was there within 2 weeks. If the standard is supply from stock, the question is whether it was on hand the day the customer ordered. It is measured as the share of orders, lines or units supplied in full and on time against that standard."
           }
         ]
       },
@@ -1115,7 +1122,7 @@
           },
           {
             "type": "p",
-            "text": "Your customer service level is a business decision. Customer expectations are worth knowing, but the target should reflect the service your company chooses to offer, weighed against the extra working capital it requires."
+            "text": "Customer expectations set the standard: supply from stock today, or within an agreed lead time. The customer service level target is separate. It is how many times out of 100 you choose to meet that standard, for example 95 out of 100. Setting that target is a business decision, weighed against the extra working capital each step up requires."
           }
         ],
         "heading": "Customer Expectations Can Differ",
@@ -1152,7 +1159,7 @@
           },
           {
             "type": "p",
-            "text": "Achieving very high availability levels may require disproportionately larger increases in safety stock and working capital."
+            "text": "Achieving very high availability levels will probably require disproportionately larger increases in safety stock and working capital. A 100% customer service level would need infinite inventory, because you can't plan for every outlier."
           }
         ],
         "heading": "Example",
@@ -1182,7 +1189,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "Appropriate customer service levels often depend heavily on the industry and market environment."
+            "text": "The industry and market shape what customers expect: supply from stock, or within an agreed lead time."
           },
           {
             "type": "p",
@@ -1191,14 +1198,14 @@
           {
             "type": "ul",
             "items": [
-              "FMCG (Fast-Moving Consumer Goods, called CPG in the US) environments often require very high service levels due to strong customer availability expectations",
-              "Industrial or specialized products may tolerate longer replenishment times",
-              "Spare parts businesses may prioritize availability for critical items only"
+              "FMCG (Fast-Moving Consumer Goods, called CPG in the US) customers expect products on the shelf, supplied from stock",
+              "Industrial or specialised product customers often accept an agreed replenishment lead time",
+              "Spare parts customers expect critical items from stock, while non-critical items can be supplied to a lead time"
             ]
           },
           {
             "type": "p",
-            "text": "Customer expectations, competitive pressure, and product criticality all influence appropriate inventory and service level strategies."
+            "text": "Once the expectation is set, the customer service level target is how many times out of 100 you choose to meet it."
           }
         ],
         "heading": "Industry and Market Expectations",
@@ -1231,17 +1238,17 @@
     ]
   },
   "inventory-turns": {
-    "definition": "Stockturns: how many times a year your average stock is used up and replaced to meet customer demand. For example, if your cost of goods sold for the year is $600,000 and you hold $100,000 of stock on average, that's 6 turns a year.",
+    "definition": "Stockturns show how much working capital is needed to support your sales.",
     "sections": [
       {
         "blocks": [
           {
             "type": "p",
-            "text": "Stockturns: how many times a year your average stock is used up and replaced to meet customer demand. For example, if your cost of goods sold for the year is $600,000 and you hold $100,000 of stock on average, that's 6 turns a year."
+            "text": "Stockturns show how much working capital is needed to support your sales. More turns means less cash tied up in stock for the same sales. Fewer turns means more cash tied up in stock."
           },
           {
             "type": "p",
-            "text": "Stockturns show how much working capital is tied up in stock to meet customer demand at the service level you've chosen. More turns means less cash tied up in stock. Fewer turns means more cash tied up in stock."
+            "text": "Stockturns measure how many times a year your average stock is used up and replaced to meet customer demand, at the service level you've chosen. For example, if your cost of goods sold for the year is $600,000 and you hold $100,000 of stock on average, that's 6 turns a year."
           }
         ],
         "heading": "Inventory Turns / Stockturns",
@@ -1269,7 +1276,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "Faster inventory turns often reduce:"
+            "text": "Faster inventory turns reduce:"
           },
           {
             "type": "ul",
