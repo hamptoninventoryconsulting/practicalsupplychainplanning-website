@@ -35,13 +35,15 @@
  * goods actually arrive. A short shipment is private until that day.
  * The planned due day is the first day of the week that is the base lead
  * time after the release week: a week-1 release with a 5-week lead time
- * is due on day 36 (week 6). Extra delay adds whole weeks after that and
- * is recognised only when the planned day passes with no receipt. The
- * planner then keeps the normal quantity and counts the order on the
- * revised due date. Nothing arrives before release + base lead time.
- * Each day, demand is taken from the opening stock, then a receipt due
- * that day is added. One nominal lot is ordered, unless that lot would
- * not lift the projected week above zero — then two lots.
+ * is due on day 36 (week 6). Extra delay adds whole weeks after that.
+ * A miss only shows that the expected day passed with no receipt. The
+ * plan then expects the normal quantity one week later, and slips that
+ * expectation again if it misses. It does not learn the private arrival
+ * day. Nothing arrives before release + base lead time. Each day, demand
+ * is taken from the opening stock, then a receipt due that day is added.
+ * The release is as many normal lots as the forecast needs to finish at
+ * or above safety stock. Another lot can be due the same week as one
+ * already released when the forecast still finishes below safety stock.
  * A day below zero before the receipt marks its week out of stock.
  * Touching zero does not. The chart draws each day's post-demand stock,
  * and the post-receipt stock as well when a receipt lands.
@@ -787,9 +789,78 @@
     };
   }
 
+  // Weekly plan from on-hand, the forecast, and outstanding orders at
+  // their known due dates. Private arrival days and short quantities are
+  // not inputs. A shortfall inside the lead time is carried forward. At
+  // the first week that is at least the lead time out, and again in any
+  // later week that would still finish below safety stock, the plan adds
+  // enough normal lots to reach safety stock. An outstanding order is
+  // counted on its known due week and does not push the next lot later.
+  function planReview(spec) {
+    var weekIndex = spec.weekIndex;
+    var base = spec.base;
+    var safetyStock = spec.safetyStock;
+    var nominalLot = spec.nominalLot;
+    var leadTimeWeeks = spec.leadTimeWeeks;
+    var outstanding = spec.outstanding || [];
+    var horizon = spec.horizon || HORIZON;
+    var suggestions = [];
+    var projection = [];
+    var start = spec.onHand;
+    var earliest = weekIndex + leadTimeWeeks;
+    var w;
+    for (w = weekIndex; w < horizon; w += 1) {
+      var forecast = base[w];
+      var incoming = 0;
+      var i;
+      for (i = 0; i < outstanding.length; i += 1) {
+        var knownWeek = Math.floor((outstanding[i].knownDueDay - 1) / DAYS_PER_WEEK);
+        if (knownWeek === w) {
+          incoming += outstanding[i].nominalQuantity;
+        }
+      }
+      for (i = 0; i < suggestions.length; i += 1) {
+        if (suggestions[i].dueWeekIndex === w) {
+          incoming += suggestions[i].nominalQuantity;
+        }
+      }
+      var end = start + incoming - forecast;
+      var added = 0;
+      var lots = 0;
+      if (end < safetyStock - 1e-9 && w >= earliest) {
+        var gap = safetyStock - end;
+        lots = Math.ceil((gap - 1e-9) / nominalLot);
+        if (lots < 1) {
+          lots = 1;
+        }
+        added = lots * nominalLot;
+        suggestions.push({
+          dueWeekIndex: w,
+          releaseWeekIndex: w - leadTimeWeeks,
+          lots: lots,
+          nominalQuantity: added,
+        });
+        end += added;
+      }
+      projection.push({
+        week: w + 1,
+        forecast: forecast,
+        knownIncoming: incoming,
+        addedNominal: added,
+        lots: lots,
+        end: end,
+      });
+      start = end;
+    }
+    return { suggestions: suggestions, projection: projection };
+  }
+
   // Weekly plan, then seven execution days. Planning reads nominal
   // quantities and known due dates only. Private delay and private
   // quantity are drawn at release and are not planning inputs.
+  // Overdue assumption: a missed expected day moves the known due date
+  // forward by one week. That uses only the miss and the weekly review.
+  // The private arrival day is not copied onto the plan.
   function simulateReplenishment(gen, controls, base, demand, nominalLot, safetyStock, startingSoh) {
     var orders = [];
     var reviews = [];
@@ -867,67 +938,27 @@
     }
 
     function weeklyReview(weekIndex, onHand) {
-      var suggestions = [];
-      var projection = [];
-      var start = onHand;
-      var w;
-      for (w = weekIndex; w < HORIZON; w += 1) {
-        var forecast = base[w];
-        var incoming = 0;
-        var i;
-        for (i = 0; i < orders.length; i += 1) {
-          var order = orders[i];
-          if (!order.hasArrived && dueWeekIndex(order.knownDueDay) === w) {
-            incoming += order.nominalQuantity;
-          }
+      var openOrders = [];
+      var i;
+      for (i = 0; i < orders.length; i += 1) {
+        if (!orders[i].hasArrived) {
+          openOrders.push({
+            nominalQuantity: orders[i].nominalQuantity,
+            knownDueDay: orders[i].knownDueDay,
+          });
         }
-        for (i = 0; i < suggestions.length; i += 1) {
-          if (suggestions[i].dueWeekIndex === w) {
-            incoming += suggestions[i].nominalQuantity;
-          }
-        }
-        var end = start + incoming - forecast;
-        var added = 0;
-        if (end < safetyStock - 1e-9) {
-          var earliest = weekIndex + controls.leadTimeWeeks;
-          var last = -1;
-          for (i = 0; i < orders.length; i += 1) {
-            if (!orders[i].hasArrived) {
-              var knownWeek = dueWeekIndex(orders[i].knownDueDay);
-              if (knownWeek > last) {
-                last = knownWeek;
-              }
-            }
-          }
-          for (i = 0; i < suggestions.length; i += 1) {
-            if (suggestions[i].dueWeekIndex > last) {
-              last = suggestions[i].dueWeekIndex;
-            }
-          }
-          if (last >= 0 && last + 1 > earliest) {
-            earliest = last + 1;
-          }
-          if (w >= earliest) {
-            var lots = end + nominalLot <= 1e-9 ? 2 : 1;
-            added = lots * nominalLot;
-            suggestions.push({
-              dueWeekIndex: w,
-              releaseWeekIndex: w - controls.leadTimeWeeks,
-              lots: lots,
-              nominalQuantity: added,
-            });
-            end += added;
-          }
-        }
-        projection.push({
-          week: w + 1,
-          forecast: forecast,
-          knownIncoming: incoming,
-          addedNominal: added,
-          end: end,
-        });
-        start = end;
       }
+      var plan = planReview({
+        weekIndex: weekIndex,
+        onHand: onHand,
+        base: base,
+        safetyStock: safetyStock,
+        nominalLot: nominalLot,
+        leadTimeWeeks: controls.leadTimeWeeks,
+        outstanding: openOrders,
+      });
+      var suggestions = plan.suggestions;
+      var projection = plan.projection;
       var releasedNow = [];
       var futurePlans = [];
       for (var s = 0; s < suggestions.length; s += 1) {
@@ -968,20 +999,6 @@
         var t = weekIndex * DAYS_PER_WEEK + dow;
         var dayNumber = t + 1;
         var n;
-        for (n = 0; n < orders.length; n += 1) {
-          var pending = orders[n];
-          if (
-            !pending.hasArrived &&
-            !pending.delayRecognized &&
-            pending.plannedDueDay === dayNumber &&
-            pending.actualArrivalDay !== pending.plannedDueDay
-          ) {
-            pending.delayRecognized = true;
-            pending.delayRecognizedDay = dayNumber;
-            pending.knownDueDay = pending.actualArrivalDay;
-            pending.knownDueWeek = dueWeekIndex(pending.actualArrivalDay) + 1;
-          }
-        }
         var supplyUnits = 0;
         for (n = 0; n < orders.length; n += 1) {
           var arriving = orders[n];
@@ -990,6 +1007,17 @@
             arriving.hasArrived = true;
             arriving.receivedDay = dayNumber;
             arriving.receivedQuantity = arriving.privateQuantity;
+          }
+        }
+        for (n = 0; n < orders.length; n += 1) {
+          var missed = orders[n];
+          if (!missed.hasArrived && missed.knownDueDay === dayNumber) {
+            if (!missed.delayRecognized) {
+              missed.delayRecognized = true;
+              missed.delayRecognizedDay = dayNumber;
+            }
+            missed.knownDueDay = dayNumber + DAYS_PER_WEEK;
+            missed.knownDueWeek = dueWeekIndex(missed.knownDueDay) + 1;
           }
         }
         var existing7 = supplyUnits * DAYS_PER_WEEK;
@@ -1531,6 +1559,7 @@
     nominalLotQty: nominalLotQty,
     formulaSafetyStock: formulaSafetyStock,
     leadTimeExtraMax: leadTimeExtraMax,
+    planReview: planReview,
     allowedLotReceipts: allowedLotReceipts,
     sampleShockWeeks: sampleShockWeeks,
     plottedSohPoints: plottedSohPoints,

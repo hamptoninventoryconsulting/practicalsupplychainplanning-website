@@ -7,7 +7,7 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/own-data/",
   "scripts": [
-    "/assets/own-data-engine.js?v=12",
+    "/assets/own-data-engine.js?v=13",
     "/assets/sim-results-form.js?v=7",
     "/assets/own-data-simulator.js?v=9"
   ]
@@ -233,12 +233,18 @@
             already released, counted on the date they are still expected. A
             new receipt cannot arrive until the full lead time has passed.
             An order released in week 1 with a 5-week lead time is due on the
-            first day of week 6, after that day's demand. Until the goods
+            first day of week 6, after that day's demand.             Until the goods
             arrive the plan keeps the normal lot quantity. A miss is
-            recognised when that day passes with no receipt, and a short
-            shipment is recognised only when the goods arrive. One lot is
-            ordered, or two if that lot would not lift the projected week
-            above zero. Lead time is any whole number of weeks from 1 to 26.
+            recognised when that day passes with no receipt. The plan then
+            expects that same quantity one week later, and moves the
+            expectation forward again if the goods still have not arrived.
+            It does not learn the actual arrival date in advance. A short
+            shipment is recognised only when the goods arrive. The release is
+            as many normal lots as the forecast needs to finish the week at
+            or above safety stock. An order already on the way is counted on
+            its expected date, and another lot can be due that same week if
+            the forecast still finishes below safety stock. Lead time is any
+            whole number of weeks from 1 to 26.
             Lead-time variability adds whole extra weeks after that lead time
             and cannot bring the receipt forward.
           </p>

@@ -134,9 +134,12 @@ assert.ok(cr1.metrics.averageWc >= 0);
 
 const twoLots = run({ baseDemand: flat(100), lotQty: 1, ssQty: 0 });
 assert.ok(
-  twoLots.releases.some((release) => release.lots === 2),
-  "two lots when one lot would not lift the projected finish above zero"
+  twoLots.releases.some((release) => release.lots > 1),
+  "more than one lot when one lot leaves the week below safety stock"
 );
+twoLots.releases.forEach((release) => {
+  assert.strictEqual(release.nominalQuantity, release.lots * release.nominalLot);
+});
 
 function assertLeadTimeBoundary(result, leadTime) {
   assert.ok(result.releases.length > 0, "LT " + leadTime + " still releases");
@@ -262,17 +265,128 @@ knownLot.reviews.forEach((review) => {
     assert.strictEqual(seen.delayRecognized, false);
     assert.strictEqual(seen.knownDueWeek, 12);
   }
-  if (review.week > shortLate.plannedDueWeek && review.week <= shortLate.actualArrivalWeek) {
+  if (review.week === 13) {
     assert.strictEqual(seen.delayRecognized, true);
+    assert.strictEqual(seen.knownDueWeek, 13, "a miss slips one week, not to the private arrival");
+    assert.notStrictEqual(seen.knownDueDay, shortLate.actualArrivalDay);
+  }
+  if (review.week === 14) {
+    assert.strictEqual(seen.knownDueWeek, 14);
+  }
+  if (review.week === 15) {
     assert.strictEqual(seen.knownDueWeek, 15);
     assert.strictEqual(seen.plannerQuantity, 400);
   }
 });
+const slippedReview = knownLot.reviews[12];
+assert.strictEqual(
+  slippedReview.projection.find((row) => row.week === 15).knownIncoming,
+  0,
+  "week 13 does not count the private week-15 arrival"
+);
 const arrivalReview = knownLot.reviews[shortLate.actualArrivalWeek - 1];
 const arrivalRow = arrivalReview.projection.find((row) => row.week === shortLate.actualArrivalWeek);
 assert.strictEqual(arrivalRow.knownIncoming, 400, "the plan still expects the full lot on the arrival review");
 assert.strictEqual(knownLot.weeks[shortLate.plannedDueWeek - 1].plannedSupply, 0);
 assert.strictEqual(knownLot.weeks[shortLate.actualArrivalWeek - 1].plannedSupply, 392);
+
+const coveredLate = run(
+  {
+    lotMode: "weeks",
+    lotWeeks: 10,
+    ssQty: 0,
+    leadTimeWeeks: 5,
+    demandVariability: "off",
+    leadTimeVariability: "large",
+    deliveryVariability: "large",
+    shock: false,
+  },
+  4
+);
+const orderFour = coveredLate.releases.find((release) => release.releaseWeek === 33);
+assert.ok(orderFour);
+assert.strictEqual(orderFour.plannedDueDay, 260);
+assert.strictEqual(orderFour.actualArrivalDay, 281);
+assert.strictEqual(orderFour.privateQuantity, 320);
+assert.strictEqual(orderFour.nominalQuantity, 400);
+assert.strictEqual(coveredLate.reviews[37].outstanding.find((order) => order.id === orderFour.id).knownDueWeek, 38);
+assert.strictEqual(coveredLate.reviews[39].outstanding.find((order) => order.id === orderFour.id).knownDueWeek, 40);
+assert.strictEqual(
+  coveredLate.reviews[39].projection.find((row) => row.week === 41).knownIncoming,
+  0
+);
+assert.strictEqual(coveredLate.weeks[40].plannedSupply, 320);
+
+const horizonBase = flat(40);
+function hiddenPlan(actualArrivalDay, privateQuantity) {
+  return engine.planReview({
+    weekIndex: 39,
+    onHand: -120,
+    base: horizonBase,
+    safetyStock: 0,
+    nominalLot: 400,
+    leadTimeWeeks: 5,
+    outstanding: [
+      {
+        nominalQuantity: 400,
+        knownDueDay: 274,
+        actualArrivalDay: actualArrivalDay,
+        privateQuantity: privateQuantity,
+      },
+    ],
+  });
+}
+assert.deepStrictEqual(hiddenPlan(281, 320), hiddenPlan(999, 10));
+const sameWeekRecovery = engine.planReview({
+  weekIndex: 3,
+  onHand: -80,
+  base: horizonBase,
+  safetyStock: 0,
+  nominalLot: 40,
+  leadTimeWeeks: 1,
+  outstanding: [
+    { nominalQuantity: 40, knownDueDay: 29 },
+    { nominalQuantity: 40, knownDueDay: 29 },
+  ],
+});
+const weekFive = sameWeekRecovery.projection.find((row) => row.week === 5);
+assert.ok(weekFive.addedNominal >= 40, "another lot is due in the pipeline week");
+assert.strictEqual(weekFive.end >= 0, true);
+assert.ok(sameWeekRecovery.suggestions.some((item) => item.dueWeekIndex === 4));
+const onTheLine = engine.planReview({
+  weekIndex: 0,
+  onHand: 60,
+  base: horizonBase,
+  safetyStock: 20,
+  nominalLot: 40,
+  leadTimeWeeks: 5,
+  outstanding: [],
+});
+assert.strictEqual(onTheLine.projection[0].addedNominal, 0);
+assert.strictEqual(onTheLine.projection[0].end, 20);
+const oneLotShort = engine.planReview({
+  weekIndex: 0,
+  onHand: 15,
+  base: horizonBase,
+  safetyStock: 20,
+  nominalLot: 40,
+  leadTimeWeeks: 0,
+  outstanding: [],
+});
+assert.strictEqual(oneLotShort.projection[0].lots, 2);
+assert.strictEqual(oneLotShort.projection[0].end, 55);
+const sizedBacklog = engine.planReview({
+  weekIndex: 0,
+  onHand: -200,
+  base: horizonBase,
+  safetyStock: 20,
+  nominalLot: 40,
+  leadTimeWeeks: 0,
+  outstanding: [],
+});
+assert.ok(sizedBacklog.projection[0].lots > 2);
+assert.ok(sizedBacklog.projection[0].end >= 20);
+assert.strictEqual(sizedBacklog.projection[0].addedNominal % 40, 0);
 
 const sameWeek = run({
   baseDemand: flat(40),
@@ -899,7 +1013,7 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
   "week",
 ].sort());
 
-assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=14"/);
+assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=15"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
 assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=15"/);
 
@@ -1112,6 +1226,9 @@ assert.match(replenishmentHelp, /full base lead time has passed/);
 assert.match(replenishmentHelp, /first day of week 6/);
 assert.match(replenishmentHelp, /normal lot quantity/);
 assert.match(replenishmentHelp, /short shipment is recognised only when the goods arrive/);
+assert.match(replenishmentHelp, /expects that same quantity one week later/);
+assert.match(replenishmentHelp, /does not learn the actual arrival date in advance/);
+assert.match(replenishmentHelp, /at or above safety stock/);
 assert.match(page, /any of its days is below zero/);
 assert.doesNotMatch(page, /Triple|tripled|3×/);
 const teachingAt = page.indexOf("Teaching tool only");
