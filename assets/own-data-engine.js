@@ -470,7 +470,7 @@
         if (dailyPre == null || dailyPre === "") {
           dailyPre = rows[d].endingSoh;
         }
-        if (dailyPre < 0) {
+        if (dailyPre < 0 || Number(rows[d].endingSoh) < 0) {
           bad[rows[d].week] = true;
         }
       }
@@ -822,7 +822,7 @@
         var end7 = before7 + existing7 - sim7;
         var before = before7 / DAYS_PER_WEEK;
         var end = end7 / DAYS_PER_WEEK;
-        var pre = before < end ? before : end;
+        var pre = supplyUnits > 0 ? before : end;
         var supply = supplyUnits;
         if (dow === 0) {
           weeks.push({

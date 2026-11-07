@@ -339,6 +339,62 @@ const noisyShort = run(
   4
 );
 assert.ok(noisyShort.metrics.oosWeeks > 0, "variability can still stock out");
+const morningCase = run(
+  {
+    lotQty: 1,
+    ssQty: 0,
+    leadTimeWeeks: 2,
+    demandVariability: "large",
+    leadTimeVariability: "off",
+    deliveryVariability: "off",
+    shock: false,
+  },
+  1
+);
+const morningDay = morningCase.days[154];
+assert.strictEqual(morningDay.day, 155);
+assert.strictEqual(morningDay.beginningSoh, 11);
+assert.strictEqual(morningDay.plannedSupply, 4);
+assert.strictEqual(morningDay.simulatedDemand, 11);
+assert.strictEqual(morningDay.endingSoh, 4);
+assert.strictEqual(morningDay.preReceiptSoh, 11);
+const describedPoints = engine.plottedSohPoints(morningCase.days);
+let describedSum = 0;
+describedPoints.forEach((point) => {
+  describedSum += point > 0 ? point : 0;
+});
+assert.ok(Math.abs(morningCase.metrics.avgSohTurns - describedSum / describedPoints.length) < 1e-9);
+assert.strictEqual(Number(morningCase.metrics.avgSohTurns.toFixed(3)), 13.957);
+assert.strictEqual(Number(morningCase.metrics.averageWc.toFixed(2)), 976.98);
+assert.strictEqual(Number(morningCase.metrics.inventoryTurns.toFixed(2)), 168.09);
+assert.ok(Math.abs(morningCase.metrics.averageWc - morningCase.metrics.avgSohTurns * 70) < 1e-6);
+assert.ok(Math.abs(morningCase.metrics.inventoryTurns - morningCase.metrics.annualDemand / morningCase.metrics.avgSohTurns) < 1e-9);
+const collapsed = [];
+morningCase.days.forEach((day) => {
+  collapsed.push(Math.min(day.beginningSoh, day.endingSoh));
+  if (day.plannedSupply > 0) {
+    collapsed.push(day.endingSoh);
+  }
+});
+let collapsedSum = 0;
+collapsed.forEach((point) => {
+  collapsedSum += point > 0 ? point : 0;
+});
+assert.ok(Math.abs(collapsedSum / collapsed.length - 13.938) < 0.001);
+assert.ok(morningCase.metrics.avgSohTurns > collapsedSum / collapsed.length);
+const uncoveredClose = [];
+for (let i = 0; i < 53; i += 1) {
+  uncoveredClose.push({
+    week: 1,
+    demandSevenths: 0,
+    beginningSoh: 0,
+    preReceiptSoh: 0,
+    endingSoh: i === 0 ? -5 : 0,
+    plannedSupply: i === 0 ? 1 : 0,
+    simulatedDemand: 0,
+  });
+}
+assert.strictEqual(engine.computeMetrics(uncoveredClose).oosWeeks, 1);
 noisyShort.releases.forEach((release) => {
   assert.ok(release.actualArrivalDay >= release.releaseDay + 14);
   noisyShort.reviews.forEach((review) => {
@@ -923,8 +979,8 @@ function ordersFromBaseForecast(result) {
   result.days.forEach((day) => {
     const close = day.beginningSoh - day.simulatedDemand + day.plannedSupply;
     assert.ok(Math.abs(day.endingSoh - close) < 1e-9);
-    const low = Math.min(day.beginningSoh, day.endingSoh);
-    assert.ok(Math.abs(day.preReceiptSoh - low) < 1e-9);
+    const observed = day.plannedSupply > 0 ? day.beginningSoh : day.endingSoh;
+    assert.ok(Math.abs(day.preReceiptSoh - observed) < 1e-9);
   });
   result.releases.forEach((release) => {
     assert.strictEqual(
@@ -1151,7 +1207,7 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
   "week",
 ].sort());
 
-assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=17"/);
+assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=18"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
 assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=15"/);
 
@@ -1369,6 +1425,8 @@ assert.match(replenishmentHelp, /does not learn the actual arrival date in advan
 assert.match(replenishmentHelp, /at or above safety stock/);
 assert.match(replenishmentHelp, /Starting stock is that full normal/);
 assert.match(replenishmentHelp, /week-1 forecast is not added/);
+assert.match(replenishmentHelp, /morning stock on a receipt day/);
+assert.match(replenishmentHelp, /not the lowest close after a receipt/);
 
 [0, 40, 160, 300].forEach((safetyStock) => {
   ["fixed", "weeks"].forEach((lotMode) => {

@@ -601,9 +601,9 @@
     };
   }
 
-  // Points drawn for one week. No receipt: the pre-receipt stock only.
-  // A receipt: that point, then the close after the receipt. A missing
-  // pre-receipt falls back to the close so a one-point week still averages.
+  // Points drawn for one day or week. No receipt: the stock after demand.
+  // A receipt: the morning stock just before the receipt, then the close
+  // after that demand. A missing pre-receipt falls back to the close.
   function plottedSohPoints(weeks) {
     if (!weeks || !weeks.length) {
       return [];
@@ -666,7 +666,7 @@
     for (var d = 0; d < series.length; d += 1) {
       var weekNo = series[d].week;
       seen[weekNo] = true;
-      if (seriesPreReceipt(series[d]) < 0) {
+      if (seriesPreReceipt(series[d]) < 0 || Number(series[d].endingSoh) < 0) {
         bad[weekNo] = true;
       }
     }
@@ -1028,7 +1028,7 @@
         var end7 = before7 + existing7 - sim7;
         var before = before7 / DAYS_PER_WEEK;
         var end = end7 / DAYS_PER_WEEK;
-        var pre = before < end ? before : end;
+        var pre = supplyUnits > 0 ? before : end;
         var supply = supplyUnits;
         if (dow === 0) {
           weeks.push({

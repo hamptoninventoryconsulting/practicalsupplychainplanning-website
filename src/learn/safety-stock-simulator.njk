@@ -7,7 +7,7 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/",
   "scripts": [
-    "/assets/safety-stock-engine.js?v=17",
+    "/assets/safety-stock-engine.js?v=18",
     "/assets/sim-results-form.js?v=7",
     "/assets/safety-stock-simulator.js?v=15"
   ]
@@ -395,15 +395,17 @@
           <p class="sim-note">
             Inventory turns, average stock, and working capital use the daily
             points drawn on the chart. A day with no receipt contributes the
-            stock after demand. A receipt day contributes that point and the
-            stock after the receipt. A plotted point below zero counts as zero
+            stock after demand. A receipt day contributes the stock just
+            before the receipt and the stock after that day's demand. A
+            plotted point below zero counts as zero
             in that average, for the chart label, for turns, and for working
             capital. A stockout does not improve turns or reduce working
             capital. If the average is zero, turns are not applicable. Working
             capital is that average times the $70 cost. The weekly table is
             still one row per week. Its pre-receipt column is the lowest
-            stock before a receipt due that day, and after demand when no
-            receipt is due. Gross profit is simulated demand times
+            stock before a receipt is added: the morning stock on a receipt
+            day, and the stock after demand on every other day. It is not
+            the lowest close after a receipt. Gross profit is simulated demand times
             $30 and does not change because of backorders.
           </p>
           <p class="sim-help">

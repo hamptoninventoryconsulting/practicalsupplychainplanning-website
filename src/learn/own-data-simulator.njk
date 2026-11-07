@@ -7,7 +7,7 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/own-data/",
   "scripts": [
-    "/assets/own-data-engine.js?v=14",
+    "/assets/own-data-engine.js?v=15",
     "/assets/sim-results-form.js?v=7",
     "/assets/own-data-simulator.js?v=9"
   ]
@@ -364,18 +364,19 @@
                 <p class="sim-meta">
                   One year, one point per day: the stock after that day's demand.
                   A receipt day also shows the stock just before the receipt.
-                  A receipt day also draws the stock after the receipt. Monte
-                  Carlo does not draw this chart.
+                  Monte Carlo does not draw this chart.
                 </p>
               </figcaption>
             </figure>
             <p class="sim-help">
               SOH means stock on hand, the units in stock. The table is one
               row per week. Beginning SOH is the stock at the start of the
-              week. Pre-receipt SOH is the lowest stock after a day's demand
-              in that week. Ending SOH is the stock at the end of the week.
-              A week is out of stock if any day is below zero before the
-              receipt. Touching zero is not a stockout.
+              week. Pre-receipt SOH is the lowest stock before a receipt is
+              added: the morning stock on a receipt day, and the stock after
+              demand on every other day. It is not the lowest close after a
+              receipt. Ending SOH is the stock at the end of the week. A week
+              is out of stock if stock is below zero before a receipt due that
+              morning, or after demand. Touching zero is not a stockout.
             </p>
             <details class="sim-details">
               <summary>Weekly table</summary>
