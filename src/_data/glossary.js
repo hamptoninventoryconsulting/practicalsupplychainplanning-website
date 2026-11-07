@@ -132,7 +132,7 @@ const GROUPS = [
       },
       {
         id: "forecast-reliability",
-        term: "Forecast reliability",
+        term: "Sales history variability",
         usedIn: ["Demand Planner"],
         seeAlso: ["forecast", "safety-stock", "customer-service-level"],
       },

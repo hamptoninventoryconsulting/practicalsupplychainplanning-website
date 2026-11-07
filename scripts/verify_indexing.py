@@ -1351,16 +1351,13 @@ def verify_glossary(errors: list[str]) -> None:
         fail("/learn/glossary/ is missing the general forecast horizon definition", errors)
     if "Intermittent demand has many weeks with no sales." not in text:
         fail("/learn/glossary/ is missing the general intermittent demand definition", errors)
-    reliability = "Forecast reliability is influenced by the variability of historical demand."
-    forecast_block = re.search(
-        r'<details class="sim-details" id="forecast">.*?</details>',
-        text,
-        re.S,
-    )
-    if forecast_block and reliability in forecast_block.group(0):
-        fail("/learn/glossary/ forecast entry repeats the forecast reliability text", errors)
-    if reliability not in text:
-        fail("/learn/glossary/ is missing the forecast reliability entry", errors)
+    if 'id="forecast-reliability"' not in text:
+        fail("/learn/glossary/ must keep the forecast-reliability anchor", errors)
+    if "Sales history variability" not in text:
+        fail("/learn/glossary/ is missing the sales history variability term", errors)
+    old_reliability = "Forecast reliability is influenced by the variability of historical demand."
+    if old_reliability in text:
+        fail("/learn/glossary/ still uses the old forecast reliability wording", errors)
     for phrase in (
         "26, 52, and 78 weeks",
         "how many future months will be generated",
