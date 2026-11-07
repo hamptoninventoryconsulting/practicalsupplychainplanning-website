@@ -39,14 +39,17 @@
  * A miss only shows that the expected day passed with no receipt. The
  * plan then expects the normal quantity one week later, and slips that
  * expectation again if it misses. It does not learn the private arrival
- * day. Nothing arrives before release + base lead time. Each day, demand
- * is taken from the opening stock, then a receipt due that day is added.
+ * day. Nothing arrives before release + base lead time. A receipt is
+ * posted at the start of its due day, before that day's demand, so it
+ * matches the weekly plan that counts the receipt for the whole due
+ * week. A day with no receipt still takes demand off the opening stock.
  * The release is as many normal lots as the forecast needs to finish at
  * or above safety stock. Another lot can be due the same week as one
  * already released when the forecast still finishes below safety stock.
- * A day below zero before the receipt marks its week out of stock.
- * Touching zero does not. The chart draws each day's post-demand stock,
- * and the post-receipt stock as well when a receipt lands.
+ * A day is out of stock when stock is below zero before a receipt due
+ * that morning, or after demand. Touching zero is not. The chart draws
+ * the stock after demand, and on a receipt day also the stock before
+ * the receipt.
  *
  * Demand shock (when on) doubles pre-shock normal demand on exactly three
  * weeks in 21–52, successive gaps at least 4, then rounds. The base demand
@@ -598,9 +601,9 @@
     };
   }
 
-  // Points drawn for one week. No receipt: the pre-receipt stock only.
-  // A receipt: that point, then the close after the receipt. A missing
-  // pre-receipt falls back to the close so a one-point week still averages.
+  // Points drawn for one day or week. No receipt: the stock after demand.
+  // A receipt: the morning stock just before the receipt, then the close
+  // after that demand. A missing pre-receipt falls back to the close.
   function plottedSohPoints(weeks) {
     if (!weeks || !weeks.length) {
       return [];
@@ -663,7 +666,7 @@
     for (var d = 0; d < series.length; d += 1) {
       var weekNo = series[d].week;
       seen[weekNo] = true;
-      if (seriesPreReceipt(series[d]) < 0) {
+      if (seriesPreReceipt(series[d]) < 0 || Number(series[d].endingSoh) < 0) {
         bad[weekNo] = true;
       }
     }
@@ -1021,10 +1024,11 @@
           }
         }
         var existing7 = supplyUnits * DAYS_PER_WEEK;
-        var pre7 = open7 - sim7;
-        var end7 = pre7 + existing7;
-        var pre = pre7 / DAYS_PER_WEEK;
+        var before7 = open7;
+        var end7 = before7 + existing7 - sim7;
+        var before = before7 / DAYS_PER_WEEK;
         var end = end7 / DAYS_PER_WEEK;
+        var pre = supplyUnits > 0 ? before : end;
         var supply = supplyUnits;
         if (dow === 0) {
           weeks.push({

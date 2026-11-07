@@ -147,6 +147,27 @@ assert.strictEqual(typedOpening.nominalLot, 400);
 assert.strictEqual(typedOpening.safetyStock, 300);
 assert.strictEqual(typedOpening.startingSoh, 80);
 assert.strictEqual(typedOpening.weeks[0].beginningSoh, 80);
+const morningOwn = own.runYear(
+  sku({
+    forecast: 40,
+    currentStock: 1,
+    lotMode: "fixed",
+    lotQty: 1,
+    ssMode: "fixed",
+    ssQty: 0,
+    leadTimeWeeks: 2,
+    demandVariability: "large",
+    leadTimeVariability: "off",
+  }),
+  globals({ deliveryVariability: "off" }),
+  1
+);
+const morningOwnDay = morningOwn.days[154];
+assert.strictEqual(morningOwnDay.beginningSoh, 11);
+assert.strictEqual(morningOwnDay.plannedSupply, 4);
+assert.strictEqual(morningOwnDay.endingSoh, 4);
+assert.strictEqual(morningOwnDay.preReceiptSoh, 11);
+assert.strictEqual(Number(morningOwn.metrics.avgSohTurns.toFixed(3)), 13.957);
 assert.ok(zeroStock.releases.length > 0, "zero stock still places an order");
 assert.strictEqual(zeroStock.metrics.unitsSold + zeroStock.metrics.unmetDemand, zeroStock.metrics.annualDemand);
 assert.strictEqual(zeroStock.metrics.annualGp, zeroStock.metrics.unitsSold * 30);
@@ -901,13 +922,15 @@ assert.match(page, /Inventory turns/);
 assert.match(page, /Average working capital/);
 assert.match(page, /Annual gross profit \(units sold\)/);
 assert.match(flat, /only units actually sold/);
-assert.match(flat, /Demand that opening stock/);
+assert.match(flat, /Demand that the morning stock/);
+assert.match(flat, /morning stock on a receipt day/);
+assert.match(flat, /not the lowest close after a receipt/);
 assert.match(flat, /could not fill is left out/);
 assert.match(flat, /SOH means stock on hand/);
 assert.match(flat, /In 8 out of 10 simulated years, the result falls inside it/);
 assert.match(flat, /Z comes from the service level you pick/);
 assert.match(flat, /square root of L spreads that weekly variation/);
-assert.match(page, /src="\/assets\/own-data-engine\.js\?v=13"/);
+assert.match(page, /src="\/assets\/own-data-engine\.js\?v=15"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
 assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=9"/);
 assert.ok(page.indexOf("own-data-engine.js") < page.indexOf("own-data-simulator.js"));

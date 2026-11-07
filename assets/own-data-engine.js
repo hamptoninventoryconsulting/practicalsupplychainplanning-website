@@ -470,7 +470,7 @@
         if (dailyPre == null || dailyPre === "") {
           dailyPre = rows[d].endingSoh;
         }
-        if (dailyPre < 0) {
+        if (dailyPre < 0 || Number(rows[d].endingSoh) < 0) {
           bad[rows[d].week] = true;
         }
       }
@@ -818,10 +818,11 @@
           }
         }
         var existing7 = supplyUnits * DAYS_PER_WEEK;
-        var pre7 = open7 - sim7;
-        var end7 = pre7 + existing7;
-        var pre = pre7 / DAYS_PER_WEEK;
+        var before7 = open7;
+        var end7 = before7 + existing7 - sim7;
+        var before = before7 / DAYS_PER_WEEK;
         var end = end7 / DAYS_PER_WEEK;
+        var pre = supplyUnits > 0 ? before : end;
         var supply = supplyUnits;
         if (dow === 0) {
           weeks.push({
@@ -847,7 +848,7 @@
           baseDemand: baseWeek / DAYS_PER_WEEK,
           simulatedDemand: sim7 / DAYS_PER_WEEK,
           demandSevenths: sim7,
-          openSevenths: open7,
+          openSevenths: open7 + existing7,
           beginningSoh: open7 / DAYS_PER_WEEK,
           plannedSupply: supply,
           preReceiptSoh: pre,
