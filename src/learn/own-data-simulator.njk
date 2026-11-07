@@ -7,7 +7,7 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/own-data/",
   "scripts": [
-    "/assets/own-data-engine.js?v=10",
+    "/assets/own-data-engine.js?v=11",
     "/assets/sim-results-form.js?v=7",
     "/assets/own-data-simulator.js?v=8"
   ]
@@ -285,10 +285,12 @@
           <p class="sim-help">
             Demand variability defaults to Medium. Off uses the weekly forecast
             as the demand. Small and Medium stay nearer the forecast. Large is
-            the extreme band, from none of the weekly forecast up to double it,
-            and the weeks still average to the forecast. These are the same
-            bands as the teaching simulator. The draw is for the whole week,
-            then that week is split evenly across its seven days. Delivery
+            the extreme band, from none of the weekly forecast up to double it.
+            The forecast is the expected mean. Across many runs those weeks
+            average to the forecast. One year's realized mean can sit above or
+            below it. These are the same bands as the teaching simulator. The
+            draw is for the whole week, then that week is split evenly across
+            its seven days. Delivery
             quantity is shared by every SKU.
           </p>
         </section>

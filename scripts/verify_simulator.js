@@ -370,7 +370,6 @@ assert.deepStrictEqual(engine.DEMAND_FACTORS.large, [0, 2]);
 });
 
 const largeSeeds = [1, 7, 42, 99];
-const largePool = [];
 largeSeeds.forEach((seed) => {
   const once = run({ demandVariability: "large", shock: false, baseDemand: flat(40) }, seed);
   const twice = run({ demandVariability: "large", shock: false, baseDemand: flat(40) }, seed);
@@ -391,16 +390,48 @@ largeSeeds.forEach((seed) => {
     once.metrics.annualDemand,
     once.simulatedDemand.reduce((sum, qty) => sum + qty, 0)
   );
-  largePool.push(...once.simulatedDemand);
+});
+
+// Audit trail, not the seeds 1-50 result. The first report called 40.019 the
+// mean of seeds 1-50. That pool appended seeds 1, 7, 42, and 99 and then
+// seeds 1-50 again, so 1, 7, and 42 were counted twice and 99 was included.
+// Those 2,808 weeks sum to 112,374, which is 40.019 to three decimals.
+const earlierMixed = [];
+largeSeeds.forEach((seed) => {
+  earlierMixed.push(
+    ...run({ demandVariability: "large", shock: false, baseDemand: flat(40) }, seed).simulatedDemand
+  );
 });
 for (let seed = 1; seed <= 50; seed += 1) {
-  const sampled = run({ demandVariability: "large", shock: false, baseDemand: flat(40) }, seed);
-  largePool.push(...sampled.simulatedDemand);
+  earlierMixed.push(
+    ...run({ demandVariability: "large", shock: false, baseDemand: flat(40) }, seed).simulatedDemand
+  );
 }
-assert.strictEqual(Math.min(...largePool), 0, "large reaches none of the forecast");
-assert.strictEqual(Math.max(...largePool), 80, "large reaches double the forecast");
-const largeMean = largePool.reduce((sum, qty) => sum + qty, 0) / largePool.length;
-assert.ok(Math.abs(largeMean - 40) < 1, "large stays centred on the forecast: " + largeMean);
+assert.strictEqual(earlierMixed.length, 2808, "earlier double-counted pool length");
+assert.strictEqual(
+  earlierMixed.reduce((sum, qty) => sum + qty, 0),
+  112374,
+  "earlier double-counted pool sum, reported as mean 40.019"
+);
+
+const uniqueSeeds = [];
+for (let seed = 1; seed <= 50; seed += 1) {
+  const sampled = run({ demandVariability: "large", shock: false, baseDemand: flat(40) }, seed);
+  sampled.simulatedDemand.forEach((qty) => {
+    assert.ok(qty >= 0 && qty <= 80);
+  });
+  uniqueSeeds.push(...sampled.simulatedDemand);
+}
+assert.strictEqual(uniqueSeeds.length, 50 * 52, "unique seeds 1-50, each week once");
+assert.strictEqual(Math.min(...uniqueSeeds), 0, "unique seeds 1-50 reach none of the forecast");
+assert.strictEqual(Math.max(...uniqueSeeds), 80, "unique seeds 1-50 reach double the forecast");
+const uniqueSum = uniqueSeeds.reduce((sum, qty) => sum + qty, 0);
+assert.strictEqual(uniqueSum, 104116, "unique seeds 1-50 weekly demand sum");
+assert.strictEqual(
+  Math.round((uniqueSum / uniqueSeeds.length) * 1000) / 1000,
+  40.045,
+  "unique seeds 1-50 weekly mean, three decimals"
+);
 
 const largeMc = engine.runMonteCarlo(
   Object.assign({}, engine.DEFAULT_CONTROLS, {
@@ -719,7 +750,7 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
   "week",
 ].sort());
 
-assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=12"/);
+assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=13"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
 assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=14"/);
 
@@ -922,6 +953,11 @@ assert.ok(
   "run helper note sits in the Demand shock card"
 );
 assert.match(page, /split evenly across seven days/);
+const variabilityHelp = page.replace(/\s+/g, " ");
+assert.match(variabilityHelp, /The forecast is the expected mean/);
+assert.match(variabilityHelp, /One year's realized mean can sit above or below it/);
+assert.match(variabilityHelp, /Across many runs those weeks average to the forecast/);
+assert.doesNotMatch(variabilityHelp, /still average to the forecast/);
 assert.match(page, /one day before the stock would finish at or below/);
 assert.match(page, /any of its days is below zero/);
 assert.doesNotMatch(page, /Triple|tripled|3×/);

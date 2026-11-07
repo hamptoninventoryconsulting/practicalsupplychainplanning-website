@@ -59,8 +59,10 @@
   };
 
   // Same weekly bands as the teaching engine. Large is none of the
-  // forecast up to double it, centred on the forecast. The week total
-  // is chosen first, then split evenly across seven days.
+  // forecast up to double it. The factor is centred on 1, so the forecast
+  // is the expected mean across many runs. One year's realized mean can
+  // differ. The week total is chosen first, then split evenly across
+  // seven days.
   var DEMAND_FACTORS = {
     small: [0.9, 1.1],
     medium: [0.7, 1.3],

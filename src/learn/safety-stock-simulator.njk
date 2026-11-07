@@ -7,7 +7,7 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/",
   "scripts": [
-    "/assets/safety-stock-engine.js?v=12",
+    "/assets/safety-stock-engine.js?v=13",
     "/assets/sim-results-form.js?v=7",
     "/assets/safety-stock-simulator.js?v=14"
   ]
@@ -276,10 +276,11 @@
             not mean you expect to sell exactly 100 every week — some weeks
             will be more, some less. That is <strong>demand</strong> variability.
             Large is the extreme band: each week can be anywhere from none of
-            that week's forecast up to double it, and over the year those
-            weeks still average to the forecast. Small and Medium stay nearer
-            the forecast. The draw is for the whole week, then that week is
-            split evenly across its seven days.
+            that week's forecast up to double it. The forecast is the expected
+            mean. Across many runs those weeks average to the forecast. One
+            year's realized mean can sit above or below it. Small and Medium
+            stay nearer the forecast. The draw is for the whole week, then
+            that week is split evenly across its seven days.
             <strong>Lead time</strong> variability is stock arriving earlier or
             later than expected. That can come from things like vessel
             availability, port congestion, or manufacturing delays.
