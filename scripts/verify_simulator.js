@@ -125,8 +125,9 @@ cr1Demand[1] = 25;
 cr1Demand[2] = 25;
 cr1Demand[3] = 25;
 const cr1 = run({ baseDemand: cr1Demand, lotQty: 10, ssQty: 0 });
-assert.strictEqual(cr1.startingSoh, 35);
-assert.strictEqual(cr1.weeks[0].endingSoh, 10);
+assert.strictEqual(cr1.startingSoh, 10);
+assert.strictEqual(cr1.weeks[0].beginningSoh, 10);
+assert.strictEqual(cr1.weeks[0].endingSoh, -15);
 assert.strictEqual(cr1.weeks[0].plannedSupply, 0);
 assert.ok(cr1.metrics.oosWeeks > 0, "the lead time leaves the early spike uncovered");
 assert.ok(Math.abs(cr1.metrics.avgSohTurns - cr1.metrics.averageWc / 70) < 1e-9);
@@ -202,7 +203,12 @@ const fence = run({
   deliveryVariability: "off",
   shock: false,
 });
-assert.strictEqual(fence.startingSoh, 80);
+assert.strictEqual(fence.startingSoh, 40);
+assert.strictEqual(fence.weeks[0].beginningSoh, fence.startingSoh);
+assert.strictEqual(fence.days[0].beginningSoh, fence.startingSoh);
+assert.ok(
+  Math.abs(fence.weeks[0].beginningSoh - fence.weeks[0].simulatedDemand + fence.weeks[0].plannedSupply - fence.weeks[0].endingSoh) < 1e-9
+);
 assert.strictEqual(fence.days.length, 364);
 assert.strictEqual(fence.metrics.annualDemand, 2080);
 assert.ok(fence.releases.length < 60, "orders are weekly, not one a day");
@@ -249,9 +255,11 @@ assert.ok(shortLate, "seed 1 has a late short receipt");
 assert.strictEqual(shortLate.nominalQuantity, 400);
 assert.strictEqual(shortLate.privateQuantity, 392);
 assert.strictEqual(shortLate.privateDelayWeeks, 3);
-assert.strictEqual(shortLate.plannedDueWeek, 12);
-assert.strictEqual(shortLate.actualArrivalWeek, 15);
-assert.strictEqual(shortLate.delayRecognizedDay, 78);
+assert.strictEqual(shortLate.plannedDueWeek, 11);
+assert.strictEqual(shortLate.plannedDueDay, 71);
+assert.strictEqual(shortLate.actualArrivalWeek, 14);
+assert.strictEqual(shortLate.actualArrivalDay, 92);
+assert.strictEqual(shortLate.delayRecognizedDay, 71);
 knownLot.reviews.forEach((review) => {
   review.outstanding.concat(review.releasedNow).forEach((order) => {
     assert.strictEqual(order.plannerQuantity, order.nominalQuantity);
@@ -263,26 +271,23 @@ knownLot.reviews.forEach((review) => {
   assert.strictEqual(seen.plannerQuantity, 400);
   if (review.week < shortLate.plannedDueWeek) {
     assert.strictEqual(seen.delayRecognized, false);
-    assert.strictEqual(seen.knownDueWeek, 12);
+    assert.strictEqual(seen.knownDueWeek, shortLate.plannedDueWeek);
   }
-  if (review.week === 13) {
+  if (review.week === shortLate.plannedDueWeek + 1) {
     assert.strictEqual(seen.delayRecognized, true);
-    assert.strictEqual(seen.knownDueWeek, 13, "a miss slips one week, not to the private arrival");
+    assert.strictEqual(seen.knownDueWeek, shortLate.plannedDueWeek + 1);
     assert.notStrictEqual(seen.knownDueDay, shortLate.actualArrivalDay);
   }
-  if (review.week === 14) {
-    assert.strictEqual(seen.knownDueWeek, 14);
-  }
-  if (review.week === 15) {
-    assert.strictEqual(seen.knownDueWeek, 15);
+  if (review.week === shortLate.actualArrivalWeek) {
+    assert.strictEqual(seen.knownDueWeek, shortLate.actualArrivalWeek);
     assert.strictEqual(seen.plannerQuantity, 400);
   }
 });
-const slippedReview = knownLot.reviews[12];
+const slippedReview = knownLot.reviews[shortLate.plannedDueWeek];
 assert.strictEqual(
-  slippedReview.projection.find((row) => row.week === 15).knownIncoming,
+  slippedReview.projection.find((row) => row.week === shortLate.actualArrivalWeek).knownIncoming,
   0,
-  "week 13 does not count the private week-15 arrival"
+  "the review after the miss does not count the private arrival week"
 );
 const arrivalReview = knownLot.reviews[shortLate.actualArrivalWeek - 1];
 const arrivalRow = arrivalReview.projection.find((row) => row.week === shortLate.actualArrivalWeek);
@@ -303,19 +308,21 @@ const coveredLate = run(
   },
   4
 );
-const orderFour = coveredLate.releases.find((release) => release.releaseWeek === 33);
+const orderFour = coveredLate.releases.find((release) => release.releaseWeek === 32);
 assert.ok(orderFour);
-assert.strictEqual(orderFour.plannedDueDay, 260);
-assert.strictEqual(orderFour.actualArrivalDay, 281);
+assert.strictEqual(orderFour.plannedDueDay, 253);
+assert.strictEqual(orderFour.plannedDueWeek, 37);
+assert.strictEqual(orderFour.actualArrivalDay, 274);
+assert.strictEqual(orderFour.actualArrivalWeek, 40);
 assert.strictEqual(orderFour.privateQuantity, 320);
 assert.strictEqual(orderFour.nominalQuantity, 400);
-assert.strictEqual(coveredLate.reviews[37].outstanding.find((order) => order.id === orderFour.id).knownDueWeek, 38);
-assert.strictEqual(coveredLate.reviews[39].outstanding.find((order) => order.id === orderFour.id).knownDueWeek, 40);
+assert.strictEqual(coveredLate.reviews[36].outstanding.find((order) => order.id === orderFour.id).knownDueWeek, 37);
+assert.strictEqual(coveredLate.reviews[38].outstanding.find((order) => order.id === orderFour.id).knownDueWeek, 39);
 assert.strictEqual(
-  coveredLate.reviews[39].projection.find((row) => row.week === 41).knownIncoming,
+  coveredLate.reviews[38].projection.find((row) => row.week === 40).knownIncoming,
   0
 );
-assert.strictEqual(coveredLate.weeks[40].plannedSupply, 320);
+assert.strictEqual(coveredLate.weeks[39].plannedSupply, 320);
 
 const horizonBase = flat(40);
 function hiddenPlan(actualArrivalDay, privateQuantity) {
@@ -467,7 +474,7 @@ const levelBase = flat(40);
 const quiet = run({ deliveryVariability: "off" }, 9);
 const noisyDelivery = run({ deliveryVariability: "large" }, 9);
 assert.strictEqual(quiet.startingSoh, noisyDelivery.startingSoh);
-assert.strictEqual(quiet.startingSoh, engine.roundHalfEven(levelBase[0] + 40));
+assert.strictEqual(quiet.startingSoh, 60);
 assert.deepStrictEqual(quiet.simulatedDemand, noisyDelivery.simulatedDemand);
 
 let sawShortReceipt = false;
@@ -512,7 +519,7 @@ const cover = run({
   ssWeeks: 2,
 });
 assert.strictEqual(cover.nominalLot, 160);
-assert.strictEqual(cover.startingSoh, 200);
+assert.strictEqual(cover.startingSoh, 240);
 assert.strictEqual(cover.safetyStock, 80);
 cover.releases.forEach((release) => {
   const allowed = engine.allowedLotReceipts(cover.controls, cover.baseDemand);
@@ -670,7 +677,7 @@ for (let seed = 1; seed <= 40; seed += 1) {
     again.releases.map((release) => release.actualArrivalDay + ":" + release.privateQuantity)
   );
   assert.strictEqual(covered.nominalLot, 400);
-  assert.strictEqual(covered.startingSoh, 440);
+  assert.strictEqual(covered.startingSoh, 400);
   covered.simulatedDemand.forEach((qty) => {
     assert.ok(qty >= 0 && qty <= 80);
   });
@@ -1013,7 +1020,7 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
   "week",
 ].sort());
 
-assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=15"/);
+assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=16"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
 assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=15"/);
 
@@ -1229,6 +1236,109 @@ assert.match(replenishmentHelp, /short shipment is recognised only when the good
 assert.match(replenishmentHelp, /expects that same quantity one week later/);
 assert.match(replenishmentHelp, /does not learn the actual arrival date in advance/);
 assert.match(replenishmentHelp, /at or above safety stock/);
+assert.match(replenishmentHelp, /Starting stock is that full normal/);
+assert.match(replenishmentHelp, /week-1 forecast is not added/);
+
+[0, 40, 160, 300].forEach((safetyStock) => {
+  ["fixed", "weeks"].forEach((lotMode) => {
+    const opened = run({
+      lotMode: lotMode,
+      lotQty: 400,
+      lotWeeks: 10,
+      ssMode: "fixed",
+      ssQty: safetyStock,
+      demandVariability: "off",
+      leadTimeVariability: "off",
+      deliveryVariability: "off",
+    });
+    assert.strictEqual(opened.nominalLot, 400);
+    assert.strictEqual(opened.startingSoh, 400 + safetyStock);
+    assert.strictEqual(opened.weeks[0].beginningSoh, opened.startingSoh);
+    assert.strictEqual(opened.weeks[0].safetyStock, safetyStock);
+  });
+});
+const userExample = run({
+  lotMode: "weeks",
+  lotWeeks: 10,
+  ssMode: "fixed",
+  ssQty: 300,
+  demandVariability: "off",
+});
+assert.strictEqual(userExample.startingSoh, 700);
+assert.strictEqual(userExample.weeks[0].baseDemand, 40);
+assert.strictEqual(userExample.weeks[0].plannedSupply, 0);
+assert.strictEqual(userExample.weeks[0].endingSoh, 660);
+const seasonalOpen = run({
+  patternId: "seasonal",
+  lotMode: "weeks",
+  lotWeeks: 10,
+  ssQty: 300,
+  demandVariability: "off",
+});
+assert.strictEqual(seasonalOpen.nominalLot, 486);
+assert.strictEqual(seasonalOpen.startingSoh, 786);
+const risingOpen = run({
+  patternId: "rising",
+  lotMode: "fixed",
+  lotQty: 400,
+  ssQty: 300,
+  demandVariability: "off",
+});
+assert.strictEqual(risingOpen.baseDemand[0], 22);
+assert.strictEqual(risingOpen.startingSoh, 700);
+const formulaOff = run({
+  lotMode: "weeks",
+  lotWeeks: 10,
+  ssMode: "formula",
+  demandVariability: "off",
+});
+assert.strictEqual(formulaOff.safetyStock, 0);
+assert.strictEqual(formulaOff.startingSoh, 400);
+const formulaOn = run({
+  lotMode: "weeks",
+  lotWeeks: 10,
+  ssMode: "formula",
+  serviceLevel: 95,
+  demandVariability: "large",
+}, 7);
+assert.ok(formulaOn.safetyStock > 0);
+assert.strictEqual(formulaOn.startingSoh, 400 + formulaOn.safetyStock);
+const quietOpen = run({
+  lotQty: 400,
+  ssQty: 300,
+  demandVariability: "off",
+  leadTimeVariability: "off",
+  deliveryVariability: "off",
+});
+const noisyOpen = run({
+  lotQty: 400,
+  ssQty: 300,
+  demandVariability: "off",
+  leadTimeVariability: "large",
+  deliveryVariability: "large",
+}, 9);
+assert.strictEqual(quietOpen.startingSoh, 700);
+assert.strictEqual(noisyOpen.startingSoh, quietOpen.startingSoh);
+const batch = engine.runMonteCarlo(
+  {
+    patternId: "level",
+    lotMode: "weeks",
+    lotWeeks: 10,
+    ssMode: "formula",
+    serviceLevel: 95,
+    leadTimeWeeks: 5,
+    demandVariability: "large",
+    leadTimeVariability: "off",
+    deliveryVariability: "off",
+    shock: false,
+  },
+  1,
+  { runs: 5 }
+);
+batch.runs.forEach((sample) => {
+  assert.strictEqual(sample.safetyStock, batch.runs[0].safetyStock);
+  assert.strictEqual(sample.startingSoh, 400 + sample.safetyStock);
+});
 assert.match(page, /any of its days is below zero/);
 assert.doesNotMatch(page, /Triple|tripled|3×/);
 const teachingAt = page.indexOf("Teaching tool only");

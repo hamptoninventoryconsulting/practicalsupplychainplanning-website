@@ -1080,7 +1080,11 @@
         safetyStockFrozen = true;
       }
     }
-    var startingSoh = roundHalfEven(base[0] + nominalLot);
+    // One full nominal lot plus the safety stock this run uses. The
+    // week-1 forecast is not added. Delivery noise is not applied. A
+    // frozen Monte Carlo quantity is already in safetyStock, so every
+    // year in the batch opens with that same lot plus that same buffer.
+    var startingSoh = roundHalfEven(nominalLot + safetyStock);
     var simulated = simulateReplenishment(
       gen,
       controls,

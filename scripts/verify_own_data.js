@@ -129,6 +129,24 @@ assert.ok(quiet.releases.length === 0, "a full opening stock does not order");
 
 const zeroStock = own.runYear(sku({ currentStock: 0, ssQty: 0, demandVariability: "off" }), globals(), 4);
 assert.strictEqual(zeroStock.startingSoh, 0);
+const typedOpening = own.runYear(
+  sku({
+    forecast: 40,
+    currentStock: 80,
+    lotMode: "weeks",
+    lotWeeks: 10,
+    lotQty: 400,
+    ssMode: "fixed",
+    ssQty: 300,
+    demandVariability: "off",
+  }),
+  globals(),
+  1
+);
+assert.strictEqual(typedOpening.nominalLot, 400);
+assert.strictEqual(typedOpening.safetyStock, 300);
+assert.strictEqual(typedOpening.startingSoh, 80);
+assert.strictEqual(typedOpening.weeks[0].beginningSoh, 80);
 assert.ok(zeroStock.releases.length > 0, "zero stock still places an order");
 assert.strictEqual(zeroStock.metrics.unitsSold + zeroStock.metrics.unmetDemand, zeroStock.metrics.annualDemand);
 assert.strictEqual(zeroStock.metrics.annualGp, zeroStock.metrics.unitsSold * 30);
@@ -219,7 +237,7 @@ const teachingLead = teaching.runYear(
 );
 assert.strictEqual(teachingLead.controls.leadTimeWeeks, 5);
 
-function parityControls(controls) {
+function parityControls(controls, startingSoh) {
   const forecast = 40;
   const nominal = controls.lotMode === "weeks" ? forecast * (controls.lotWeeks || 4) : (controls.lotQty == null ? 40 : controls.lotQty);
   return sku({
@@ -228,7 +246,7 @@ function parityControls(controls) {
     demandVariability: controls.demandVariability || "off",
     leadTimeWeeks: controls.leadTimeWeeks || 5,
     leadTimeVariability: controls.leadTimeVariability || "off",
-    currentStock: forecast + nominal,
+    currentStock: startingSoh == null ? nominal : startingSoh,
     unitCost: 70,
     sellingPrice: 100,
     lotMode: controls.lotMode || "fixed",
@@ -313,7 +331,11 @@ function assertSameYear(left, right, label) {
                 shock: shock,
               };
               const taught = teaching.runYear(controls, seed);
-              const ours = own.runYear(parityControls(controls), globals({ deliveryVariability: delivery, shock: shock }), seed);
+              const ours = own.runYear(
+                parityControls(controls, taught.startingSoh),
+                globals({ deliveryVariability: delivery, shock: shock }),
+                seed
+              );
               assertSameYear(ours, taught, "y" + seed + ":" + lead + ":" + demand + ":" + ssMode + ":" + shock);
             });
           });
@@ -336,9 +358,10 @@ const weekControls = {
   deliveryVariability: "medium",
   shock: true,
 };
+const taughtWeeks = teaching.runYear(weekControls, 9);
 assertSameYear(
-  own.runYear(parityControls(weekControls), globals({ deliveryVariability: "medium", shock: true }), 9),
-  teaching.runYear(weekControls, 9),
+  own.runYear(parityControls(weekControls, taughtWeeks.startingSoh), globals({ deliveryVariability: "medium", shock: true }), 9),
+  taughtWeeks,
   "weeks lot"
 );
 
@@ -354,9 +377,10 @@ const largeDemandControls = {
   deliveryVariability: "off",
   shock: false,
 };
+const taughtLarge = teaching.runYear(largeDemandControls, 42);
 assertSameYear(
-  own.runYear(parityControls(largeDemandControls), globals(), 42),
-  teaching.runYear(largeDemandControls, 42),
+  own.runYear(parityControls(largeDemandControls, taughtLarge.startingSoh), globals(), 42),
+  taughtLarge,
   "large demand"
 );
 
@@ -374,8 +398,9 @@ const mcControls = {
   shock: true,
 };
 const taughtMc = teaching.runMonteCarlo(mcControls, 7, { runs: 50 });
+const ownMcSku = parityControls(mcControls, taughtMc.runs[0].startingSoh);
 const ownMc = own.runMonteCarlo(
-  parityControls(mcControls),
+  ownMcSku,
   globals({ deliveryVariability: "off", shock: true }),
   7
 );
@@ -398,7 +423,7 @@ const chunkScenario = own.validateScenario({
   seed: 7,
   deliveryVariability: "off",
   shock: true,
-  skus: [parityControls(mcControls)],
+  skus: [ownMcSku],
 }).scenario;
 const jobs = own.portfolioJobs(chunkScenario, "monte-carlo", 7);
 const grouped = [];
