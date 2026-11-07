@@ -39,14 +39,17 @@
  * A miss only shows that the expected day passed with no receipt. The
  * plan then expects the normal quantity one week later, and slips that
  * expectation again if it misses. It does not learn the private arrival
- * day. Nothing arrives before release + base lead time. Each day, demand
- * is taken from the opening stock, then a receipt due that day is added.
+ * day. Nothing arrives before release + base lead time. A receipt is
+ * posted at the start of its due day, before that day's demand, so it
+ * matches the weekly plan that counts the receipt for the whole due
+ * week. A day with no receipt still takes demand off the opening stock.
  * The release is as many normal lots as the forecast needs to finish at
  * or above safety stock. Another lot can be due the same week as one
  * already released when the forecast still finishes below safety stock.
- * A day below zero before the receipt marks its week out of stock.
- * Touching zero does not. The chart draws each day's post-demand stock,
- * and the post-receipt stock as well when a receipt lands.
+ * A day is out of stock when stock is below zero before a receipt due
+ * that morning, or after demand. Touching zero is not. The chart draws
+ * the stock after demand, and on a receipt day also the stock before
+ * the receipt.
  *
  * Demand shock (when on) doubles pre-shock normal demand on exactly three
  * weeks in 21–52, successive gaps at least 4, then rounds. The base demand
@@ -1021,10 +1024,11 @@
           }
         }
         var existing7 = supplyUnits * DAYS_PER_WEEK;
-        var pre7 = open7 - sim7;
-        var end7 = pre7 + existing7;
-        var pre = pre7 / DAYS_PER_WEEK;
+        var before7 = open7;
+        var end7 = before7 + existing7 - sim7;
+        var before = before7 / DAYS_PER_WEEK;
         var end = end7 / DAYS_PER_WEEK;
+        var pre = before < end ? before : end;
         var supply = supplyUnits;
         if (dow === 0) {
           weeks.push({

@@ -220,6 +220,135 @@ assert.strictEqual(new Set(releaseWeeks).size, releaseWeeks.length, "one release
 assert.ok(fence.metrics.averageWc >= 0);
 assert.ok(Math.abs(fence.metrics.averageWc - fence.metrics.avgSohTurns * 70) < 1e-6);
 
+function weekClose(week) {
+  return week.beginningSoh - week.simulatedDemand + week.plannedSupply;
+}
+const baseline = run({
+  lotMode: "fixed",
+  lotQty: 160,
+  ssQty: 0,
+  leadTimeWeeks: 2,
+  demandVariability: "off",
+  leadTimeVariability: "off",
+  deliveryVariability: "off",
+  shock: false,
+});
+const baselineCover = run({
+  lotMode: "weeks",
+  lotWeeks: 4,
+  ssQty: 0,
+  leadTimeWeeks: 2,
+  demandVariability: "off",
+  leadTimeVariability: "off",
+  deliveryVariability: "off",
+  shock: false,
+});
+[baseline, baselineCover].forEach((result) => {
+  assert.strictEqual(result.startingSoh, 160);
+  assert.strictEqual(result.metrics.oosWeeks, 0);
+  assert.strictEqual(result.metrics.annualDemand, 2080);
+  const shown = result.weeks.slice(0, 9).map((week) => [
+    week.beginningSoh,
+    week.preReceiptSoh,
+    week.plannedSupply,
+    week.endingSoh,
+  ]);
+  assert.deepStrictEqual(shown, [
+    [160, 120, 0, 120],
+    [120, 80, 0, 80],
+    [80, 40, 0, 40],
+    [40, 0, 0, 0],
+    [0, 0, 160, 120],
+    [120, 80, 0, 80],
+    [80, 40, 0, 40],
+    [40, 0, 0, 0],
+    [0, 0, 160, 120],
+  ]);
+  result.days.forEach((day) => {
+    assert.ok(day.preReceiptSoh >= -1e-9, "day " + day.day);
+  });
+  result.releases.forEach((release) => {
+    assert.ok(release.actualArrivalDay >= release.releaseDay + 14);
+    assert.strictEqual(release.actualArrivalDay, release.plannedDueDay);
+  });
+});
+
+[40, 80, 120, 160, 400, 600].forEach((lotQty) => {
+  [2, 5, 10].forEach((leadTime) => {
+    [0, 20].forEach((safetyStock) => {
+      const sample = run({
+        lotQty: lotQty,
+        ssQty: safetyStock,
+        leadTimeWeeks: leadTime,
+        demandVariability: "off",
+        leadTimeVariability: "off",
+        deliveryVariability: "off",
+        shock: false,
+      });
+      assert.strictEqual(sample.startingSoh, lotQty + safetyStock);
+      sample.weeks.forEach((week) => {
+        assert.ok(Math.abs(weekClose(week) - week.endingSoh) < 1e-6, lotQty + " LT" + leadTime);
+      });
+      sample.releases.forEach((release) => {
+        assert.ok(
+          release.actualArrivalDay >= release.releaseDay + leadTime * 7,
+          "no early receipt"
+        );
+      });
+      const firstReceipt = sample.weeks.find((week) => week.plannedSupply > 0);
+      if (firstReceipt) {
+        assert.ok(firstReceipt.week >= 1 + leadTime);
+      }
+      sample.days.forEach((day) => {
+        if (Math.abs(day.beginningSoh) < 1e-9 && day.plannedSupply > 0) {
+          assert.ok(day.preReceiptSoh >= -1e-9, "zero opening is not a one-day dip");
+        }
+      });
+    });
+  });
+});
+const insideFence = run({
+  lotQty: 160,
+  ssQty: 0,
+  leadTimeWeeks: 5,
+  demandVariability: "off",
+  leadTimeVariability: "off",
+  deliveryVariability: "off",
+  shock: false,
+});
+assert.ok(insideFence.weeks[4].endingSoh < -1, "week 5 is inside a 5-week fence");
+assert.strictEqual(insideFence.weeks[4].plannedSupply, 0);
+assert.ok(insideFence.metrics.oosWeeks > 0);
+const shortLot = run({
+  lotQty: 40,
+  ssQty: 0,
+  leadTimeWeeks: 2,
+  demandVariability: "off",
+});
+assert.ok(shortLot.metrics.oosWeeks > 0, "a one-week lot cannot cover a 2-week lead time");
+const noisyShort = run(
+  {
+    lotQty: 160,
+    ssQty: 0,
+    leadTimeWeeks: 2,
+    demandVariability: "large",
+    leadTimeVariability: "large",
+    deliveryVariability: "large",
+    shock: true,
+  },
+  4
+);
+assert.ok(noisyShort.metrics.oosWeeks > 0, "variability can still stock out");
+noisyShort.releases.forEach((release) => {
+  assert.ok(release.actualArrivalDay >= release.releaseDay + 14);
+  noisyShort.reviews.forEach((review) => {
+    const seen = review.outstanding.concat(review.releasedNow).find((order) => order.id === release.id);
+    if (seen) {
+      assert.strictEqual(seen.plannerQuantity, release.nominalQuantity);
+    }
+  });
+});
+
 const calm = run({ demandVariability: "off", shock: false, ssQty: 0, lotQty: 400, leadTimeWeeks: 5 });
 const wild = run({ demandVariability: "large", shock: false, ssQty: 0, lotQty: 400, leadTimeWeeks: 5 }, 3);
 let replanned = false;
@@ -792,8 +921,10 @@ shockExample.weeks.forEach((week) => {
 
 function ordersFromBaseForecast(result) {
   result.days.forEach((day) => {
-    assert.ok(Math.abs(day.preReceiptSoh - (day.beginningSoh - day.simulatedDemand)) < 1e-9);
-    assert.ok(Math.abs(day.endingSoh - (day.preReceiptSoh + day.plannedSupply)) < 1e-9);
+    const close = day.beginningSoh - day.simulatedDemand + day.plannedSupply;
+    assert.ok(Math.abs(day.endingSoh - close) < 1e-9);
+    const low = Math.min(day.beginningSoh, day.endingSoh);
+    assert.ok(Math.abs(day.preReceiptSoh - low) < 1e-9);
   });
   result.releases.forEach((release) => {
     assert.strictEqual(
@@ -1020,7 +1151,7 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
   "week",
 ].sort());
 
-assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=16"/);
+assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=17"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
 assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=15"/);
 
@@ -1339,7 +1470,7 @@ batch.runs.forEach((sample) => {
   assert.strictEqual(sample.safetyStock, batch.runs[0].safetyStock);
   assert.strictEqual(sample.startingSoh, 400 + sample.safetyStock);
 });
-assert.match(page, /any of its days is below zero/);
+assert.match(page, /below zero before a receipt due that morning/);
 assert.doesNotMatch(page, /Triple|tripled|3×/);
 const teachingAt = page.indexOf("Teaching tool only");
 const modeAt = page.indexOf('id="sim-mode-band"');

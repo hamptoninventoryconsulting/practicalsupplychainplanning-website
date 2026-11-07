@@ -7,7 +7,7 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/own-data/",
   "scripts": [
-    "/assets/own-data-engine.js?v=13",
+    "/assets/own-data-engine.js?v=14",
     "/assets/sim-results-form.js?v=7",
     "/assets/own-data-simulator.js?v=9"
   ]
@@ -227,13 +227,14 @@
           <p id="own-formula-note" class="sim-meta" hidden></p>
           <p class="sim-help">
             Each week's forecast is split evenly across seven days, and those
-            days add up to the week. Demand comes off that day's opening
-            stock, then any receipt due that day is added. At the start of
+            days add up to the week. A receipt due on a day is in stock
+            before that day's demand. A day with no receipt takes demand
+            off the opening stock. At the start of
             each week the plan is rebuilt from the forecast and from orders
             already released, counted on the date they are still expected. A
             new receipt cannot arrive until the full lead time has passed.
             An order released in week 1 with a 5-week lead time is due on the
-            first day of week 6, after that day's demand.             Until the goods
+            first day of week 6, before that day's demand. Until the goods
             arrive the plan keeps the normal lot quantity. A miss is
             recognised when that day passes with no receipt. The plan then
             expects that same quantity one week later, and moves the
@@ -343,12 +344,14 @@
             <div class="sim-metrics" id="own-metrics"></div>
             <p class="sim-note">
               Annual gross profit counts only units actually sold. Demand is
-              filled from opening stock. A receipt arrives after that demand,
-              so it does not cover a stockout in the arrival week. Inventory
-              turns and working capital use the daily points on the chart. A
-              plotted point below zero counts as zero, so working capital is
-              not negative. The table stays one row per week. A week is out
-              of stock if any day in it is below zero before the receipt.
+              filled from the stock available that morning, after a receipt
+              due that day. Stock that is already below zero before the
+              receipt is still a stockout. Inventory turns and working
+              capital use the daily points on the chart. A plotted point
+              below zero counts as zero, so working capital is not negative.
+              The table stays one row per week. A week is out of stock if
+              stock is below zero before a receipt due that morning, or
+              after demand when nothing arrives.
             </p>
             <figure class="sim-figure">
               <svg id="own-chart" class="sim-chart" role="img" aria-label="Stock on hand, safety stock, and zero"></svg>
@@ -360,6 +363,7 @@
                 </ul>
                 <p class="sim-meta">
                   One year, one point per day: the stock after that day's demand.
+                  A receipt day also shows the stock just before the receipt.
                   A receipt day also draws the stock after the receipt. Monte
                   Carlo does not draw this chart.
                 </p>
@@ -419,8 +423,8 @@
               Out-of-stock weeks, customer service, inventory turns, and
               average working capital show the median and the P10–P90 band.
               Annual gross profit (units sold) shows the median only. It
-              counts only units actually sold. Demand that opening stock
-              could not fill is left out. A receipt does not cover that week.
+              counts only units actually sold. Demand that the morning stock,
+              after a receipt due that day, could not fill is left out.
             </p>
             <details class="sim-details">
               <summary>Per-run results</summary>

@@ -7,7 +7,7 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/",
   "scripts": [
-    "/assets/safety-stock-engine.js?v=16",
+    "/assets/safety-stock-engine.js?v=17",
     "/assets/sim-results-form.js?v=7",
     "/assets/safety-stock-simulator.js?v=15"
   ]
@@ -186,13 +186,14 @@
           <p id="sim-formula-note" class="sim-meta" hidden></p>
           <p class="sim-help">
             Each week's demand is split evenly across seven days, and those
-            seven days add up to the week. Each day, demand comes off the
-            opening stock and then any receipt due that day is added. At the
+            seven days add up to the week. A receipt due on a day is in stock
+            before that day's demand. A day with no receipt takes demand off
+            the opening stock. At the
             start of each week the plan is rebuilt from the forecast and from
             orders already released, counted on the date they are still
             expected. A new receipt cannot arrive until the full base lead
             time has passed. An order released in week 1 with a 5-week lead
-            time is due on the first day of week 6, after that day's demand.
+            time is due on the first day of week 6, before that day's demand.
             Until the goods arrive the plan keeps the normal lot quantity. A
             miss is recognised when that day passes with no receipt. The plan
             then expects that same quantity one week later, and moves the
@@ -358,7 +359,7 @@
               <p id="sim-chart-avg" class="visually-hidden"></p>
               <p class="sim-meta">
                 One year, one point per day: the stock after that day's demand.
-                A receipt day also draws the stock after the receipt. Week
+                A receipt day also shows the stock just before the receipt. Week
                 numbers mark the chart. Monte Carlo does not draw this chart.
               </p>
             </figcaption>
@@ -401,14 +402,16 @@
             capital. If the average is zero, turns are not applicable. Working
             capital is that average times the $70 cost. The weekly table is
             still one row per week. Its pre-receipt column is the lowest
-            stock after demand in that week. Gross profit is simulated demand times
+            stock before a receipt due that day, and after demand when no
+            receipt is due. Gross profit is simulated demand times
             $30 and does not change because of backorders.
           </p>
           <p class="sim-help">
             High turns with weak service is a poor outcome. The warning appears
             when turns are at least 8 and either customer service is below 95%
             or three or more weeks are out of stock. A week is out of stock
-            if any of its days is below zero before that day's receipt.
+            if stock is below zero before a receipt due that morning, or
+            after demand when nothing arrives.
             Touching zero is not a stockout. Customer service is the share of
             the 52 weeks that are not out of stock.
           </p>
