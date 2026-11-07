@@ -1239,7 +1239,7 @@
           },
           {
             "type": "p",
-            "text": "Once the expectation is set, the customer service level target is how many times out of 100 you choose to meet it."
+            "text": "Once your company has chosen its service standard, the customer service level target is how many times out of 100 you aim to meet that standard."
           }
         ],
         "heading": "Industry and Market Expectations",
@@ -2095,7 +2095,7 @@
           },
           {
             "type": "p",
-            "text": "Forecasts are commonly more accurate at higher levels of aggregation than at detailed item or customer levels."
+            "text": "Forecasts are commonly more accurate in percentage terms at higher levels of aggregation than at detailed item or customer levels."
           },
           {
             "type": "p",
