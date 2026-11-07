@@ -354,6 +354,9 @@ cover.releases.forEach((release) => {
 
 const demandOff = run({ demandVariability: "off", shock: false }, 5);
 assert.deepStrictEqual(demandOff.simulatedDemand, demandOff.baseDemand);
+assert.deepStrictEqual(engine.DEMAND_FACTORS.small, [0.9, 1.1]);
+assert.deepStrictEqual(engine.DEMAND_FACTORS.medium, [0.7, 1.3]);
+assert.deepStrictEqual(engine.DEMAND_FACTORS.large, [0, 2]);
 ["small", "medium", "large"].forEach((level) => {
   const bounds = engine.DEMAND_FACTORS[level];
   const varied = run({ demandVariability: level, shock: false }, 6);
@@ -364,6 +367,73 @@ assert.deepStrictEqual(demandOff.simulatedDemand, demandOff.baseDemand);
       engine.roundHalfEven(varied.baseDemand[index] * factor)
     );
   });
+});
+
+const largeSeeds = [1, 7, 42, 99];
+const largePool = [];
+largeSeeds.forEach((seed) => {
+  const once = run({ demandVariability: "large", shock: false, baseDemand: flat(40) }, seed);
+  const twice = run({ demandVariability: "large", shock: false, baseDemand: flat(40) }, seed);
+  assert.deepStrictEqual(once.simulatedDemand, twice.simulatedDemand, "seed " + seed);
+  assert.deepStrictEqual(once.demandFactors, twice.demandFactors, "seed " + seed);
+  once.simulatedDemand.forEach((qty, index) => {
+    assert.ok(qty >= 0 && qty <= 80, "week " + (index + 1) + " seed " + seed);
+    assert.strictEqual(once.baseDemand[index], 40);
+    const days = once.days.filter((day) => day.week === index + 1);
+    assert.strictEqual(days.length, 7);
+    const daySum = days.reduce((sum, day) => sum + day.demandSevenths, 0) / 7;
+    assert.strictEqual(daySum, qty, "daily total week " + (index + 1));
+  });
+  once.demandFactors.forEach((factor) => {
+    assert.ok(factor >= 0 && factor < 2);
+  });
+  assert.strictEqual(
+    once.metrics.annualDemand,
+    once.simulatedDemand.reduce((sum, qty) => sum + qty, 0)
+  );
+  largePool.push(...once.simulatedDemand);
+});
+for (let seed = 1; seed <= 50; seed += 1) {
+  const sampled = run({ demandVariability: "large", shock: false, baseDemand: flat(40) }, seed);
+  largePool.push(...sampled.simulatedDemand);
+}
+assert.strictEqual(Math.min(...largePool), 0, "large reaches none of the forecast");
+assert.strictEqual(Math.max(...largePool), 80, "large reaches double the forecast");
+const largeMean = largePool.reduce((sum, qty) => sum + qty, 0) / largePool.length;
+assert.ok(Math.abs(largeMean - 40) < 1, "large stays centred on the forecast: " + largeMean);
+
+const largeMc = engine.runMonteCarlo(
+  Object.assign({}, engine.DEFAULT_CONTROLS, {
+    demandVariability: "large",
+    leadTimeVariability: "off",
+    deliveryVariability: "off",
+    shock: false,
+  }),
+  42,
+  { runs: 5 }
+);
+largeMc.runs.forEach((sample) => {
+  assert.strictEqual(
+    sample.metrics.annualDemand,
+    sample.weeks.reduce((sum, week) => sum + week.simulatedDemand, 0)
+  );
+  assert.strictEqual(
+    sample.metrics.oosWeeks,
+    sample.weeks.filter((week) => week.preReceiptSoh < 0).length
+  );
+  sample.weeks.forEach((week) => {
+    assert.ok(week.simulatedDemand >= 0 && week.simulatedDemand <= 80);
+  });
+});
+
+const tinyBase = flat(1);
+const tiny = run({ demandVariability: "large", shock: false, baseDemand: tinyBase }, 3);
+tiny.simulatedDemand.forEach((qty) => {
+  assert.ok(qty === 0 || qty === 1 || qty === 2);
+});
+const mediumOnly = run({ demandVariability: "medium", shock: false, baseDemand: flat(40) }, 11);
+mediumOnly.simulatedDemand.forEach((qty) => {
+  assert.ok(qty >= 28 && qty <= 52);
 });
 
 const shockWeeksSeen = new Set();
@@ -649,7 +719,7 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
   "week",
 ].sort());
 
-assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=11"/);
+assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=12"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
 assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=14"/);
 

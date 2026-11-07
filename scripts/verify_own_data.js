@@ -306,6 +306,24 @@ assertSameYear(
   "weeks lot"
 );
 
+const largeDemandControls = {
+  patternId: "level",
+  lotMode: "fixed",
+  lotQty: 40,
+  ssMode: "fixed",
+  ssQty: 20,
+  leadTimeWeeks: 5,
+  demandVariability: "large",
+  leadTimeVariability: "off",
+  deliveryVariability: "off",
+  shock: false,
+};
+assertSameYear(
+  own.runYear(parityControls(largeDemandControls), globals(), 42),
+  teaching.runYear(largeDemandControls, 42),
+  "large demand"
+);
+
 const mcControls = {
   patternId: "level",
   lotMode: "fixed",
@@ -823,7 +841,7 @@ assert.match(flat, /SOH means stock on hand/);
 assert.match(flat, /In 8 out of 10 simulated years, the result falls inside it/);
 assert.match(flat, /Z comes from the service level you pick/);
 assert.match(flat, /square root of L spreads that weekly variation/);
-assert.match(page, /src="\/assets\/own-data-engine\.js\?v=9"/);
+assert.match(page, /src="\/assets\/own-data-engine\.js\?v=10"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
 assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=8"/);
 assert.ok(page.indexOf("own-data-engine.js") < page.indexOf("own-data-simulator.js"));

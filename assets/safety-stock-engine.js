@@ -91,10 +91,16 @@
     99: 2.326,
   };
 
+  // One half-open uniform draw per week, multiplied by that week's base
+  // forecast, then rounded half-even. The week's integer is what the
+  // table shows; it is then split evenly across the seven days. Large
+  // runs from none of the forecast up to double it, centred on the
+  // forecast, so the weeks still average to the base. It is not a
+  // standard-deviation setting. Small and Medium stay narrow.
   var DEMAND_FACTORS = {
     small: [0.9, 1.1],
     medium: [0.7, 1.3],
-    large: [0.5, 1.5],
+    large: [0, 2],
   };
 
   var LT_EXTRA_MAX = {
