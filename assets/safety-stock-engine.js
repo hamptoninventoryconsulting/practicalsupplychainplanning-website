@@ -993,6 +993,49 @@
       });
     }
 
+    // Orders the same forecast plan would already have released before
+    // week 1. Only weeks a new order cannot reach (before the lead-time
+    // fence) are filled. Dates and quantities use the base forecast and
+    // the selected safety stock, not this year's random demand. Private
+    // delay and short quantity are drawn now and stay hidden until the
+    // due day is missed or the goods arrive.
+    function seedOpeningPipeline() {
+      var pipeline = [];
+      var start = startingSoh;
+      var fence = controls.leadTimeWeeks;
+      var w;
+      for (w = 0; w < fence && w < HORIZON; w += 1) {
+        var incoming = 0;
+        var i;
+        for (i = 0; i < pipeline.length; i += 1) {
+          if (pipeline[i].dueWeekIndex === w) {
+            incoming += pipeline[i].nominalQuantity;
+          }
+        }
+        var end = start + incoming - base[w];
+        if (end < safetyStock - 1e-9 && nominalLot > 0) {
+          var gap = safetyStock - end;
+          var lots = Math.ceil((gap - 1e-9) / nominalLot);
+          if (lots < 1) {
+            lots = 1;
+          }
+          pipeline.push({
+            dueWeekIndex: w,
+            releaseWeekIndex: w - controls.leadTimeWeeks,
+            lots: lots,
+            nominalQuantity: lots * nominalLot,
+          });
+          end += lots * nominalLot;
+        }
+        start = end;
+      }
+      for (var p = 0; p < pipeline.length; p += 1) {
+        var order = releaseOrder(pipeline[p]);
+        order.openedBeforeStart = true;
+      }
+    }
+    seedOpeningPipeline();
+
     for (var weekIndex = 0; weekIndex < HORIZON; weekIndex += 1) {
       weeklyReview(weekIndex, open7 / DAYS_PER_WEEK);
       var baseWeek = base[weekIndex];

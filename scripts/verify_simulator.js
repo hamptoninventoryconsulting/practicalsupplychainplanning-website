@@ -127,9 +127,9 @@ cr1Demand[3] = 25;
 const cr1 = run({ baseDemand: cr1Demand, lotQty: 10, ssQty: 0 });
 assert.strictEqual(cr1.startingSoh, 10);
 assert.strictEqual(cr1.weeks[0].beginningSoh, 10);
-assert.strictEqual(cr1.weeks[0].endingSoh, -15);
-assert.strictEqual(cr1.weeks[0].plannedSupply, 0);
-assert.ok(cr1.metrics.oosWeeks > 0, "the lead time leaves the early spike uncovered");
+assert.strictEqual(cr1.weeks[0].plannedSupply, 20);
+assert.strictEqual(cr1.weeks[0].endingSoh, 5);
+assert.ok(cr1.releases.some((release) => release.releaseWeek < 1 && release.plannedDueWeek === 1));
 assert.ok(Math.abs(cr1.metrics.avgSohTurns - cr1.metrics.averageWc / 70) < 1e-9);
 assert.ok(cr1.metrics.averageWc >= 0);
 
@@ -180,15 +180,14 @@ function assertLeadTimeBoundary(result, leadTime) {
     );
     assertLeadTimeBoundary(timed, leadTime);
     if (leadTime === 5 && level === "off") {
-      assert.strictEqual(timed.releases[0].releaseWeek, 1);
-      assert.strictEqual(timed.releases[0].plannedDueWeek, 6);
-      assert.strictEqual(timed.releases[0].actualArrivalDay, 36);
-      timed.weeks.slice(0, 5).forEach((week) => {
-        assert.strictEqual(week.plannedSupply, 0, "week " + week.week + " is inside the fence");
-      });
-      assert.ok(timed.weeks[2].endingSoh < 0, "the uncovered weeks stay visible");
-      assert.ok(timed.releases.length >= 2, "a later order is still allowed");
-      assert.ok(timed.releases[1].plannedDueWeek > timed.releases[0].plannedDueWeek);
+      const prior = timed.releases.filter((release) => release.releaseWeek < 1);
+      const during = timed.releases.filter((release) => release.releaseWeek >= 1);
+      assert.deepStrictEqual(prior.map((release) => release.plannedDueWeek), [2, 3, 4, 5]);
+      assert.strictEqual(timed.weeks[0].plannedSupply, 0);
+      assert.strictEqual(timed.weeks[0].endingSoh, 0);
+      assert.strictEqual(during[0].releaseWeek, 1);
+      assert.strictEqual(during[0].plannedDueWeek, 6);
+      assert.ok(during.length >= 1, "a later order is still allowed");
     }
   });
 });
@@ -213,7 +212,11 @@ assert.strictEqual(fence.days.length, 364);
 assert.strictEqual(fence.metrics.annualDemand, 2080);
 assert.ok(fence.releases.length < 60, "orders are weekly, not one a day");
 fence.releases.forEach((release) => {
-  assert.strictEqual((release.releaseDay - 1) % 7, 0, "release is the weekly review");
+  if (release.releaseWeek >= 1) {
+    assert.strictEqual((release.releaseDay - 1) % 7, 0, "release is the weekly review");
+  } else {
+    assert.strictEqual(Math.abs((release.releaseDay - 1) % 7), 0, "opening release stays on a week boundary");
+  }
 });
 const releaseWeeks = fence.releases.map((release) => release.releaseWeek);
 assert.strictEqual(new Set(releaseWeeks).size, releaseWeeks.length, "one release per review");
@@ -294,11 +297,10 @@ const baselineCover = run({
           release.actualArrivalDay >= release.releaseDay + leadTime * 7,
           "no early receipt"
         );
+        if (release.releaseWeek >= 1) {
+          assert.ok(release.plannedDueWeek >= 1 + leadTime);
+        }
       });
-      const firstReceipt = sample.weeks.find((week) => week.plannedSupply > 0);
-      if (firstReceipt) {
-        assert.ok(firstReceipt.week >= 1 + leadTime);
-      }
       sample.days.forEach((day) => {
         if (Math.abs(day.beginningSoh) < 1e-9 && day.plannedSupply > 0) {
           assert.ok(day.preReceiptSoh >= -1e-9, "zero opening is not a one-day dip");
@@ -316,16 +318,108 @@ const insideFence = run({
   deliveryVariability: "off",
   shock: false,
 });
-assert.ok(insideFence.weeks[4].endingSoh < -1, "week 5 is inside a 5-week fence");
-assert.strictEqual(insideFence.weeks[4].plannedSupply, 0);
-assert.ok(insideFence.metrics.oosWeeks > 0);
+assert.strictEqual(insideFence.weeks[3].endingSoh, 0);
+assert.strictEqual(insideFence.weeks[4].beginningSoh, 0);
+assert.strictEqual(insideFence.weeks[4].plannedSupply, 160);
+assert.strictEqual(insideFence.weeks[4].endingSoh, 120);
+assert.ok(insideFence.releases.some((release) => release.releaseWeek < 1 && release.plannedDueWeek === 5));
+assert.strictEqual(insideFence.metrics.oosWeeks, 0);
+[2, 5, 10].forEach((leadTime) => {
+  const steady = run({
+    lotQty: 160,
+    ssQty: 0,
+    leadTimeWeeks: leadTime,
+    demandVariability: "off",
+    leadTimeVariability: "off",
+    deliveryVariability: "off",
+    shock: false,
+  });
+  assert.strictEqual(steady.weeks[3].endingSoh, 0, "LT " + leadTime);
+  assert.strictEqual(steady.weeks[4].plannedSupply, 160, "LT " + leadTime);
+  assert.strictEqual(steady.weeks[4].preReceiptSoh, 0, "LT " + leadTime);
+  assert.strictEqual(steady.weeks[4].endingSoh, 120, "LT " + leadTime);
+  assert.strictEqual(steady.metrics.oosWeeks, 0, "LT " + leadTime);
+  const prior = steady.releases.filter((release) => release.releaseWeek < 1);
+  prior.forEach((release) => {
+    assert.strictEqual(release.nominalQuantity, 160);
+    assert.strictEqual(release.plannedDueWeek, release.releaseWeek + leadTime);
+    assert.strictEqual(release.actualArrivalWeek, release.plannedDueWeek);
+    assert.ok(release.openedBeforeStart);
+  });
+  if (leadTime === 2) {
+    assert.strictEqual(prior.length, 0);
+  }
+  if (leadTime === 5) {
+    assert.deepStrictEqual(prior.map((release) => release.plannedDueWeek), [5]);
+  }
+  if (leadTime === 10) {
+    assert.deepStrictEqual(prior.map((release) => release.plannedDueWeek), [5, 9]);
+  }
+  steady.releases.filter((release) => release.releaseWeek >= 1).forEach((release) => {
+    assert.ok(release.plannedDueWeek >= release.releaseWeek + leadTime);
+  });
+  steady.weeks.forEach((week) => {
+    assert.ok(Math.abs(weekClose(week) - week.endingSoh) < 1e-6);
+  });
+});
+const smallPipeline = run({
+  lotQty: 40,
+  ssQty: 0,
+  leadTimeWeeks: 5,
+  demandVariability: "off",
+  leadTimeVariability: "off",
+  deliveryVariability: "off",
+  shock: false,
+});
+assert.deepStrictEqual(
+  smallPipeline.releases.filter((release) => release.releaseWeek < 1).map((release) => release.plannedDueWeek),
+  [2, 3, 4, 5]
+);
+assert.strictEqual(smallPipeline.weeks[0].plannedSupply, 0);
+assert.strictEqual(smallPipeline.weeks[0].endingSoh, 0);
+[2, 3, 4, 5].forEach((weekNo) => {
+  assert.strictEqual(smallPipeline.weeks[weekNo - 1].plannedSupply, 40);
+  assert.strictEqual(smallPipeline.weeks[weekNo - 1].endingSoh, 0);
+});
+assert.strictEqual(smallPipeline.metrics.oosWeeks, 0);
+const pipelineQuiet = run({
+  lotQty: 160,
+  ssQty: 0,
+  leadTimeWeeks: 10,
+  demandVariability: "off",
+});
+const pipelineWild = run({
+  lotQty: 160,
+  ssQty: 0,
+  leadTimeWeeks: 10,
+  demandVariability: "large",
+  leadTimeVariability: "large",
+  deliveryVariability: "large",
+  shock: true,
+}, 6);
+assert.deepStrictEqual(
+  pipelineQuiet.releases.filter((release) => release.openedBeforeStart).map((release) => release.plannedDueWeek),
+  pipelineWild.releases.filter((release) => release.openedBeforeStart).map((release) => release.plannedDueWeek)
+);
+pipelineWild.releases.filter((release) => release.openedBeforeStart).forEach((release) => {
+  pipelineWild.reviews.forEach((review) => {
+    const seen = review.outstanding.concat(review.releasedNow).find((order) => order.id === release.id);
+    if (seen) {
+      assert.strictEqual(seen.plannerQuantity, 160);
+    }
+  });
+});
+pipelineWild.releases.filter((release) => release.releaseWeek >= 1).forEach((release) => {
+  assert.ok(release.plannedDueWeek >= release.releaseWeek + 10);
+});
 const shortLot = run({
   lotQty: 40,
   ssQty: 0,
   leadTimeWeeks: 2,
   demandVariability: "off",
 });
-assert.ok(shortLot.metrics.oosWeeks > 0, "a one-week lot cannot cover a 2-week lead time");
+assert.strictEqual(shortLot.metrics.oosWeeks, 0, "an order already on the way covers the lead-time gap");
+assert.ok(shortLot.releases.some((release) => release.releaseWeek < 1 && release.plannedDueWeek === 2));
 const noisyShort = run(
   {
     lotQty: 160,
@@ -364,9 +458,9 @@ describedPoints.forEach((point) => {
   describedSum += point > 0 ? point : 0;
 });
 assert.ok(Math.abs(morningCase.metrics.avgSohTurns - describedSum / describedPoints.length) < 1e-9);
-assert.strictEqual(Number(morningCase.metrics.avgSohTurns.toFixed(3)), 13.957);
-assert.strictEqual(Number(morningCase.metrics.averageWc.toFixed(2)), 976.98);
-assert.strictEqual(Number(morningCase.metrics.inventoryTurns.toFixed(2)), 168.09);
+assert.strictEqual(Number(morningCase.metrics.avgSohTurns.toFixed(3)), 14.275);
+assert.strictEqual(Number(morningCase.metrics.averageWc.toFixed(2)), 999.25);
+assert.strictEqual(Number(morningCase.metrics.inventoryTurns.toFixed(2)), 164.34);
 assert.ok(Math.abs(morningCase.metrics.averageWc - morningCase.metrics.avgSohTurns * 70) < 1e-6);
 assert.ok(Math.abs(morningCase.metrics.inventoryTurns - morningCase.metrics.annualDemand / morningCase.metrics.avgSohTurns) < 1e-9);
 const collapsed = [];
@@ -380,7 +474,6 @@ let collapsedSum = 0;
 collapsed.forEach((point) => {
   collapsedSum += point > 0 ? point : 0;
 });
-assert.ok(Math.abs(collapsedSum / collapsed.length - 13.938) < 0.001);
 assert.ok(morningCase.metrics.avgSohTurns > collapsedSum / collapsed.length);
 const uncoveredClose = [];
 for (let i = 0; i < 53; i += 1) {
@@ -587,9 +680,10 @@ const sameWeek = run({
   leadTimeWeeks: 10,
   leadTimeVariability: "off",
 });
-assert.strictEqual(sameWeek.releases[0].releaseWeek, 1);
-assert.strictEqual(sameWeek.releases[0].plannedDueWeek, 11);
+assert.ok(sameWeek.releases[0].releaseWeek < 1);
+assert.strictEqual(sameWeek.releases[0].plannedDueWeek, sameWeek.releases[0].releaseWeek + 10);
 assert.strictEqual(sameWeek.releases[0].delay, 0);
+assert.ok(sameWeek.releases.some((release) => release.releaseWeek >= 1 && release.plannedDueWeek >= 11));
 assert.ok(sameWeek.controls.leadTimeWeeks === 10);
 assert.ok(sameWeek.weeks.every((week) => week.safetyStock === 100));
 
@@ -1207,7 +1301,7 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
   "week",
 ].sort());
 
-assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=18"/);
+assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=19"/);
 assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
 assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=15"/);
 
@@ -1425,6 +1519,7 @@ assert.match(replenishmentHelp, /does not learn the actual arrival date in advan
 assert.match(replenishmentHelp, /at or above safety stock/);
 assert.match(replenishmentHelp, /Starting stock is that full normal/);
 assert.match(replenishmentHelp, /week-1 forecast is not added/);
+assert.match(replenishmentHelp, /already have released before week 1/);
 assert.match(replenishmentHelp, /morning stock on a receipt day/);
 assert.match(replenishmentHelp, /not the lowest close after a receipt/);
 

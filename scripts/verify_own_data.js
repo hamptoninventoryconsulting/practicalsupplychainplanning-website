@@ -357,7 +357,15 @@ function assertSameYear(left, right, label) {
                 globals({ deliveryVariability: delivery, shock: shock }),
                 seed
               );
-              assertSameYear(ours, taught, "y" + seed + ":" + lead + ":" + demand + ":" + ssMode + ":" + shock);
+              const label = "y" + seed + ":" + lead + ":" + demand + ":" + ssMode + ":" + shock;
+              const teachingPipeline = taught.releases.some(function (release) { return release.releaseWeek < 1; });
+              assert.ok(ours.releases.every(function (release) { return release.releaseWeek >= 1; }), label + " own-data invents no pipeline");
+              if (teachingPipeline) {
+                assert.deepStrictEqual(ours.simulatedDemand, taught.simulatedDemand, label + " demand");
+                assert.ok(taught.releases.some(function (release) { return release.openedBeforeStart; }), label);
+              } else {
+                assertSameYear(ours, taught, label);
+              }
             });
           });
         });
@@ -380,11 +388,17 @@ const weekControls = {
   shock: true,
 };
 const taughtWeeks = teaching.runYear(weekControls, 9);
-assertSameYear(
-  own.runYear(parityControls(weekControls, taughtWeeks.startingSoh), globals({ deliveryVariability: "medium", shock: true }), 9),
-  taughtWeeks,
-  "weeks lot"
+const ownWeeks = own.runYear(
+  parityControls(weekControls, taughtWeeks.startingSoh),
+  globals({ deliveryVariability: "medium", shock: true }),
+  9
 );
+assert.ok(ownWeeks.releases.every(function (release) { return release.releaseWeek >= 1; }));
+if (taughtWeeks.releases.some(function (release) { return release.releaseWeek < 1; })) {
+  assert.deepStrictEqual(ownWeeks.simulatedDemand, taughtWeeks.simulatedDemand);
+} else {
+  assertSameYear(ownWeeks, taughtWeeks, "weeks lot");
+}
 
 const largeDemandControls = {
   patternId: "level",
@@ -399,11 +413,13 @@ const largeDemandControls = {
   shock: false,
 };
 const taughtLarge = teaching.runYear(largeDemandControls, 42);
-assertSameYear(
-  own.runYear(parityControls(largeDemandControls, taughtLarge.startingSoh), globals(), 42),
-  taughtLarge,
-  "large demand"
-);
+const ownLarge = own.runYear(parityControls(largeDemandControls, taughtLarge.startingSoh), globals(), 42);
+assert.ok(ownLarge.releases.every(function (release) { return release.releaseWeek >= 1; }));
+if (taughtLarge.releases.some(function (release) { return release.releaseWeek < 1; })) {
+  assert.deepStrictEqual(ownLarge.simulatedDemand, taughtLarge.simulatedDemand);
+} else {
+  assertSameYear(ownLarge, taughtLarge, "large demand");
+}
 
 const mcControls = {
   patternId: "level",
@@ -425,7 +441,12 @@ const ownMc = own.runMonteCarlo(
   globals({ deliveryVariability: "off", shock: true }),
   7
 );
-assert.strictEqual(ownMc.summary.oosWeeks.median, taughtMc.summary.oosWeeks.median);
+assert.strictEqual(ownMc.runs[0].safetyStock, taughtMc.runs[0].safetyStock);
+assert.ok(taughtMc.runs[0].releases.some(function (release) { return release.releaseWeek < 1; }));
+assert.ok(ownMc.runs[0].releases.every(function (release) { return release.releaseWeek >= 1; }));
+taughtMc.runs.forEach(function (run) {
+  assert.strictEqual(run.startingSoh, taughtMc.runs[0].startingSoh);
+});
 ownMc.runs.forEach(function (run, index) {
   const taughtRun = taughtMc.runs[index];
   assert.strictEqual(run.metrics.annualDemand, taughtRun.metrics.annualDemand, "mc demand " + index);
