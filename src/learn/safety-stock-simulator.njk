@@ -7,7 +7,7 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/",
   "scripts": [
-    "/assets/safety-stock-engine.js?v=18",
+    "/assets/safety-stock-engine.js?v=19",
     "/assets/sim-results-form.js?v=7",
     "/assets/safety-stock-simulator.js?v=15"
   ]
@@ -215,7 +215,13 @@
             use the quantity you set. Formula uses the computed result.
             Monte Carlo uses the one frozen quantity for every year in the
             batch. The week-1 forecast is not added, and delivery
-            variability does not change this opening lot.
+            variability does not change this opening lot. The year is a
+            snapshot of a plan already running. Orders that plan would
+            already have released before week 1 are still on the way. They
+            show up as receipts on their due dates, at the normal lot
+            quantity until the goods arrive. They are not added into the
+            opening stock. A new order placed during the year still waits
+            the full base lead time.
           </p>
           <p class="sim-help">
             <strong>Base lead time</strong> is the time it takes from placing a purchase order to receiving the
