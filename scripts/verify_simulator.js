@@ -1302,7 +1302,7 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
 ].sort());
 
 assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=19"/);
-assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
+assert.match(page, /src="\/assets\/sim-results-form\.js\?v=8"/);
 assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=15"/);
 
 assert.strictEqual(engine.meanPlottedSoh([]), null);

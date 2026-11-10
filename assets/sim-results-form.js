@@ -84,6 +84,19 @@
     });
   }
 
+  function notifyMetaLead(formId) {
+    if (formId !== "safety-stock-simulator" && formId !== "own-data-simulator") {
+      return;
+    }
+    try {
+      if (window.pscpMeta && typeof window.pscpMeta.trackLead === "function") {
+        window.pscpMeta.trackLead();
+      }
+    } catch (err) {
+      /* The email already succeeded. A measurement failure must not change that. */
+    }
+  }
+
   function attach(options) {
     var root = document.getElementById(options.id);
     var idle = { show: function () {}, hide: function () {} };
@@ -305,6 +318,7 @@
             if (typeof options.onSent === "function") {
               options.onSent();
             }
+            notifyMetaLead(options.formId);
             return;
           }
           resetWidget();
