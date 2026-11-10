@@ -214,11 +214,22 @@ function makeWindow(doc, location) {
     this.body = body;
     this.sentBody = true;
   };
+  function HTMLFormElement() {}
+  HTMLFormElement.submits = [];
+  HTMLFormElement.prototype.submit = function () {
+    HTMLFormElement.submits.push({
+      action: this.action,
+      fields: (this.elements || []).map(function (field) {
+        return { name: field.name, value: field.value };
+      }),
+    });
+  };
   const win = {
     document: doc,
     location: location,
     Image: FakeImage,
     XMLHttpRequest: XHR,
+    HTMLFormElement: HTMLFormElement,
     navigator: {
       sendBeacon(url, data) {
         this.beacons = this.beacons || [];
@@ -226,7 +237,9 @@ function makeWindow(doc, location) {
         return true;
       },
     },
-    fetch(url) {
+    fetchCalls: [],
+    fetch(url, init) {
+      this.fetchCalls.push({ url: url, body: init && init.body });
       return Promise.resolve({ ok: true, url: url, json: function () { return Promise.resolve({}); }, text: function () { return Promise.resolve(""); } });
     },
     self: null,
@@ -581,10 +594,11 @@ async function main() {
   assert.strictEqual(pixel.choice(), "accepted");
   assert.ok(scriptSrcs(doc).some(function (src) { return src.indexOf(meta.SCRIPT_SRC) !== -1; }));
   const calls = queueArgs(win);
-  assert.deepStrictEqual(calls[0], ["set", "autoConfig", false, PIXEL_ID]);
-  assert.deepStrictEqual(calls[1], ["init", PIXEL_ID]);
-  assert.deepStrictEqual(calls[2], ["track", "PageView"]);
-  assert.strictEqual(calls[1].length, 2);
+  assert.deepStrictEqual(calls[0], ["consent", "grant"]);
+  assert.deepStrictEqual(calls[1], ["set", "autoConfig", false, PIXEL_ID]);
+  assert.deepStrictEqual(calls[2], ["init", PIXEL_ID]);
+  assert.deepStrictEqual(calls[3], ["track", "PageView"]);
+  assert.strictEqual(calls[2].length, 2);
   assertNoScenario(JSON.stringify(calls), "fbq queue after accept");
   assert.deepStrictEqual(leadCalls(win), []);
 
@@ -796,6 +810,156 @@ async function main() {
   assert.doesNotMatch(privacy, /has no analytics, advertising or tracking cookies/);
   assert.doesNotMatch(privacy, /don&rsquo;t use it for advertising/);
   assert.doesNotMatch(privacy, /AWAITING DANIEL/);
+  assert.match(privacy, /not switched on/);
+  assert.match(privacy, /no Cookie choices link/);
+  assert.doesNotMatch(privacy, /The banner offers Accept and Reject/);
+  const privacySource = fs.readFileSync(path.join(ROOT, "src", "privacy.njk"), "utf8");
+  assert.match(privacySource, /The banner offers Accept and Reject as equal choices/);
+  assert.match(privacySource, /AWAITING DANIEL'S APPROVAL/);
+
+  const simPage = fs.readFileSync(path.join(SITE, "learn", "safety-stock-simulator", "index.html"), "utf8").replace(/\s+/g, " ");
+  const ownPage = fs.readFileSync(path.join(SITE, "learn", "safety-stock-simulator", "own-data", "index.html"), "utf8").replace(/\s+/g, " ");
+  assert.doesNotMatch(simPage, /Nothing is stored on a server/);
+  assert.match(simPage, /for 24 months/);
+  assert.match(simPage, /page address can include the scenario settings/);
+  assert.match(simPage, /That view does not include the scenario settings/);
+  assert.match(ownPage, /We do not keep the summary or the link/);
+  assert.match(ownPage, /for 24 months/);
+  assert.match(ownPage, /does not include the #d= fragment/);
+  assert.doesNotMatch(ownPage, /are not stored and are not sent to a server/);
+  assert.match(
+    fs.readFileSync(path.join(ROOT, "src", "learn", "safety-stock-simulator.njk"), "utf8"),
+    /AWAITING DANIEL'S APPROVAL/
+  );
+  assert.match(
+    fs.readFileSync(path.join(ROOT, "src", "learn", "own-data-simulator.njk"), "utf8"),
+    /AWAITING DANIEL'S APPROVAL/
+  );
+
+  const sku = "QA-SKU-LEAK";
+  const fragment = "#d=" + sku + "x".repeat(2000 - 3 - sku.length);
+  assert.strictEqual(fragment.length, 2000);
+  const longPage =
+    "https://practicalsupplychainplanning.com/learn/safety-stock-simulator/own-data/?lq=500&sku=" +
+    sku +
+    "&utm_source=facebook" +
+    fragment;
+  assert.ok(fragment.length >= 1893);
+  assert.ok(longPage.length > 2048, "fixture should be long enough for a Pixel POST");
+  const postBody =
+    "id=" +
+    PIXEL_ID +
+    "&ev=PageView&dl=" +
+    encodeURIComponent(longPage) +
+    "&cd=" +
+    encodeURIComponent(JSON.stringify({ sku: sku, email: "planner@example.com" }));
+  assert.ok(decoded(postBody).includes(sku));
+
+  const longDoc = makeDocument(JSON.stringify(armedConfig()));
+  const longLoc = pixelLocation("/learn/safety-stock-simulator/own-data/", longPage);
+  const longWin = makeWindow(longDoc, longLoc);
+  const longPixel = meta.createMetaPixel({
+    config: armedConfig(),
+    storage: longWin.localStorage,
+    location: longLoc,
+    document: longDoc,
+    window: longWin,
+    referrer: longPage,
+  });
+  longPixel.mount();
+  choiceButtons(longDoc)[0].listeners.click();
+
+  const xhr = new longWin.XMLHttpRequest();
+  xhr.open("POST", "https://www.facebook.com/tr/");
+  xhr.send(postBody);
+  assert.strictEqual(xhr.sentBody, true);
+  const posted = decoded(xhr.body);
+  assert.ok(posted.includes("ev=PageView"));
+  assert.ok(posted.includes("utm_source=facebook"));
+  assert.ok(!posted.includes(sku), posted);
+  assert.ok(!posted.includes("#d="));
+  assert.ok(!posted.includes("lq=500"));
+  assert.ok(!posted.includes("sku="));
+  assert.ok(!posted.includes("planner@example.com"));
+  assert.ok(!posted.includes("#"));
+
+  const formData = new FormData();
+  formData.append("id", PIXEL_ID);
+  formData.append("ev", "PageView");
+  formData.append("dl", longPage);
+  formData.append("cd", JSON.stringify({ sku: sku }));
+  formData.append("sku", sku);
+  await longWin.fetch("https://www.facebook.com/tr/", { method: "POST", body: formData });
+  const fetched = decoded(longWin.fetchCalls[longWin.fetchCalls.length - 1].body);
+  assert.ok(fetched.includes("utm_source=facebook"));
+  assert.ok(!fetched.includes(sku));
+  assert.ok(!fetched.includes("#"));
+
+  const form = Object.create(longWin.HTMLFormElement.prototype);
+  form.action = "https://www.facebook.com/tr/";
+  form.elements = [
+    { name: "id", value: PIXEL_ID },
+    { name: "ev", value: "PageView" },
+    { name: "dl", value: longPage },
+    { name: "cd", value: JSON.stringify({ sku: sku }) },
+    { name: "sku", value: sku },
+  ];
+  form.submit();
+  assert.strictEqual(longWin.HTMLFormElement.submits.length, 1);
+  const formText = longWin.HTMLFormElement.submits[0].fields
+    .map(function (field) {
+      return field.name + "=" + field.value;
+    })
+    .join("&");
+  assert.ok(decoded(formText).includes("utm_source=facebook"));
+  assert.ok(!decoded(formText).includes(sku));
+  assert.ok(!formText.includes("#"));
+
+  const configScript = longDoc.createElement("script");
+  configScript.src = "https://connect.facebook.net/signals/config/" + PIXEL_ID;
+  assert.ok(!String(configScript.src).includes("/signals/config/"));
+
+  const blobWhileOn = new longWin.XMLHttpRequest();
+  blobWhileOn.open("POST", "https://www.facebook.com/tr/");
+  blobWhileOn.send(new Blob([postBody]));
+  assert.ok(!blobWhileOn.sentBody, "an unreadable Pixel body must not be sent");
+
+  const seen = [];
+  longWin.fbq.callMethod = function () {
+    seen.push(Array.prototype.slice.call(arguments));
+    const follow = new longWin.XMLHttpRequest();
+    follow.open("POST", "https://www.facebook.com/tr/");
+    follow.send(postBody);
+  };
+  longWin.fbq("init", PIXEL_ID, { em: "planner@example.com", sku: sku });
+  assert.deepStrictEqual(seen[seen.length - 1], ["init", PIXEL_ID]);
+
+  const sendsBeforeReject = seen.length;
+  longPixel.reject();
+  assert.ok(seen.slice(sendsBeforeReject).some(function (args) {
+    return args[0] === "consent" && args[1] === "revoke";
+  }));
+  const afterRevoke = seen.length;
+  longWin.fbq("track", "PageView");
+  longWin.fbq("track", "Lead");
+  assert.strictEqual(seen.length, afterRevoke);
+  assert.deepStrictEqual(leadCalls(longWin), []);
+
+  const late = new longWin.XMLHttpRequest();
+  late.open("POST", "https://www.facebook.com/tr/");
+  late.send(postBody);
+  assert.ok(!late.sentBody);
+
+  const lateBlob = new longWin.XMLHttpRequest();
+  lateBlob.open("POST", "https://www.facebook.com/tr/");
+  lateBlob.send(new Blob([postBody]));
+  assert.ok(!lateBlob.sentBody);
+
+  form.elements[2].value = longPage;
+  form.elements[4].value = sku;
+  const submitsBefore = longWin.HTMLFormElement.submits.length;
+  form.submit();
+  assert.strictEqual(longWin.HTMLFormElement.submits.length, submitsBefore);
 
   console.log("Meta Pixel consent checks OK.");
 }

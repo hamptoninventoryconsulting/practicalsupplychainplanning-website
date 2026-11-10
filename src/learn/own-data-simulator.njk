@@ -37,19 +37,28 @@
               <li>Demand, lead time, and delivery quantity move inside fixed variability bands.</li>
               <li>Each week's forecast is split evenly across seven days. Once a week the plan is rebuilt from the forecast and from orders already released. A new receipt cannot arrive until the full lead time has passed, and the plan keeps the normal lot quantity until the goods actually arrive.</li>
             </ul>
+            {# AWAITING DANIEL'S APPROVAL — 10 November 2026. Draft replacement for the "not stored on a server" lines. Not approved copy. #}
             <p id="own-storage-off">
               The calculation runs in this browser. SKU names, forecasts, stock,
-              and prices are not stored and are not sent to a server. After you
-              edit, the page address holds those numbers after the #, in a
-              #d= fragment. That part of the address stays on your device.
-              Anyone with the link can read the numbers.
+              and prices are kept in the #d= part of the page address, on your
+              device. That fragment is not sent when the browser requests the
+              page. Anyone with the link can read the numbers. We do not store
+              them on our server. If you accept advertising cookies, Meta may
+              receive a page view. That view does not include the #d= fragment
+              or the scenario.
             </p>
             <p id="own-storage-on" hidden>
               SKU names, forecasts, stock, and prices stay in this browser and
-              in the #d= part of the link. They are not stored on a server. If
-              you ask to email yourself the results, the email contains a
-              summary and a reopen link. Anyone who has that email can read the
-              numbers. We do not keep the summary or the link.
+              in the #d= part of the link. That fragment is not stored on our
+              server. If you ask to email yourself the results, the email
+              contains a summary and a reopen link. Anyone who has that email
+              can read the numbers. We do not keep the summary or the link. We
+              do keep your email address, the time, your network address, and
+              the page address for 24 months. The page address does not include
+              the #d= fragment. It can include other scenario settings from the
+              query string. If you accept advertising cookies, Meta may receive
+              a page view. That view does not include the #d= fragment or the
+              scenario.
             </p>
             <p>
               Practical Stock Planner is a separate Windows app that plans stock by weeks

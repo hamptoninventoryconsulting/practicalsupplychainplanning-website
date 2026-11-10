@@ -1669,7 +1669,7 @@ assert.match(page, /data-sitekey="0x4AAAAAAFMWJU5owYhGcyrK"/);
 assert.match(page, /turnstile\/v0\/api\.js\?render=explicit&onload=pscpTurnstileLoaded" async/);
 assert.doesNotMatch(page, /turnstile\/v0\/api\.js[^>]*\sdefer/);
 assert.match(page, /id="sim-storage-on" hidden/);
-assert.match(page, /unless you ask to email yourself the results/);
+assert.match(page, /If you ask to email yourself the results/);
 assert.doesNotMatch(ui, /location\.href/);
 assert.match(ui, /buildResultsUrl|resultsSummary/);
 const changeBody = ui.slice(

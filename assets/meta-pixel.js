@@ -10,9 +10,14 @@
  * Lead is the standard Meta event for "Simulator results emailed".
  * It is fired only after a successful results email, with no parameters.
  *
- * Scenario settings can sit in the page address. Outbound Pixel requests
- * have those settings removed. Custom data and email addresses are dropped.
- * UTM tags, ref and fbclid are kept.
+ * Scenario settings can sit in the page address, including a long #d= fragment.
+ * Every Pixel transport (image, fetch, XHR, sendBeacon, and form POST) rewrites
+ * dl and rl and drops scenario fields. A body that cannot be cleaned is not sent.
+ * Reject calls fbq('consent', 'revoke') and the fbq wrapper drops later track
+ * calls on the same page. The signals/config script is never requested, so
+ * Events Manager cannot turn automatic advanced matching on in the browser.
+ * Automatic advanced matching must also stay off in Events Manager.
+ * UTM tags, ref and fbclid are kept. init is called with the Pixel ID only.
  */
 (function (root) {
   "use strict";
@@ -22,6 +27,29 @@
   var ALLOWED_QUERY = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "ref", "fbclid"];
   var URL_PARAMS = { dl: true, rl: true, event_source_url: true };
   var DROP_PARAMS = { cd: true, ud: true, udff: true, em: true, email: true };
+  // Page-address keys that carry a scenario. Pixel fields sw and sh are screen
+  // size, so they are not in this list; those scenario keys are removed inside dl.
+  var SCENARIO_FIELDS = {
+    d: true,
+    m: true,
+    s: true,
+    p: true,
+    lm: true,
+    lq: true,
+    lw: true,
+    sm: true,
+    sq: true,
+    sl: true,
+    lt: true,
+    dv: true,
+    lv: true,
+    qv: true,
+    run: true,
+    sku: true,
+    forecast: true,
+    stock: true,
+    result: true,
+  };
 
   function isArmed(config) {
     if (!config || config.enabled !== true) {
@@ -99,10 +127,33 @@
 
   function shouldDropKey(key) {
     var lower = String(key || "").toLowerCase();
-    if (DROP_PARAMS[lower]) {
+    if (DROP_PARAMS[lower] || SCENARIO_FIELDS[lower]) {
       return true;
     }
     return lower.indexOf("cd[") === 0 || lower.indexOf("ud[") === 0;
+  }
+
+  function isSignalsConfigUrl(value) {
+    try {
+      var parsed = new URL(String(value || ""), "https://connect.facebook.net");
+      return parsed.hostname === "connect.facebook.net" && parsed.pathname.indexOf("/signals/") === 0;
+    } catch (error) {
+      return String(value || "").indexOf("/signals/config/") !== -1;
+    }
+  }
+
+  function payloadUnsafe(value) {
+    var decoded = safeDecode(value);
+    if (decoded.indexOf("#") !== -1) {
+      return true;
+    }
+    if (/[?&#](?:d|lq|sq|sku|forecast|stock|result)=[^&#]/i.test("?" + decoded)) {
+      return true;
+    }
+    if (/"(?:sku|forecast|stock|result|email)"\s*:/i.test(decoded)) {
+      return true;
+    }
+    return false;
   }
 
   function sanitizeParams(params) {
@@ -168,20 +219,77 @@
 
   function isPixelBody(value) {
     var text = String(value || "");
-    if (text.indexOf("ev=") === -1) {
-      return false;
-    }
-    return /(?:^|&)ev=(?:PageView|Lead)(?:&|$)/.test(text);
+    return text.indexOf("dl=") !== -1 || text.indexOf("ev=") !== -1 || text.indexOf("cd=") !== -1;
   }
 
   function sanitizePixelBody(raw) {
     var text = String(raw || "");
-    if (!isPixelBody(text)) {
+    if (!text) {
+      return "";
+    }
+    if (!isPixelBody(text) && text.indexOf("#") === -1 && !scenarioLeak(text)) {
       return text;
     }
     var params = new URLSearchParams(text);
     sanitizeParams(params);
     return params.toString();
+  }
+
+  function preparePixelBody(body) {
+    if (body == null || body === "") {
+      return body == null ? "" : body;
+    }
+    if (typeof body === "string") {
+      var cleaned = sanitizePixelBody(body);
+      if (payloadUnsafe(cleaned)) {
+        return null;
+      }
+      return cleaned;
+    }
+    if (typeof URLSearchParams !== "undefined" && body instanceof URLSearchParams) {
+      var params = new URLSearchParams(body.toString());
+      sanitizeParams(params);
+      var asString = params.toString();
+      if (payloadUnsafe(asString)) {
+        return null;
+      }
+      return asString;
+    }
+    if (typeof FormData !== "undefined" && body instanceof FormData) {
+      var formParams = new URLSearchParams();
+      var blockedBinary = false;
+      body.forEach(function (value, key) {
+        if (typeof value !== "string") {
+          blockedBinary = true;
+          return;
+        }
+        formParams.append(key, value);
+      });
+      if (blockedBinary) {
+        return null;
+      }
+      sanitizeParams(formParams);
+      var formString = formParams.toString();
+      if (payloadUnsafe(formString)) {
+        return null;
+      }
+      return formString;
+    }
+    return null;
+  }
+
+  function sanitizeFbqArgs(args) {
+    var command = String(args[0] || "");
+    if (command === "init") {
+      return [args[0], args[1]];
+    }
+    if (command === "track" || command === "trackCustom") {
+      return [args[0], args[1]];
+    }
+    if (command === "trackSingle" || command === "trackSingleCustom") {
+      return [args[0], args[1], args[2]];
+    }
+    return args.slice();
   }
 
   function readStored(storage) {
@@ -237,7 +345,21 @@
     } catch (error) {
       desc = null;
     }
+    var origSetAttribute = typeof el.setAttribute === "function" ? el.setAttribute : null;
     var current = "";
+    function apply(value) {
+      var next = filter(String(value == null ? "" : value));
+      if (next == null) {
+        current = "";
+        return;
+      }
+      current = next;
+      if (desc && desc.set) {
+        desc.set.call(el, next);
+      } else if (origSetAttribute) {
+        origSetAttribute.call(el, "src", next);
+      }
+    }
     try {
       Object.defineProperty(el, "src", {
         configurable: true,
@@ -245,20 +367,17 @@
         get: function () {
           return current;
         },
-        set: function (value) {
-          var next = filter(String(value == null ? "" : value));
-          if (next == null) {
-            current = "";
+        set: apply,
+      });
+      if (origSetAttribute) {
+        el.setAttribute = function (name, value) {
+          if (String(name).toLowerCase() === "src") {
+            apply(value);
             return;
           }
-          current = next;
-          if (desc && desc.set) {
-            desc.set.call(el, next);
-          } else if (typeof el.setAttribute === "function") {
-            el.setAttribute("src", next);
-          }
-        },
-      });
+          return origSetAttribute.apply(el, arguments);
+        };
+      }
       el.__pscpSrcHook = true;
     } catch (error) {
       /* The load gate still refuses to assign a Pixel URL before consent. */
@@ -298,13 +417,34 @@
       if (!text || !isMetaPixelUrl(text)) {
         return text;
       }
+      if (isSignalsConfigUrl(text)) {
+        blocked.push(text);
+        return null;
+      }
       if (!allow()) {
         blocked.push(text);
         return null;
       }
       var clean = text.indexOf("fbevents.js") !== -1 ? text : sanitizeOutbound(text);
+      if (payloadUnsafe(clean)) {
+        blocked.push(text);
+        return null;
+      }
       sent.push(clean);
       return clean;
+    }
+
+    function deliverBody(body) {
+      if (!allow()) {
+        blocked.push("pixel-body");
+        return null;
+      }
+      var prepared = preparePixelBody(body);
+      if (prepared == null || payloadUnsafe(prepared)) {
+        blocked.push("pixel-body");
+        return null;
+      }
+      return prepared;
     }
 
     function persist(next) {
@@ -362,39 +502,35 @@
         };
         doc.__pscpCreateHook = true;
       }
+      function emptyResponse() {
+        return Promise.resolve({
+          ok: false,
+          status: 0,
+          json: function () {
+            return Promise.resolve({});
+          },
+          text: function () {
+            return Promise.resolve("");
+          },
+        });
+      }
       if (typeof win.fetch === "function" && !win.__pscpFetchHook) {
         var origFetch = win.fetch;
         win.fetch = function (input, init) {
           var url = typeof input === "string" ? input : input && input.url;
           var nextUrl = filter(url);
           if (url && isMetaPixelUrl(url) && nextUrl == null) {
-            return Promise.resolve({
-              ok: false,
-              status: 0,
-              json: function () {
-                return Promise.resolve({});
-              },
-              text: function () {
-                return Promise.resolve("");
-              },
-            });
+            return emptyResponse();
           }
           var nextInit = init;
-          var body = init && init.body;
-          if (typeof body === "string" && isPixelBody(body)) {
-            if (!allow()) {
-              return Promise.resolve({
-                ok: false,
-                status: 0,
-                json: function () {
-                  return Promise.resolve({});
-                },
-                text: function () {
-                  return Promise.resolve("");
-                },
-              });
+          if (url && isMetaPixelUrl(url)) {
+            var prepared = deliverBody(init && init.body);
+            if (prepared == null && init && init.body != null && init.body !== "") {
+              return emptyResponse();
             }
-            nextInit = Object.assign({}, init, { body: sanitizePixelBody(body) });
+            if (init && init.body != null) {
+              nextInit = Object.assign({}, init, { body: prepared });
+            }
           }
           var nextInput = input;
           if (typeof input === "string" && nextUrl && nextUrl !== url) {
@@ -411,7 +547,8 @@
         proto.open = function (method, url) {
           var args = Array.prototype.slice.call(arguments);
           var nextUrl = filter(url);
-          this.__pscpBlocked = Boolean(url && isMetaPixelUrl(url) && nextUrl == null);
+          this.__pscpPixel = Boolean(url && isMetaPixelUrl(url));
+          this.__pscpBlocked = Boolean(this.__pscpPixel && nextUrl == null);
           if (!this.__pscpBlocked && nextUrl && nextUrl !== url) {
             args[1] = nextUrl;
           }
@@ -424,11 +561,12 @@
           if (this.__pscpBlocked) {
             return;
           }
-          if (typeof body === "string" && isPixelBody(body)) {
-            if (!allow()) {
+          if (this.__pscpPixel) {
+            var prepared = deliverBody(body);
+            if (prepared == null && body != null && body !== "") {
               return;
             }
-            body = sanitizePixelBody(body);
+            body = prepared;
           }
           return origSend.call(this, body);
         };
@@ -442,16 +580,96 @@
             return false;
           }
           var nextData = data;
-          if (typeof data === "string" && isPixelBody(data)) {
-            if (!allow()) {
+          if (url && isMetaPixelUrl(url) && data != null && data !== "") {
+            nextData = deliverBody(data);
+            if (nextData == null) {
               return false;
             }
-            nextData = sanitizePixelBody(data);
           }
           return origBeacon(nextUrl || url, nextData);
         };
         win.navigator.__pscpBeaconHook = true;
       }
+      hookFormSubmit(win);
+    }
+
+    function scrubForm(form) {
+      var action = form && (form.action || (form.getAttribute && form.getAttribute("action"))) || "";
+      if (!isMetaPixelUrl(action)) {
+        return "ignore";
+      }
+      if (!allow()) {
+        blocked.push(action);
+        return "block";
+      }
+      var cleanedAction = filter(action);
+      if (cleanedAction == null) {
+        return "block";
+      }
+      form.action = cleanedAction;
+      var elements = form.elements || [];
+      for (var i = 0; i < elements.length; i += 1) {
+        var field = elements[i];
+        if (!field) {
+          continue;
+        }
+        var key = String(field.name || "");
+        if (shouldDropKey(key)) {
+          field.value = "";
+          continue;
+        }
+        var lower = key.toLowerCase();
+        if (URL_PARAMS[lower]) {
+          field.value = cleanPageUrl(field.value);
+          continue;
+        }
+        var rawValue = String(field.value || "");
+        if (rawValue.indexOf("#") !== -1 || rawValue.indexOf("@") !== -1 || scenarioLeak(rawValue)) {
+          if (/^https?:\/\//i.test(rawValue)) {
+            field.value = cleanPageUrl(rawValue);
+          } else {
+            field.value = "";
+          }
+        }
+      }
+      var snapshot = "";
+      for (var j = 0; j < elements.length; j += 1) {
+        if (elements[j]) {
+          snapshot += String(elements[j].name || "") + "=" + String(elements[j].value || "") + "&";
+        }
+      }
+      if (payloadUnsafe(snapshot)) {
+        blocked.push(action);
+        return "block";
+      }
+      return "send";
+    }
+
+    function hookFormSubmit(target) {
+      var Form = target && target.HTMLFormElement;
+      var proto = Form && Form.prototype;
+      if (!proto || proto.__pscpSubmitHook || typeof proto.submit !== "function") {
+        return;
+      }
+      var origSubmit = proto.submit;
+      proto.submit = function () {
+        var decision = scrubForm(this);
+        if (decision === "block") {
+          return;
+        }
+        return origSubmit.apply(this, arguments);
+      };
+      if (typeof proto.requestSubmit === "function") {
+        var origRequest = proto.requestSubmit;
+        proto.requestSubmit = function () {
+          var decision = scrubForm(this);
+          if (decision === "block") {
+            return;
+          }
+          return origRequest.apply(this, arguments);
+        };
+      }
+      proto.__pscpSubmitHook = true;
     }
 
     function installFbq() {
@@ -459,7 +677,24 @@
         return;
       }
       var queueFn = function () {
-        queueFn.callMethod ? queueFn.callMethod.apply(queueFn, arguments) : queueFn.queue.push(arguments);
+        var args = Array.prototype.slice.call(arguments);
+        var command = String(args[0] || "");
+        if (!allow()) {
+          if (command === "consent" && queueFn.callMethod) {
+            queueFn.callMethod.apply(queueFn, args);
+          } else if (command === "consent") {
+            queueFn.queue.push(args);
+          } else {
+            blocked.push("fbq:" + command);
+          }
+          return;
+        }
+        var safe = sanitizeFbqArgs(args);
+        if (queueFn.callMethod) {
+          queueFn.callMethod.apply(queueFn, safe);
+        } else {
+          queueFn.queue.push(safe);
+        }
       };
       win.fbq = queueFn;
       if (!win._fbq) {
@@ -498,6 +733,7 @@
       }
       loaded = true;
       var pixelId = String(config.pixelId);
+      win.fbq("consent", "grant");
       win.fbq("set", "autoConfig", false, pixelId);
       win.fbq("init", pixelId);
       win.fbq("track", "PageView");
@@ -568,6 +804,9 @@
         return false;
       }
       loaded = false;
+      if (win && win.fbq) {
+        win.fbq("consent", "revoke");
+      }
       clearPixelCookies();
       note("");
       hideBanner();
@@ -764,6 +1003,9 @@
     createMetaPixel: createMetaPixel,
     readConfig: readConfig,
     boot: boot,
+    preparePixelBody: preparePixelBody,
+    isSignalsConfigUrl: isSignalsConfigUrl,
+    payloadUnsafe: payloadUnsafe,
   };
 
   if (typeof module === "object" && module.exports) {
