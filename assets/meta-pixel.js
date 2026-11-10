@@ -14,10 +14,11 @@
  * Every Pixel transport (image, fetch, XHR, sendBeacon, and form POST) rewrites
  * dl and rl and drops scenario fields. A body that cannot be cleaned is not sent.
  * Reject calls fbq('consent', 'revoke') and the fbq wrapper drops later track
- * calls on the same page. The signals/config script is never requested, so
- * Events Manager cannot turn automatic advanced matching on in the browser.
- * Automatic advanced matching must also stay off in Events Manager.
- * UTM tags, ref and fbclid are kept. init is called with the Pixel ID only.
+ * calls on the same page. fbq.disableConfigLoading is set before init so the
+ * Pixel sends PageView and Lead without waiting for signals/config. That
+ * script is still blocked. autoConfig stays off, and init gets the Pixel ID
+ * only. Automatic advanced matching must also stay off in Events Manager.
+ * UTM tags, ref and fbclid are kept. Pixel requests use an origin-only Referer.
  */
 (function (root) {
   "use strict";
@@ -354,6 +355,13 @@
         return;
       }
       current = next;
+      if (isMetaPixelUrl(next)) {
+        try {
+          el.referrerPolicy = "origin";
+        } catch (error) {
+          /* A stand-in image has no Referer policy. The browser image does. */
+        }
+      }
       if (desc && desc.set) {
         desc.set.call(el, next);
       } else if (origSetAttribute) {
@@ -528,8 +536,9 @@
             if (prepared == null && init && init.body != null && init.body !== "") {
               return emptyResponse();
             }
+            nextInit = Object.assign({}, init || {}, { referrerPolicy: "origin" });
             if (init && init.body != null) {
-              nextInit = Object.assign({}, init, { body: prepared });
+              nextInit.body = prepared;
             }
           }
           var nextInput = input;
@@ -705,6 +714,10 @@
       queueFn.version = "2.0";
       queueFn.queue = [];
       queueFn.disablePushState = true;
+      queueFn.disableConfigLoading = true;
+      // The real Pixel sends PageView once per page unless this is set.
+      // Accept after Reject must be able to send PageView again.
+      queueFn.allowDuplicatePageViews = true;
       var script = doc.createElement("script");
       script.async = true;
       script.id = "pscp-meta-pixel-script";
@@ -733,6 +746,8 @@
       }
       loaded = true;
       var pixelId = String(config.pixelId);
+      win.fbq.disableConfigLoading = true;
+      win.fbq.allowDuplicatePageViews = true;
       win.fbq("consent", "grant");
       win.fbq("set", "autoConfig", false, pixelId);
       win.fbq("init", pixelId);

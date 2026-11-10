@@ -114,6 +114,7 @@
       The Meta Pixel is not switched on. This site does not show an advertising-cookie banner, and the footer has no Cookie choices link. If we switch the Pixel on, the banner will offer Accept and Reject as equal choices, Reject will leave the Pixel unloaded, and Cookie choices in the footer will open that choice again. The Pixel will not load unless you accept it.
     </p>
     {%- endif %}
+    {%- if metaPixel.enabled %}
     <p>
       This choice is separate from the &ldquo;Email me my results&rdquo; tick box. That tick box only sends you the email you asked for. It does not accept the Pixel.
     </p>
@@ -129,6 +130,11 @@
     <p>
       To opt out, choose Reject, or open Cookie choices in the footer and choose Reject. You can also email <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a> with any question about this.
     </p>
+    {%- else %}
+    <p>
+      While the Pixel is switched off, this site does not send page views to Meta.
+    </p>
+    {%- endif %}
 
     <h2>6. How we use it</h2>
     <ul>

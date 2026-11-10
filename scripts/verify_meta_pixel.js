@@ -594,6 +594,7 @@ async function main() {
   assert.strictEqual(pixel.choice(), "accepted");
   assert.ok(scriptSrcs(doc).some(function (src) { return src.indexOf(meta.SCRIPT_SRC) !== -1; }));
   const calls = queueArgs(win);
+  assert.strictEqual(win.fbq.disableConfigLoading, true);
   assert.deepStrictEqual(calls[0], ["consent", "grant"]);
   assert.deepStrictEqual(calls[1], ["set", "autoConfig", false, PIXEL_ID]);
   assert.deepStrictEqual(calls[2], ["init", PIXEL_ID]);
@@ -797,6 +798,7 @@ async function main() {
     assert.strictEqual(config.pixelId, "");
   }
 
+  const privacySource = fs.readFileSync(path.join(ROOT, "src", "privacy.njk"), "utf8");
   const privacy = fs.readFileSync(path.join(SITE, "privacy", "index.html"), "utf8");
   assert.match(privacy, /Last updated: 10 November 2026/);
   assert.match(privacy, /Meta Platforms, Inc\./);
@@ -804,8 +806,12 @@ async function main() {
   assert.match(privacy, /United States/);
   assert.match(privacy, /about 90 days/);
   assert.match(privacy, /Cookie choices/);
-  assert.match(privacy, /We never send scenario data, SKU names, forecasts, stock figures or result numbers to Meta/);
-  assert.match(privacy, /separate from the .*Email me my results/);
+  assert.doesNotMatch(privacy, /If you accept, Meta receives/);
+  assert.doesNotMatch(privacy, /choose Reject, or open Cookie choices/);
+  assert.match(privacySource, /If you accept, Meta receives a page view/);
+  assert.match(privacySource, /choose Reject, or open Cookie choices/);
+  assert.match(privacySource, /We never send scenario data, SKU names, forecasts, stock figures or result numbers to Meta/);
+  assert.match(privacySource, /separate from the .*Email me my results/);
   assert.doesNotMatch(privacy, /does not use advertising or tracking cookies/);
   assert.doesNotMatch(privacy, /has no analytics, advertising or tracking cookies/);
   assert.doesNotMatch(privacy, /don&rsquo;t use it for advertising/);
@@ -813,7 +819,6 @@ async function main() {
   assert.match(privacy, /not switched on/);
   assert.match(privacy, /no Cookie choices link/);
   assert.doesNotMatch(privacy, /The banner offers Accept and Reject/);
-  const privacySource = fs.readFileSync(path.join(ROOT, "src", "privacy.njk"), "utf8");
   assert.match(privacySource, /The banner offers Accept and Reject as equal choices/);
   assert.match(privacySource, /AWAITING DANIEL'S APPROVAL/);
 
