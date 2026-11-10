@@ -805,9 +805,11 @@ async function main() {
   assert.match(privacy, /Safety Stock Simulator/);
   assert.match(privacy, /United States/);
   assert.match(privacy, /about 90 days/);
-  assert.match(privacy, /Cookie choices/);
+  assert.match(privacy, /The Meta Pixel is not switched on, so no page views are sent to Meta/);
+  assert.doesNotMatch(privacy, /Cookie choices/);
   assert.doesNotMatch(privacy, /If you accept, Meta receives/);
   assert.doesNotMatch(privacy, /choose Reject, or open Cookie choices/);
+  assert.doesNotMatch(privacy, /described above/);
   assert.match(privacySource, /If you accept, Meta receives a page view/);
   assert.match(privacySource, /choose Reject, or open Cookie choices/);
   assert.match(privacySource, /We never send scenario data, SKU names, forecasts, stock figures or result numbers to Meta/);
@@ -817,10 +819,10 @@ async function main() {
   assert.doesNotMatch(privacy, /don&rsquo;t use it for advertising/);
   assert.doesNotMatch(privacy, /AWAITING DANIEL/);
   assert.match(privacy, /not switched on/);
-  assert.match(privacy, /no Cookie choices link/);
   assert.doesNotMatch(privacy, /The banner offers Accept and Reject/);
   assert.match(privacySource, /The banner offers Accept and Reject as equal choices/);
-  assert.match(privacySource, /AWAITING DANIEL'S APPROVAL/);
+  assert.match(privacySource, /a page view, and a lead event after a results email is sent/);
+  assert.doesNotMatch(privacySource, /AWAITING DANIEL/);
 
   const simPage = fs.readFileSync(path.join(SITE, "learn", "safety-stock-simulator", "index.html"), "utf8").replace(/\s+/g, " ");
   const ownPage = fs.readFileSync(path.join(SITE, "learn", "safety-stock-simulator", "own-data", "index.html"), "utf8").replace(/\s+/g, " ");
@@ -832,13 +834,13 @@ async function main() {
   assert.match(ownPage, /for 24 months/);
   assert.match(ownPage, /does not include the #d= fragment/);
   assert.doesNotMatch(ownPage, /are not stored and are not sent to a server/);
-  assert.match(
+  assert.doesNotMatch(
     fs.readFileSync(path.join(ROOT, "src", "learn", "safety-stock-simulator.njk"), "utf8"),
-    /AWAITING DANIEL'S APPROVAL/
+    /AWAITING DANIEL/
   );
-  assert.match(
+  assert.doesNotMatch(
     fs.readFileSync(path.join(ROOT, "src", "learn", "own-data-simulator.njk"), "utf8"),
-    /AWAITING DANIEL'S APPROVAL/
+    /AWAITING DANIEL/
   );
 
   const sku = "QA-SKU-LEAK";
