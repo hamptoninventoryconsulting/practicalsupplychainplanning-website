@@ -1,16 +1,15 @@
 /**
  * Meta Pixel for the Safety Stock Simulator ads test.
  *
- * Off until Daniel has approved the privacy wording and the consent banner,
- * then supplied a real Pixel ID and set enabled to true.
+ * Daniel created the dataset "Practical Supply Chain Planning Pixel"
+ * and supplied this ID. enabled is true, so the consent banner is shown
+ * and the Pixel can load after Accept.
  *
- * enabled must be the boolean true. pixelId must be the numeric Pixel ID
- * (15 to 20 digits). An empty ID, or a placeholder such as REPLACE_ME, keeps
- * the Pixel off even if enabled is true.
- *
- * Merging with these defaults loads nothing from Meta and shows no banner.
+ * Automatic advanced matching must stay off in Events Manager.
+ * An empty ID, or a placeholder such as REPLACE_ME, keeps the Pixel off
+ * even if enabled is true.
  */
 module.exports = {
-  enabled: false,
-  pixelId: "",
+  enabled: true,
+  pixelId: "4035664576572032",
 };

@@ -17,7 +17,8 @@ const path = require("path");
 const ROOT = path.resolve(__dirname, "..");
 const FIXTURE = path.join(ROOT, "scripts", "fixtures", "fbevents-2.9.439.js");
 const CHROME = process.env.CHROME_PATH || "/usr/local/bin/google-chrome";
-const PIXEL_ID = "123456789012345";
+const metaConfig = require("../src/_data/metaPixel.js");
+const PIXEL_ID = metaConfig.pixelId;
 const SKU = "QA-SKU-LEAK";
 const ALLOWED = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "ref", "fbclid"];
 
@@ -30,6 +31,35 @@ function freePort() {
       server.close(function () {
         resolve(port);
       });
+    });
+  });
+}
+
+function startBuilt(port) {
+  const site = path.join(ROOT, "_site");
+  const server = http.createServer(function (req, res) {
+    const url = new URL(req.url, "http://127.0.0.1");
+    let rel = decodeURIComponent(url.pathname).replace(/^\/+/, "");
+    if (rel === "" || rel.endsWith("/")) {
+      rel += "index.html";
+    }
+    const file = path.resolve(site, rel);
+    if (!file.startsWith(site + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
+      res.writeHead(404);
+      res.end("missing");
+      return;
+    }
+    const type = file.endsWith(".js")
+      ? "text/javascript"
+      : file.endsWith(".css")
+        ? "text/css"
+        : "text/html";
+    res.writeHead(200, { "content-type": type });
+    fs.createReadStream(file).pipe(res);
+  });
+  return new Promise(function (resolve) {
+    server.listen(port, "127.0.0.1", function () {
+      resolve(server);
     });
   });
 }
@@ -255,6 +285,8 @@ function assertCleanHit(hit, origin) {
 }
 
 async function main() {
+  assert.strictEqual(metaConfig.enabled, true);
+  assert.strictEqual(PIXEL_ID, "4035664576572032");
   assert.ok(fs.existsSync(FIXTURE), "missing " + FIXTURE);
   const fixture = fs.readFileSync(FIXTURE);
   assert.ok(fixture.includes("2.9.439"), "fixture is not fbevents 2.9.439");
@@ -284,6 +316,7 @@ async function main() {
   const signals = [];
   let fbeventsLoads = 0;
   let browser;
+  let builtServer = null;
 
   try {
     let version = null;
@@ -363,6 +396,37 @@ async function main() {
         { urlPattern: "*facebook.com/privacy_sandbox*" },
       ],
     });
+
+    const builtPort = await freePort();
+    builtServer = await startBuilt(builtPort);
+    const builtOrigin = "http://127.0.0.1:" + builtPort;
+    for (const pagePath of ["/", "/learn/", "/learn/safety-stock-simulator/"]) {
+      const beforeEvents = fbeventsLoads;
+      const beforeHits = hits.length;
+      const beforeSignals = signals.length;
+      await send("Page.navigate", { url: builtOrigin + pagePath });
+      await waitFor(pagePath + " banner", async function () {
+        const state = await send("Runtime.evaluate", {
+          expression:
+            "!!document.getElementById('pscp-meta-banner') && !document.getElementById('pscp-meta-banner').hidden && !!document.getElementById('pscp-cookie-choices')",
+          returnByValue: true,
+        });
+        return state.result && state.result.value === true;
+      });
+      const labels = await send("Runtime.evaluate", {
+        expression:
+          "document.getElementById('pscp-meta-banner').innerText + '\\n' + document.getElementById('pscp-cookie-choices').textContent",
+        returnByValue: true,
+      });
+      const labelText = labels.result.value;
+      assert.ok(labelText.includes("Accept"), pagePath + " banner is missing Accept");
+      assert.ok(labelText.includes("Reject"), pagePath + " banner is missing Reject");
+      assert.ok(labelText.includes("Cookie choices"), pagePath + " footer is missing Cookie choices");
+      await sleep(500);
+      assert.strictEqual(fbeventsLoads, beforeEvents, pagePath + " requested fbevents.js before Accept");
+      assert.strictEqual(hits.length, beforeHits, pagePath + " sent a Pixel event before Accept");
+      assert.strictEqual(signals.length, beforeSignals, pagePath + " requested signals/config before Accept");
+    }
 
     await send("Page.navigate", {
       url: origin + "from/?lq=500&sku=" + SKU + "&forecast=9991&stock=8882#d=" + SKU,
@@ -480,6 +544,11 @@ async function main() {
     await new Promise(function (resolve) {
       server.close(resolve);
     });
+    if (builtServer) {
+      await new Promise(function (resolve) {
+        builtServer.close(resolve);
+      });
+    }
     try {
       fs.rmSync(profile, { recursive: true, force: true });
     } catch (error) {
