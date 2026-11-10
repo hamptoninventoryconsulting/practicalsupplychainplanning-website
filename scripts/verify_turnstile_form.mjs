@@ -31,7 +31,7 @@ assert.match(partial, /async><\/script>/);
 assert.doesNotMatch(partial, /api\.js[^>]*defer/);
 assert.match(
   fs.readFileSync(path.join(ROOT, "src", "learn", "safety-stock-simulator.njk"), "utf8"),
-  /sim-results-form\.js\?v=7/
+  /sim-results-form\.js\?v=8/
 );
 
 function Element(spec) {

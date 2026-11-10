@@ -1302,7 +1302,7 @@ assert.deepStrictEqual(Object.keys(cr1.weeks[0]).sort(), [
 ].sort());
 
 assert.match(page, /src="\/assets\/safety-stock-engine\.js\?v=19"/);
-assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
+assert.match(page, /src="\/assets\/sim-results-form\.js\?v=8"/);
 assert.match(page, /src="\/assets\/safety-stock-simulator\.js\?v=15"/);
 
 assert.strictEqual(engine.meanPlottedSoh([]), null);
@@ -1669,7 +1669,7 @@ assert.match(page, /data-sitekey="0x4AAAAAAFMWJU5owYhGcyrK"/);
 assert.match(page, /turnstile\/v0\/api\.js\?render=explicit&onload=pscpTurnstileLoaded" async/);
 assert.doesNotMatch(page, /turnstile\/v0\/api\.js[^>]*\sdefer/);
 assert.match(page, /id="sim-storage-on" hidden/);
-assert.match(page, /unless you ask to email yourself the results/);
+assert.match(page, /If you ask to email yourself the results/);
 assert.doesNotMatch(ui, /location\.href/);
 assert.match(ui, /buildResultsUrl|resultsSummary/);
 const changeBody = ui.slice(
