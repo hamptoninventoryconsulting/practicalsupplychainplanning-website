@@ -151,7 +151,7 @@ function main() {
     const privacy = fs.readFileSync(path.join(SITE, "privacy", "index.html"), "utf8");
     assert.match(privacy, /Cloudflare Web Analytics/);
     assert.match(privacy, /does not use cookies/);
-    assert.match(privacy, /10 November 2026/);
+    assert.match(privacy, /12 November 2026/);
     assert.match(privacy, /Meta Pixel/);
     assert.doesNotMatch(privacy, /does not use a Cloudflare analytics beacon/);
     assert.match(
@@ -165,7 +165,7 @@ function main() {
   } else {
     const privacy = fs.readFileSync(path.join(SITE, "privacy", "index.html"), "utf8");
     assert.match(privacy, /does not use a Cloudflare analytics beacon/);
-    assert.match(privacy, /10 November 2026/);
+    assert.match(privacy, /12 November 2026/);
     assert.match(privacy, /Meta Pixel/);
     assert.doesNotMatch(privacy, /does not use advertising or tracking cookies/);
     assert.match(

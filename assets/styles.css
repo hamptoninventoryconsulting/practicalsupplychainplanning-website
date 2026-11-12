@@ -1058,7 +1058,8 @@ a.sim-button--secondary:is(:link, :visited, :hover, :focus, :focus-visible, :act
 }
 
 .sim-field input,
-.sim-field select {
+.sim-field select,
+.sim-field textarea {
   width: 100%;
   font: inherit;
   font-weight: 500;
@@ -1069,8 +1070,26 @@ a.sim-button--secondary:is(:link, :visited, :hover, :focus, :focus-visible, :act
   color: var(--color-text);
 }
 
+.sim-field textarea {
+  min-height: 8rem;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.ask-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-width: 36rem;
+}
+
+.ask-form[hidden] {
+  display: none !important;
+}
+
 .sim-field input:focus-visible,
 .sim-field select:focus-visible,
+.sim-field textarea:focus-visible,
 .sim-check input:focus-visible {
   outline: 2px solid var(--color-brand-cyan);
   outline-offset: 2px;

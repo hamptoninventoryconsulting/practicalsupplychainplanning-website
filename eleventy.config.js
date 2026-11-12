@@ -1,4 +1,5 @@
 const { injectWebAnalytics, webAnalyticsToken } = require("./scripts/web-analytics");
+const { plainParagraphs } = require("./scripts/faq-items");
 
 const MONTHS = [
   "January",
@@ -114,6 +115,8 @@ module.exports = function (eleventyConfig) {
     }
     return `${Number(match[3])} ${month} ${match[1]}`;
   });
+
+  eleventyConfig.addFilter("plainParagraphs", plainParagraphs);
 
   eleventyConfig.addFilter("readingLabel", (value) => {
     const match = String(value || "").match(/(\d+)/);

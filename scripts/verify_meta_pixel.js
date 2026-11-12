@@ -802,7 +802,7 @@ async function main() {
 
   const privacySource = fs.readFileSync(path.join(ROOT, "src", "privacy.njk"), "utf8");
   const privacy = fs.readFileSync(path.join(SITE, "privacy", "index.html"), "utf8");
-  assert.match(privacy, /Last updated: 10 November 2026/);
+  assert.match(privacy, /Last updated: 12 November 2026/);
   assert.match(privacy, /Meta Platforms, Inc\./);
   assert.match(privacy, /Safety Stock Simulator/);
   assert.match(privacy, /United States/);

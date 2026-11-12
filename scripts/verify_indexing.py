@@ -96,6 +96,7 @@ CORE_PAGES = (
     "/refunds/",
     "/privacy/",
     "/contact/",
+    "/faq/",
 )
 
 CANONICAL_PAGES = (
@@ -117,6 +118,7 @@ CANONICAL_PAGES = (
     ("refunds/index.html", f"{SITE_ORIGIN}/refunds/"),
     ("privacy/index.html", f"{SITE_ORIGIN}/privacy/"),
     ("contact/index.html", f"{SITE_ORIGIN}/contact/"),
+    ("faq/index.html", f"{SITE_ORIGIN}/faq/"),
 )
 
 LEGACY_PATHS = (
@@ -1703,6 +1705,50 @@ def verify_start_pages(errors: list[str]) -> None:
         fail("/start/planning-guides/ should keep the Stock Planner link soft", errors)
 
 
+def verify_faq_links(errors: list[str]) -> None:
+    """Public FAQ page, linked from the menus and the buyer pages."""
+    sources = (
+        (ROOT / "src" / "_includes" / "partials" / "header.njk", "header"),
+        (ROOT / "src" / "_includes" / "partials" / "footer.njk", "site footer"),
+        (ROOT / "src" / "_includes" / "layouts" / "sales.njk", "sales footer"),
+        (ROOT / "src" / "welcome.njk", "welcome"),
+        (ROOT / "src" / "start" / "plan-ahead.njk", "plan-ahead"),
+        (ROOT / "src" / "contact.njk", "contact"),
+        (ROOT / "src" / "products" / "practical-stock-planner.njk", "product page"),
+    )
+    for path, label in sources:
+        text = path.read_text(encoding="utf-8")
+        if 'href="/faq/"' not in text:
+            fail(f"{label} must link to /faq/", errors)
+        if label in ("header", "site footer", "sales footer"):
+            if text.find('href="/faq/"') > text.find('href="/contact/"'):
+                fail(f"{label} FAQ link must sit before Contact", errors)
+    product = (ROOT / "src" / "products" / "practical-stock-planner.njk").read_text(encoding="utf-8")
+    if 'or see the <a href="/contact/">Contact page</a>.' not in product:
+        fail("the product Questions block must keep its Contact sentence", errors)
+    plan = (ROOT / "src" / "start" / "plan-ahead.njk").read_text(encoding="utf-8")
+    if "More answers are on the" not in plan or 'href="/faq/"' not in plan:
+        fail("/start/plan-ahead/ must point to the FAQ page from its Questions block", errors)
+    faq_source = (ROOT / "src" / "faq.njk").read_text(encoding="utf-8")
+    if 'href="/start/' in faq_source:
+        fail("/faq/ must not link to /start/", errors)
+    built = SITE / "faq" / "index.html"
+    if not built.is_file():
+        fail("/faq/ was not built", errors)
+        return
+    page = built.read_text(encoding="utf-8")
+    if NOINDEX_RE.search(page):
+        fail("/faq/ must not be noindex", errors)
+    if "FAQPage" in page:
+        fail("/faq/ must not emit FAQPage JSON-LD while no question is filled in", errors)
+    if 'href="/start/' in page:
+        fail("/faq/ must not link to /start/", errors)
+    if page.lower().count("<h1") != 1:
+        fail("/faq/ must have exactly one h1", errors)
+    if "Ask a question" not in page or "Send question" not in page:
+        fail("/faq/ must include the question form", errors)
+
+
 def main() -> int:
     errors: list[str] = []
     verify_legacy_sources(errors)
@@ -1733,6 +1779,7 @@ def main() -> int:
         verify_glossary(errors)
         verify_seller(errors)
         verify_start_pages(errors)
+        verify_faq_links(errors)
     except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
         fail(str(exc), errors)
     if errors:
