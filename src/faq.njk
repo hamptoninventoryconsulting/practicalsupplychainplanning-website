@@ -1,0 +1,95 @@
+---json
+{
+  "layout": "layouts/page.njk",
+  "title": "Practical Stock Planner FAQ — Practical Supply Chain Planning",
+  "description": "Questions about Practical Stock Planner for buyers and trial users, and a form to ask Daniel.",
+  "canonical": "https://practicalsupplychainplanning.com/faq/",
+  "nav": "faq",
+  "permalink": "/faq/"
+}
+---
+<h1 class="page-title">Questions about Practical Stock Planner</h1>
+<p class="tagline">For the trial and the app. Daniel answers.</p>
+
+{%- if faqItems and faqItems.length %}
+<section class="card">
+  <div class="content">
+    {%- for item in faqItems %}
+    <h2>{{ item.question }}</h2>
+    {%- for paragraph in item.answer | plainParagraphs %}
+    <p>{{ paragraph }}</p>
+    {%- endfor %}
+    {%- endfor %}
+  </div>
+</section>
+{%- endif %}
+
+<section class="card" aria-labelledby="ask-heading">
+  <h2 class="card__title" id="ask-heading">Ask a question</h2>
+  <div class="content">
+    <form class="ask-form" id="ask-question" novalidate>
+      <p class="sim-results__status" id="ask-status" role="status"></p>
+      <label class="sim-field" for="ask-name">
+        Name (optional)
+        <input id="ask-name" name="name" type="text" autocomplete="name" maxlength="80" />
+      </label>
+      <label class="sim-field" for="ask-email">
+        Email address
+        <input id="ask-email" name="email" type="email" autocomplete="email" maxlength="254" required />
+      </label>
+      <label class="sim-field" for="ask-topic">
+        Topic
+        <select id="ask-topic" name="topic" required>
+          <option value="">Choose a topic</option>
+          {%- for topic in askForm.topics %}
+          <option value="{{ topic }}">{{ topic }}</option>
+          {%- endfor %}
+        </select>
+      </label>
+      <label class="sim-field" for="ask-body">
+        Question
+        <textarea id="ask-body" name="question" maxlength="4000" required></textarea>
+      </label>
+      <p class="sim-meta">
+        We email this to
+        <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a>
+        and use it only to reply. We won&rsquo;t add you to a mailing list.
+        <a href="/privacy/">Privacy</a>
+      </p>
+      <div class="sim-turnstile" data-sitekey="{{ site.turnstileSiteKey }}" data-appearance="interaction-only"></div>
+      <div class="sim-hp" aria-hidden="true">
+        <label for="ask-company">Company</label>
+        <input id="ask-company" name="company" type="text" tabindex="-1" autocomplete="off" />
+      </div>
+      <button id="ask-send" class="sim-button" type="submit">Send question</button>
+    </form>
+    <p class="sim-results__sent" id="ask-sent" hidden>{{ askForm.success }}</p>
+  </div>
+</section>
+<script>
+  (function () {
+    window.pscpTurnstileQueue = window.pscpTurnstileQueue || [];
+    if (typeof window.pscpTurnstileLoaded !== "function") {
+      window.pscpTurnstileLoaded = function () {
+        var waiting = window.pscpTurnstileQueue;
+        window.pscpTurnstileQueue = {
+          push: function (fn) {
+            fn();
+          },
+        };
+        if (waiting && waiting.forEach) {
+          waiting.forEach(function (fn) {
+            fn();
+          });
+        }
+      };
+    }
+    if (!document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]')) {
+      var script = document.createElement("script");
+      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=pscpTurnstileLoaded";
+      script.async = true;
+      document.head.appendChild(script);
+    }
+  })();
+</script>
+<script src="/assets/ask-question.js?v={{ site.cssVersion }}"></script>

@@ -27,6 +27,18 @@ assert.match(
   fs.readFileSync(path.join(ROOT, "src", "_includes", "partials", "keep-in-touch.njk"), "utf8"),
   /data-appearance="interaction-only"/
 );
+assert.match(
+  fs.readFileSync(path.join(ROOT, "assets", "ask-question.js"), "utf8"),
+  /appearance:\s*"interaction-only"/
+);
+assert.doesNotMatch(
+  fs.readFileSync(path.join(ROOT, "assets", "ask-question.js"), "utf8"),
+  /turnstile\.ready|\.ready\(|api\.resend|fbq\(|notifyMetaLead/
+);
+assert.match(
+  fs.readFileSync(path.join(ROOT, "src", "faq.njk"), "utf8"),
+  /data-appearance="interaction-only"/
+);
 assert.match(partial, /async><\/script>/);
 assert.doesNotMatch(partial, /api\.js[^>]*defer/);
 assert.match(
