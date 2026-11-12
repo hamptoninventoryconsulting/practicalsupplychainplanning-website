@@ -1,4 +1,4 @@
-const { publishedFaqItems } = require("../scripts/faq-items");
+const { faqPlainText, publishedFaqItems } = require("../scripts/faq-items");
 
 module.exports = {
   eleventyComputed: {
@@ -20,7 +20,7 @@ module.exports = {
               name: item.question,
               acceptedAnswer: {
                 "@type": "Answer",
-                text: item.answer,
+                text: faqPlainText(item.answer),
               },
             };
           }),

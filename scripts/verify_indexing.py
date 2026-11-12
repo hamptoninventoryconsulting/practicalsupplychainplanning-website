@@ -993,6 +993,11 @@ PADDLE_RESELLER_SENTENCES = (
     "Paddle.com is the Merchant of Record for all our orders.",
     "Paddle provides all customer service inquiries and handles returns.",
 )
+FOUNDING_QUESTIONNAIRE = (
+    "A short feedback questionnaire is requested, about two weeks after you start. "
+    "The founding price is not withdrawn if you don&rsquo;t fill it in. "
+    "Giving a quote is optional."
+)
 
 
 def verify_policy_pages(errors: list[str]) -> None:
@@ -1067,7 +1072,7 @@ def verify_policy_pages(errors: list[str]) -> None:
             "for the first 12 months",
             "first 20 customers",
             "31 Jan 2027",
-            "20-minute feedback call",
+            "A short feedback questionnaire is requested, about two weeks after you start.",
             "FOUNDING29",
             "FOUNDINGAU",
             "available from launch on 16 Nov 2026",
@@ -1083,7 +1088,7 @@ def verify_policy_pages(errors: list[str]) -> None:
             "deleted within 30 days of the call",
             "within 14 days of the Guided setup payment",
             "A Guided setup booked later still has its 14-day refund counted from that payment.",
-            "The founding price is not withdrawn if you can&rsquo;t make the call.",
+            "The founding price is not withdrawn if you don&rsquo;t fill it in.",
             "buy button for it yet",
             "Windows 10 or 11, 64-bit",
             "7 days from the first failed payment",
@@ -1093,6 +1098,13 @@ def verify_policy_pages(errors: list[str]) -> None:
         ):
             if phrase not in pricing:
                 fail(f"the product page is missing approved copy: {phrase}", errors)
+        if pricing.count(FOUNDING_QUESTIONNAIRE) != 2:
+            fail(
+                "the product page must use the founding questionnaire sentence in the Price section and the founding-price question",
+                errors,
+            )
+        if re.search(r"feedback\s+call", pricing, re.I):
+            fail("the product page must not keep the old founding-call sentence", errors)
         if "may not be created" in pricing or "may not apply" in pricing:
             fail("the product page must not say the Australian founding code may be missing", errors)
         if "buy.paddle" in pricing or "checkout.paddle" in pricing:
@@ -1196,7 +1208,8 @@ def verify_policy_pages(errors: list[str]) -> None:
             "for the first 12 months",
             "FOUNDING29",
             "FOUNDINGAU",
-            "The founding price is not withdrawn if you can&rsquo;t make the call.",
+            "A short feedback questionnaire is requested, about two weeks after you start.",
+            "The founding price is not withdrawn if you don&rsquo;t fill it in.",
             "A Guided setup booked later still has its 14-day refund counted from that payment.",
             "deleted within 30 days of the call",
             "Daniel Hampton",
@@ -1205,6 +1218,10 @@ def verify_policy_pages(errors: list[str]) -> None:
         ):
             if phrase not in terms:
                 fail(f"/terms/ is missing approved copy: {phrase}", errors)
+        if terms.count(FOUNDING_QUESTIONNAIRE) != 1:
+            fail("/terms/ must use the founding questionnaire sentence once", errors)
+        if re.search(r"feedback\s+call", terms, re.I):
+            fail("/terms/ must not keep the old founding-call sentence", errors)
         if "may not be created" in terms or "may not apply" in terms:
             fail("/terms/ must not say the Australian founding code may be missing", errors)
         if 'class="site-address">practicalsupplychainplanning.com' not in terms:
@@ -1739,8 +1756,52 @@ def verify_faq_links(errors: list[str]) -> None:
     page = built.read_text(encoding="utf-8")
     if NOINDEX_RE.search(page):
         fail("/faq/ must not be noindex", errors)
-    if "FAQPage" in page:
-        fail("/faq/ must not emit FAQPage JSON-LD while no question is filled in", errors)
+    if "FAQPage" not in page:
+        fail("/faq/ must emit FAQPage JSON-LD for the published questions", errors)
+    for question in (
+        "How do I get started?",
+        "What files does it use? Does it connect to Shopify, Xero or Cin7?",
+        "How does the licence work?",
+        "Who takes payment, and how do I cancel?",
+        "Does it run on a Mac, or only on Windows?",
+        "Where does my planning data go?",
+        "What is the founding-customer price?",
+        "When am I charged?",
+        "What does Practical Stock Planner actually do?",
+        "What doesn\u2019t it do?",
+        "Can I get help with setup?",
+        "How do I ask a question that isn\u2019t covered here?",
+    ):
+        if f"<h2>{question}</h2>" not in page:
+            fail(f"/faq/ is missing the question: {question}", errors)
+    if (
+        "In return, a short feedback questionnaire is requested about two weeks after you start. "
+        "The founding price is not withdrawn if you don\u2019t fill it in. Giving a quote is optional."
+    ) not in page:
+        fail("/faq/ is missing the founding questionnaire answer", errors)
+    if (
+        "Can\u2019t see your question answered above? Send it here and Daniel will reply by email "
+        "within 2 business days (Brisbane time)."
+    ) not in page:
+        fail("/faq/ is missing the Ask a question help text", errors)
+    if "outgrown simple reorder triggers" not in page:
+        fail("/faq/ is missing the approved reorder-triggers wording", errors)
+    if "30\u201345 minute video call" not in page or "It is not the founding feedback questionnaire." not in page:
+        fail("/faq/ must keep Guided setup separate from the founding questionnaire", errors)
+    if re.search(r"feedback\s+call", page, re.I):
+        fail("/faq/ must not mention a founding call", errors)
+    if re.search(r"reorder-point|reorder point|min-max|min/max|minmax", page, re.I):
+        fail("/faq/ must not use reorder-point or min-max wording", errors)
+    for href in (
+        'href="/products/practical-stock-planner/"',
+        'href="/refunds/"',
+        'href="/privacy/"',
+        'href="/contact/"',
+        'href="https://www.paddle.net" rel="noopener noreferrer" target="_blank"',
+        'href="mailto:support@practicalsupplychainplanning.com"',
+    ):
+        if href not in page:
+            fail(f"/faq/ is missing {href}", errors)
     if 'href="/start/' in page:
         fail("/faq/ must not link to /start/", errors)
     if page.lower().count("<h1") != 1:

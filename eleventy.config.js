@@ -1,5 +1,5 @@
 const { injectWebAnalytics, webAnalyticsToken } = require("./scripts/web-analytics");
-const { plainParagraphs } = require("./scripts/faq-items");
+const { faqInline, plainParagraphs } = require("./scripts/faq-items");
 
 const MONTHS = [
   "January",
@@ -117,6 +117,7 @@ module.exports = function (eleventyConfig) {
   });
 
   eleventyConfig.addFilter("plainParagraphs", plainParagraphs);
+  eleventyConfig.addFilter("faqInline", faqInline);
 
   eleventyConfig.addFilter("readingLabel", (value) => {
     const match = String(value || "").match(/(\d+)/);
