@@ -17,7 +17,7 @@
     {%- for item in faqItems %}
     <h2>{{ item.question }}</h2>
     {%- for paragraph in item.answer | plainParagraphs %}
-    <p>{{ paragraph }}</p>
+    <p>{{ paragraph | faqInline | safe }}</p>
     {%- endfor %}
     {%- endfor %}
   </div>
@@ -27,7 +27,8 @@
 <section class="card" aria-labelledby="ask-heading">
   <h2 class="card__title" id="ask-heading">Ask a question</h2>
   <div class="content">
-    <form class="ask-form" id="ask-question" novalidate>
+    <p id="ask-help">{{ askForm.help }}</p>
+    <form class="ask-form" id="ask-question" aria-describedby="ask-help" novalidate>
       <p class="sim-results__status" id="ask-status" role="status"></p>
       <label class="sim-field" for="ask-name">
         Name (optional)

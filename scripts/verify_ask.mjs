@@ -47,6 +47,8 @@ assert.strictEqual(ASK_TOPICS.length, 5);
 assert.match(page, /id="ask-question"/);
 assert.match(page, /name="company"/);
 assert.match(page, /askForm\.success/);
+assert.match(page, /askForm\.help/);
+assert.match(page, /id="ask-help"/);
 assert.match(ASK_SUCCESS, /2 business days/);
 
 const privacy = fs.readFileSync(path.join(ROOT, "src", "privacy.njk"), "utf8");
@@ -58,8 +60,54 @@ assert.match(
 assert.match(privacy, /we do not add you to a mailing list/);
 
 const shipped = JSON.parse(fs.readFileSync(path.join(ROOT, "src", "_data", "faq.json"), "utf8"));
-assert.strictEqual(faqItems.publishedFaqItems(shipped).length, 0);
+const published = faqItems.publishedFaqItems(shipped);
+assert.deepStrictEqual(
+  published.map(function (item) {
+    return item.question;
+  }),
+  [
+    "How do I get started?",
+    "What files does it use? Does it connect to Shopify, Xero or Cin7?",
+    "How does the licence work?",
+    "Who takes payment, and how do I cancel?",
+    "Does it run on a Mac, or only on Windows?",
+    "Where does my planning data go?",
+    "What is the founding-customer price?",
+    "When am I charged?",
+    "What does Practical Stock Planner actually do?",
+    "What doesn\u2019t it do?",
+    "Can I get help with setup?",
+    "How do I ask a question that isn\u2019t covered here?",
+  ]
+);
+assert.match(
+  published[0].answer,
+  /\[Practical Stock Planner page\]\(https:\/\/practicalsupplychainplanning.com\/products\/practical-stock-planner\/\)/
+);
+assert.match(published[0].answer, /`support@practicalsupplychainplanning.com`/);
+assert.match(
+  published[6].answer,
+  /In return, a short feedback questionnaire is requested about two weeks after you start\. The founding price is not withdrawn if you don\u2019t fill it in\./
+);
+assert.match(published[8].answer, /outgrown simple reorder triggers/);
+assert.doesNotMatch(JSON.stringify(shipped), /reorder-point|reorder point|min-max|min\/max|feedback\s+call/i);
 assert.deepStrictEqual(faqItems.plainParagraphs("One line.\n\nTwo\nlines."), ["One line.", "Two lines."]);
+assert.strictEqual(
+  faqItems.faqInline(
+    "See the [Practical Stock Planner page](https://practicalsupplychainplanning.com/products/practical-stock-planner/) and `support@practicalsupplychainplanning.com`."
+  ),
+  'See the <a href="/products/practical-stock-planner/">Practical Stock Planner page</a> and <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a>.'
+);
+assert.strictEqual(
+  faqItems.faqInline("At <script> [paddle.net](https://www.paddle.net)."),
+  'At &lt;script&gt; <a href="https://www.paddle.net" rel="noopener noreferrer" target="_blank">paddle.net</a>.'
+);
+assert.strictEqual(
+  faqItems.faqPlainText(
+    "See the [Refund Policy](https://practicalsupplychainplanning.com/refunds/) and `support@practicalsupplychainplanning.com`."
+  ),
+  "See the Refund Policy and support@practicalsupplychainplanning.com."
+);
 
 const blankSchema = faqPage.eleventyComputed.schemaJson({
   faq: [
@@ -81,6 +129,13 @@ assert.match(filledSchema, /How do I move a licence\?/);
 assert.doesNotMatch(filledSchema, /<script>/);
 assert.match(filledSchema, /\\u003cscript/);
 assert.doesNotMatch(filledSchema, /hidden/);
+
+const shippedSchema = faqPage.eleventyComputed.schemaJson({ faq: shipped });
+assert.match(shippedSchema, /"@type": "FAQPage"/);
+assert.match(shippedSchema, /short feedback questionnaire is requested about two weeks after you start/);
+assert.match(shippedSchema, /Practical Stock Planner page/);
+assert.doesNotMatch(shippedSchema, /\]\(https:/);
+assert.doesNotMatch(shippedSchema, /`support@/);
 
 function adapter(sqlite) {
   return {
@@ -449,8 +504,22 @@ assert.strictEqual(
 const built = path.join(ROOT, "_site", "faq", "index.html");
 assert.ok(fs.existsSync(built), "Built /faq/ is missing. Run npm run build first.");
 const html = fs.readFileSync(built, "utf8");
-assert.doesNotMatch(html, /FAQPage/);
+assert.match(html, /"@type": "FAQPage"/);
 assert.match(html, /Ask a question/);
+assert.match(
+  html,
+  /Can\u2019t see your question answered above\? Send it here and Daniel will reply by email within 2 business days \(Brisbane time\)\./
+);
+assert.match(html, /30\u201345 minute video call/);
+assert.match(html, /It is not the founding feedback questionnaire\./);
+assert.match(html, /href="\/products\/practical-stock-planner\/"/);
+assert.match(html, /href="\/refunds\/"/);
+assert.match(html, /href="\/privacy\/"/);
+assert.match(html, /href="\/contact\/"/);
+assert.match(html, /href="https:\/\/www\.paddle\.net" rel="noopener noreferrer" target="_blank"/);
+assert.doesNotMatch(html, /feedback\s+call/i);
+assert.doesNotMatch(html, /reorder-point|reorder point|min-max|min\/max/i);
+assert.doesNotMatch(html, /`support@/);
 assert.match(html, /Send question/);
 ASK_TOPICS.forEach(function (topic) {
   assert.ok(html.includes(topic), "built page missing " + topic);
