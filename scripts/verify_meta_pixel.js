@@ -748,7 +748,9 @@ async function main() {
   assert.match(checkout, /window\.pscpVisit\.customData/);
   const visit = fs.readFileSync(path.join(ROOT, "assets", "visit.js"), "utf8");
   assert.match(visit, /STORAGE_KEY = "pscp\.visit"/);
-  assert.doesNotMatch(fs.readFileSync(path.join(ROOT, "src", "_data", "metaPixel.js"), "utf8"), /enabled:\s*true/);
+  const metaConfig = fs.readFileSync(path.join(ROOT, "src", "_data", "metaPixel.js"), "utf8");
+  assert.match(metaConfig, /enabled:\s*true/);
+  assert.match(metaConfig, /pixelId:\s*"4035664576572032"/);
 
   if (!fs.existsSync(SITE)) {
     console.error("Built site is missing. Run `npm run build` before scripts/verify_meta_pixel.js.");
@@ -794,8 +796,8 @@ async function main() {
     const configMatch = html.match(/<script type="application\/json" id="pscp-meta-config">([\s\S]*?)<\/script>/);
     assert.ok(configMatch, relative + " must include the Pixel config");
     const config = JSON.parse(configMatch[1]);
-    assert.strictEqual(config.enabled, false);
-    assert.strictEqual(config.pixelId, "");
+    assert.strictEqual(config.enabled, true);
+    assert.strictEqual(config.pixelId, "4035664576572032");
   }
 
   const privacySource = fs.readFileSync(path.join(ROOT, "src", "privacy.njk"), "utf8");
@@ -805,10 +807,12 @@ async function main() {
   assert.match(privacy, /Safety Stock Simulator/);
   assert.match(privacy, /United States/);
   assert.match(privacy, /about 90 days/);
-  assert.match(privacy, /The Meta Pixel is not switched on, so no page views are sent to Meta/);
-  assert.doesNotMatch(privacy, /Cookie choices/);
-  assert.doesNotMatch(privacy, /If you accept, Meta receives/);
-  assert.doesNotMatch(privacy, /choose Reject, or open Cookie choices/);
+  assert.match(privacy, /The banner offers Accept and Reject as equal choices/);
+  assert.match(privacy, /Cookie choices in the footer/);
+  assert.match(privacy, /If you accept, Meta receives a page view/);
+  assert.match(privacy, /choose Reject, or open Cookie choices/);
+  assert.doesNotMatch(privacy, /The Meta Pixel is not switched on, so no page views are sent to Meta/);
+  assert.doesNotMatch(privacy, /While the Pixel is switched off/);
   assert.doesNotMatch(privacy, /described above/);
   assert.match(privacySource, /If you accept, Meta receives a page view/);
   assert.match(privacySource, /choose Reject, or open Cookie choices/);
@@ -818,8 +822,7 @@ async function main() {
   assert.doesNotMatch(privacy, /has no analytics, advertising or tracking cookies/);
   assert.doesNotMatch(privacy, /don&rsquo;t use it for advertising/);
   assert.doesNotMatch(privacy, /AWAITING DANIEL/);
-  assert.match(privacy, /not switched on/);
-  assert.doesNotMatch(privacy, /The banner offers Accept and Reject/);
+  assert.doesNotMatch(privacy, /not switched on/);
   assert.match(privacySource, /The banner offers Accept and Reject as equal choices/);
   assert.match(privacySource, /a page view, and a lead event after a results email is sent/);
   assert.doesNotMatch(privacySource, /AWAITING DANIEL/);
