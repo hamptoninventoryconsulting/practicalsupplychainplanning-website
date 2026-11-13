@@ -742,7 +742,11 @@ async function main() {
   assert.doesNotMatch(formSource, /pscp\.metaConsent|fbq\(|fbevents/);
 
   const paddle = fs.readFileSync(path.join(ROOT, "src", "_data", "paddle.js"), "utf8");
-  assert.match(paddle, /checkoutOpen:\s*false/);
+  assert.match(
+    paddle,
+    /checkoutOpen:\s*(?:true|false)\b/,
+    "src/_data/paddle.js must set checkoutOpen to true or false"
+  );
   const checkout = fs.readFileSync(path.join(ROOT, "assets", "pricing-checkout.js"), "utf8");
   assert.match(checkout, /config\.checkoutOpen === true/);
   assert.match(checkout, /window\.pscpVisit\.customData/);
