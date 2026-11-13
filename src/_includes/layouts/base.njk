@@ -22,6 +22,7 @@
 {{ schemaJson | safe }}
     </script>
     {%- endif %}
+    <script src="/assets/visit.js?v={{ site.cssVersion }}"></script>
   </head>
   <body>
     {% include "partials/header.njk" %}
@@ -29,6 +30,8 @@
       {{ content | safe }}
     </main>
     {% include "partials/footer.njk" %}
+    <script type="application/json" id="pscp-meta-config">{{ metaPixel | dump | safe }}</script>
+    <script src="/assets/meta-pixel.js?v={{ site.cssVersion }}"></script>
     {%- for src in scripts %}
     <script src="{{ src }}"></script>
     {%- endfor %}

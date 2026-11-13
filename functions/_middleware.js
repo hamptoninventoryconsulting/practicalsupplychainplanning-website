@@ -36,6 +36,20 @@ function isWelcomePath(pathname) {
   );
 }
 
+// Campaign pages are built at /start/<slug>/. The outreach link already uses
+// that slash. A missing slash, or an /index.html address, is one hop to the
+// same path. The query string (utm_ and ref) stays on the URL object.
+const START_SLUGS = new Set(["plan-ahead", "planning-guides"]);
+
+function startCanonicalPath(pathname) {
+  const match = pathname.match(/^\/start\/([^/]+)(?:\/index(?:\.html)?)?\/?$/);
+  if (!match || !START_SLUGS.has(match[1])) {
+    return null;
+  }
+  const canonical = `/start/${match[1]}/`;
+  return pathname === canonical ? null : canonical;
+}
+
 export function redirectDecision(requestUrl) {
   const url = new URL(requestUrl);
   let status = 301;
@@ -60,6 +74,13 @@ export function redirectDecision(requestUrl) {
     url.search = "";
     url.hash = "";
     status = 302;
+    redirect = true;
+  }
+
+  const startPath = startCanonicalPath(url.pathname);
+  if (startPath) {
+    url.pathname = startPath;
+    status = 301;
     redirect = true;
   }
 

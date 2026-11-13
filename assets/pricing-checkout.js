@@ -101,13 +101,18 @@
 
   function openCheckout(currencyCode) {
     try {
-      var customData = { campaign: "default" };
-      var params = new URLSearchParams(window.location.search);
-      params.forEach(function (value, key) {
-        if (key.indexOf("utm_") === 0 && value) {
-          customData[key] = String(value).slice(0, 100);
-        }
-      });
+      var customData;
+      if (window.pscpVisit && typeof window.pscpVisit.customData === "function") {
+        customData = window.pscpVisit.customData();
+      } else {
+        customData = { campaign: "default" };
+        var params = new URLSearchParams(window.location.search);
+        params.forEach(function (value, key) {
+          if (key.indexOf("utm_") === 0 && value) {
+            customData[key] = String(value).slice(0, 100);
+          }
+        });
+      }
       var checkout = {
         items: [{ priceId: campaign.priceId, quantity: 1 }],
         customData: customData,

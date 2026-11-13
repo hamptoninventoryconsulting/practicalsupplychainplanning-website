@@ -122,6 +122,19 @@
     return sign + "$" + Math.abs(rounded).toLocaleString("en-US");
   }
 
+  // Chart label for the floored mean of the plotted stock points. A quiet
+  // week is one point. A receipt week is the pre-receipt point and the close.
+  // Each point below zero counts as zero, the same average working capital
+  // uses. Units use the page's count formatting. Dollars are that mean times
+  // the $70 unit cost (PRICES.cost).
+  function averageSohLabel(mean) {
+    var rate = engine.PRICES && engine.PRICES.cost;
+    if (mean == null || !isFinite(mean) || rate == null || !isFinite(rate)) {
+      return "";
+    }
+    return "Avg SOH " + formatCount(mean) + " units (" + formatMoney(mean * rate) + ")";
+  }
+
   function formatBand(band, format) {
     return (
       "Median " +
@@ -157,6 +170,50 @@
     });
   }
 
+  var COVER_HINT =
+    "Average demand is about 40 a week, so 40 is about 1 week of cover.";
+
+  function coverHint(raw, field) {
+    var normalized = engine.normalizeControls(
+      field === "ssQty" ? { ssQty: raw } : { lotQty: raw }
+    );
+    var qty = field === "ssQty" ? normalized.ssQty : normalized.lotQty;
+    var weeks = (qty / 40);
+    if (weeks < 0.05) {
+      return COVER_HINT + " This quantity is <0.1 weeks of cover.";
+    }
+    var shown = Math.round(weeks * 10) / 10;
+    var unit = shown === 1 ? "week" : "weeks";
+    return COVER_HINT + " This quantity is " + shown.toFixed(1) + " " + unit + " of cover.";
+  }
+
+  function updateCoverHints() {
+    var lot = $("sim-lot-cover-hint");
+    var safety = $("sim-ss-cover-hint");
+    if (lot && $("sim-lot-qty")) {
+      lot.textContent = coverHint($("sim-lot-qty").value, "lotQty");
+    }
+    if (safety && $("sim-ss-qty")) {
+      safety.textContent = coverHint($("sim-ss-qty").value, "ssQty");
+    }
+  }
+
+  function syncPatternSummaries() {
+    if (!engine || !engine.PATTERNS) {
+      return;
+    }
+    engine.PATTERNS.forEach(function (pattern) {
+      var button = document.querySelector('[data-pattern-id="' + pattern.id + '"]');
+      if (!button || !pattern.summary) {
+        return;
+      }
+      var summary = button.querySelector(".sim-scenario__summary");
+      if (summary) {
+        summary.textContent = pattern.summary;
+      }
+    });
+  }
+
   function writeControlsToDom() {
     var controls = state.controls;
     $("sim-lot-mode").value = controls.lotMode;
@@ -177,6 +234,7 @@
       button.setAttribute("aria-pressed", selected ? "true" : "false");
       button.classList.toggle("sim-scenario--selected", selected);
     });
+    syncPatternSummaries();
     applyMode();
     $("sim-lot-qty-field").hidden = controls.lotMode !== "fixed";
     $("sim-lot-weeks-field").hidden = controls.lotMode !== "weeks";
@@ -184,6 +242,7 @@
     $("sim-ss-weeks-field").hidden = controls.ssMode !== "weeks";
     $("sim-service-field").hidden = controls.ssMode !== "formula";
     $("sim-app").classList.toggle("sim-app--help", state.explanations);
+    updateCoverHints();
   }
 
   function metricCard(label, value, note) {
@@ -306,6 +365,12 @@
     var minValue = 0;
     var maxValue = 0;
     weeks.forEach(function (week) {
+      if (week.preReceiptSoh < minValue) {
+        minValue = week.preReceiptSoh;
+      }
+      if (week.preReceiptSoh > maxValue) {
+        maxValue = week.preReceiptSoh;
+      }
       if (week.endingSoh < minValue) {
         minValue = week.endingSoh;
       }
@@ -342,6 +407,21 @@
         })
         .join(" ");
     }
+    function stockPath() {
+      var commands = [];
+      var started = false;
+      weeks.forEach(function (week, index) {
+        var values = [week.preReceiptSoh];
+        if (week.plannedSupply > 0) {
+          values.push(week.endingSoh);
+        }
+        values.forEach(function (value) {
+          commands.push((started ? "L" : "M") + x(index).toFixed(2) + " " + y(value).toFixed(2));
+          started = true;
+        });
+      });
+      return commands.join(" ");
+    }
     function add(name, attrs) {
       var node = document.createElementNS("http://www.w3.org/2000/svg", name);
       Object.keys(attrs).forEach(function (key) {
@@ -369,17 +449,60 @@
       "stroke-dasharray": "6 4",
       d: seriesPath(function (week) { return week.safetyStock; }),
     });
+    var mean = engine.meanPlottedSoh(weeks);
+    var avgLabel = averageSohLabel(mean);
+    var avgCaption = $("sim-chart-avg");
+    if (avgCaption) {
+      avgCaption.textContent = avgLabel;
+    }
+    var labelY = 0;
+    if (avgLabel) {
+      var avgY = y(mean);
+      add("line", {
+        class: "sim-chart__avg",
+        fill: "none",
+        stroke: "#6d28d9",
+        "stroke-width": "2",
+        "stroke-dasharray": "4 3",
+        x1: String(left),
+        x2: String(width - right),
+        y1: avgY.toFixed(2),
+        y2: avgY.toFixed(2),
+      });
+      labelY = avgY - 10;
+      if (labelY < top + 12) {
+        labelY = avgY + 16;
+      }
+    }
     add("path", {
       class: "sim-chart__ending",
       fill: "none",
       stroke: "#0e7490",
       "stroke-width": "2",
-      d: seriesPath(function (week) { return week.endingSoh; }),
+      d: stockPath(),
     });
+    if (avgLabel) {
+      var label = add("text", {
+        class: "sim-chart__avg-label",
+        x: String(width - right - 6),
+        y: labelY.toFixed(2),
+        "text-anchor": "end",
+        fill: "#6d28d9",
+        stroke: "#ffffff",
+        "stroke-width": "3",
+        "stroke-linejoin": "round",
+        "paint-order": "stroke",
+        "font-size": "12",
+        "font-family": "system-ui, sans-serif",
+        "font-weight": "600",
+      });
+      label.textContent = avgLabel;
+    }
     [1, 13, 26, 39, 52].forEach(function (weekNo) {
+      var labelIndex = weeks.length > 52 ? (weekNo === 52 ? weeks.length - 1 : (weekNo - 1) * 7) : weekNo - 1;
       var label = add("text", {
         class: "sim-chart__label",
-        x: x(weekNo - 1).toFixed(2),
+        x: x(labelIndex).toFixed(2),
         y: String(height - 10),
         "text-anchor": "middle",
       });
@@ -388,8 +511,8 @@
     var dataMax = 0;
     var dataMin = 0;
     weeks.forEach(function (week) {
-      dataMax = Math.max(dataMax, week.endingSoh, week.safetyStock);
-      dataMin = Math.min(dataMin, week.endingSoh, week.safetyStock);
+      dataMax = Math.max(dataMax, week.preReceiptSoh, week.endingSoh, week.safetyStock);
+      dataMin = Math.min(dataMin, week.preReceiptSoh, week.endingSoh, week.safetyStock);
     });
     var yTicks = dataMax === 0 ? [0] : [dataMax, 0];
     if (dataMin < 0) {
@@ -405,6 +528,39 @@
     });
   }
 
+  function weeksCsv(weeks) {
+    var lines = [
+      "Week,Base demand,Simulated demand,Beginning SOH,Pre-receipt SOH,Receipts,Ending SOH,Safety stock",
+    ];
+    weeks.forEach(function (week) {
+      lines.push(
+        [
+          String(week.week),
+          formatCount(week.baseDemand),
+          formatCount(week.simulatedDemand),
+          formatCount(week.beginningSoh),
+          formatCount(week.preReceiptSoh),
+          formatCount(week.plannedSupply),
+          formatCount(week.endingSoh),
+          formatCount(week.safetyStock),
+        ].join(",")
+      );
+    });
+    return lines.join("\r\n");
+  }
+
+  function downloadCsv(name, text) {
+    var blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   function renderWeeks(weeks) {
     var body = $("sim-weeks-body");
     body.innerHTML = "";
@@ -415,6 +571,7 @@
         week.baseDemand,
         week.simulatedDemand,
         week.beginningSoh,
+        week.preReceiptSoh,
         week.plannedSupply,
         week.endingSoh,
         week.safetyStock,
@@ -424,8 +581,8 @@
         if (index === 0) {
           cell.scope = "row";
         }
-        cell.textContent = String(value);
-        if (index === 5 && value < 0) {
+        cell.textContent = index === 0 ? String(value) : formatCount(value);
+        if ((index === 4 || index === 6) && value < 0) {
           cell.className = "sim-negative";
         }
         tr.appendChild(cell);
@@ -444,6 +601,10 @@
     $("sim-formula-note").textContent = "";
     $("sim-shock-weeks").textContent = "";
     $("sim-weeks-body").innerHTML = "";
+    var avgCaption = $("sim-chart-avg");
+    if (avgCaption) {
+      avgCaption.textContent = "";
+    }
     var svg = $("sim-chart");
     while (svg.firstChild) {
       svg.removeChild(svg.firstChild);
@@ -482,7 +643,7 @@
     renderFormula(result);
     renderMetrics(result);
     renderShock(result);
-    renderChart(result.weeks);
+    renderChart(result.days);
     renderWeeks(result.weeks);
   }
 
@@ -680,6 +841,7 @@
     });
     ["sim-lot-qty", "sim-ss-qty"].forEach(function (id) {
       $(id).addEventListener("change", onControlsChanged);
+      $(id).addEventListener("input", updateCoverHints);
     });
     $("sim-shock").addEventListener("change", onControlsChanged);
     $("sim-explanations").addEventListener("change", function () {
@@ -704,6 +866,12 @@
       setMode("monte-carlo");
     });
     $("sim-run-year").addEventListener("click", runYearClicked);
+    $("sim-download-weeks").addEventListener("click", function () {
+      if (!state.result || !state.result.weeks) {
+        return;
+      }
+      downloadCsv("safety-stock-weekly.csv", weeksCsv(state.result.weeks));
+    });
     $("sim-run-mc").addEventListener("click", runMonteCarloClicked);
   }
 

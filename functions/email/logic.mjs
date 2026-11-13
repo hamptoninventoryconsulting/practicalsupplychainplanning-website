@@ -6,8 +6,10 @@
  * even if RESULTS_EMAIL is not "on".
  * Secrets are read from the Pages environment. None are written here.
  * The summary used to build an email is not stored.
+ * handleAsk forwards one FAQ question to support@. It does not store the question.
  */
 
+import askForm from "../../src/_data/askForm.js";
 import site from "../../src/_data/site.js";
 
 export const SCHEMA_SQL = `
@@ -50,6 +52,14 @@ CREATE TABLE IF NOT EXISTS rate_hits (
 );
 CREATE INDEX IF NOT EXISTS rate_hits_email_created ON rate_hits (email, created_at);
 CREATE INDEX IF NOT EXISTS rate_hits_ip_created ON rate_hits (ip, created_at);
+CREATE TABLE IF NOT EXISTS ask_hits (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL,
+  ip TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ask_hits_email_created ON ask_hits (email, created_at);
+CREATE INDEX IF NOT EXISTS ask_hits_ip_created ON ask_hits (ip, created_at);
 `;
 
 export const WORDING_VERSION = "sim-results-v1";
@@ -78,6 +88,8 @@ export const DIFOT_REQUIRED_WORDING = "Email me to unlock the download.";
 export const FROM_ADDRESS =
   "Daniel at Practical Supply Chain Planning <hello@news.practicalsupplychainplanning.com>";
 export const REPLY_TO = "support@practicalsupplychainplanning.com";
+export const ASK_TOPICS = askForm.topics;
+export const ASK_SUCCESS = askForm.success;
 export const DISCLAIMER =
   "These numbers come from a teaching simulation of the scenario you ran. They are not a forecast, a recommendation or advice for your business.";
 export const UNAVAILABLE = "This form is not available yet.";
@@ -102,6 +114,10 @@ const METRIC_FIELDS = [
 
 export function sendingEnabled(env) {
   return Boolean(env && env.RESULTS_EMAIL === "on");
+}
+
+export function askEnabled(env) {
+  return Boolean(env && env.ASK_QUESTIONS === "on");
 }
 
 export async function ensureSchema(db) {
@@ -352,6 +368,67 @@ export async function handleKeepInTouch(request, env, deps) {
       return json(err.status, { ok: false, error: err.message });
     }
     return json(500, { ok: false, error: KEEP_IN_TOUCH_ADD_FAILED });
+  }
+}
+
+export async function handleAsk(request, env, deps) {
+  const tools = deps || defaultDeps();
+  try {
+    if (request.method !== "POST") {
+      return json(405, { ok: false, error: UNAVAILABLE });
+    }
+    if (!askEnabled(env)) {
+      return json(404, { ok: false, error: UNAVAILABLE });
+    }
+    if (!originAllowed(request)) {
+      return json(403, { ok: false, error: "Check the form and try again." });
+    }
+    if (!env.EMAIL_DB || !env.TURNSTILE_SECRET_KEY || !env.RESEND_API_KEY) {
+      return json(503, { ok: false, error: UNAVAILABLE });
+    }
+    const raw = await readBody(request, 20000);
+    const body = parseJson(raw);
+    if (honeypotFilled(body)) {
+      return json(200, { ok: true, message: ASK_SUCCESS });
+    }
+    const submission = validateAsk(body);
+    const ip = clientIp(request);
+    if (!ip) {
+      throw new HttpError(400, "Check the form and try again.");
+    }
+    await verifyTurnstile(tools.fetch, env.TURNSTILE_SECRET_KEY, submission.turnstileToken, ip);
+    const now = new Date(tools.now());
+    const createdAt = now.toISOString();
+    await ensureSchema(env.EMAIL_DB);
+    await prune(env.EMAIL_DB, now);
+    await run(
+      env.EMAIL_DB,
+      "INSERT INTO ask_hits (email, ip, created_at) VALUES (?, ?, ?)",
+      [submission.email, ip, createdAt]
+    );
+    const ipCount = await countSince(
+      env.EMAIL_DB,
+      "SELECT COUNT(*) AS n FROM ask_hits WHERE ip = ? AND created_at > ?",
+      [ip, new Date(now.getTime() - HOUR_MS).toISOString()]
+    );
+    const emailCount = await countSince(
+      env.EMAIL_DB,
+      "SELECT COUNT(*) AS n FROM ask_hits WHERE email = ? AND created_at > ?",
+      [submission.email, new Date(now.getTime() - DAY_MS).toISOString()]
+    );
+    if (ipCount > IP_LIMIT || emailCount > EMAIL_LIMIT) {
+      throw new HttpError(429, "That address or network has sent several of these already. Try again later.");
+    }
+    const sent = await sendEmail(tools.fetch, env.RESEND_API_KEY, buildAskMessage(submission));
+    if (!sent || !sent.id) {
+      throw new HttpError(502, "We couldn't send that. Try again in a minute.");
+    }
+    return json(200, { ok: true, message: ASK_SUCCESS });
+  } catch (err) {
+    if (err instanceof HttpError) {
+      return json(err.status, { ok: false, error: err.message });
+    }
+    return json(500, { ok: false, error: "We couldn't send that. Try again in a minute." });
   }
 }
 
@@ -1230,6 +1307,74 @@ function cleanUtm(value) {
   };
 }
 
+function validateAsk(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  onlyKeys(body, ["name", "email", "topic", "question", "company", "turnstileToken", "pageUrl"]);
+  const email = normalizeEmail(body.email);
+  if (!email) {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  if (body.company != null && typeof body.company !== "string") {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  let name = "not given";
+  if (body.name != null && body.name !== "") {
+    if (typeof body.name !== "string") {
+      throw new HttpError(400, "Check the form and try again.");
+    }
+    const cleaned = body.name.replace(/\s+/g, " ").trim();
+    if (cleaned) {
+      if (cleaned.length > 80) {
+        throw new HttpError(400, "Check the form and try again.");
+      }
+      name = cleaned;
+    }
+  }
+  if (typeof body.topic !== "string" || ASK_TOPICS.indexOf(body.topic) === -1) {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  if (typeof body.question !== "string") {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  const question = body.question.replace(/\u0000/g, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+  if (!question || question.length > 4000) {
+    throw new HttpError(400, "Check the form and try again.");
+  }
+  if (typeof body.turnstileToken !== "string" || body.turnstileToken.length < 8 || body.turnstileToken.length > 2048) {
+    throw new HttpError(400, "The check failed. Refresh the page and try again.");
+  }
+  return {
+    name: name,
+    email: email,
+    topic: body.topic,
+    question: question,
+    turnstileToken: body.turnstileToken,
+    pageUrl: cleanSignupPageUrl(body.pageUrl),
+  };
+}
+
+function buildAskMessage(submission) {
+  // Plain text only. Resend open tracking needs an HTML body, and click
+  // tracking rewrites HTML links. This message has neither, and no
+  // List-Unsubscribe header, because it is one support message.
+  return {
+    from: FROM_ADDRESS,
+    to: [REPLY_TO],
+    reply_to: submission.email,
+    subject: "FAQ question: " + submission.topic,
+    text: [
+      "Name: " + submission.name,
+      "Email: " + submission.email,
+      "Topic: " + submission.topic,
+      "Page: " + submission.pageUrl,
+      "Question:",
+      submission.question,
+    ].join("\n"),
+  };
+}
+
 function validateKeepInTouch(body) {
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     throw new HttpError(400, "Check the form and try again.");
@@ -1642,6 +1787,10 @@ async function suppressEach(db, emails, reason, eventId, createdAt) {
 }
 
 async function suppress(db, email, reason, eventId, createdAt) {
+  // A bounce or complaint on the FAQ forward must not block support@ itself.
+  if (normalizeEmail(email) === REPLY_TO) {
+    return;
+  }
   await run(
     db,
     "INSERT OR IGNORE INTO suppression (email, reason, created_at, resend_event_id) VALUES (?, ?, ?, ?)",
@@ -1679,6 +1828,7 @@ async function prune(db, now) {
   const consentCutoff = new Date(now.getTime());
   consentCutoff.setUTCMonth(consentCutoff.getUTCMonth() - 24);
   await run(db, "DELETE FROM rate_hits WHERE created_at <= ?", [rateCutoff]);
+  await run(db, "DELETE FROM ask_hits WHERE created_at <= ?", [rateCutoff]);
   await run(
     db,
     "DELETE FROM consent WHERE created_at <= ? AND beta_box = 0",

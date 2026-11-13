@@ -621,7 +621,7 @@ assert.doesNotMatch(page, /name="articles"[^>]*checked/);
 assert.match(page, /src="\/assets\/starter-forecast-engine\.js\?v=8"/);
 assert.match(page, /A quantity such as "1,000" in quotes is read as 1000/);
 assert.match(page, /A full stop is only for decimals/);
-assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
+assert.match(page, /src="\/assets\/sim-results-form\.js\?v=8"/);
 assert.match(page, /src="\/assets\/starter-forecast\.js\?v=4"/);
 assert.match(page, /Weekly quantities are whole numbers/);
 assert.match(page, /Slow sellers get 1 unit every few weeks so the total stays within 1 unit of the average times the number of weeks/);

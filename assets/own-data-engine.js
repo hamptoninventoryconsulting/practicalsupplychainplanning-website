@@ -9,9 +9,11 @@
  * engine, so a level forecast of 40, prices of $100 and $70, a lead time of
  * 2, 5, or 10, and the teaching starting stock reproduce that engine's stock
  * path. Annual gross profit does not: it counts units actually sold.
- * Demand that cannot be filled from stock on hand and receipts that week
- * is unmet and is left out. The teaching engine multiplies all simulated
- * demand by $30.
+ * Each week's demand is split evenly across 7 days, and the seven days add
+ * up to the week exactly. Demand is taken from that day's opening stock.
+ * A receipt lands after that demand, so it does not fill that day's sales.
+ * Demand the opening stock cannot fill is unmet and is left out. The
+ * teaching engine multiplies all simulated demand by $30.
  *
  * Differences:
  * - One average weekly forecast per SKU (no Level / Seasonal / Rising pattern).
@@ -21,8 +23,9 @@
  * - Lead time is any whole number of weeks from 1 to 26. Extra delay caps
  *   match the teaching table at 2, 5, and 10. Other weeks use piecewise
  *   linear interpolation between those anchors, rounded half-even, and at
- *   least 1 when variability is on. The base lead time is still not added
- *   to the arrival week. It scales formula safety stock and the delay cap.
+ *   least 1 when variability is on. The base lead time is the earliest gap
+ *   from release to receipt. Extra delay is whole weeks after that, never
+ *   before, and each of those weeks is 7 days.
  *
  * Nothing in this file sends or stores SKU data.
  */
@@ -36,6 +39,8 @@
   "use strict";
 
   var HORIZON = 52;
+  var DAYS_PER_WEEK = 7;
+  var DAY_COUNT = HORIZON * DAYS_PER_WEEK;
   var MAX_SKUS = 10;
   var MAX_QTY = 999999999;
   var MAX_LABEL = 40;
@@ -53,10 +58,15 @@
     99: 2.326,
   };
 
+  // Same weekly bands as the teaching engine. Large is none of the
+  // forecast up to double it. The factor is centred on 1, so the forecast
+  // is the expected mean across many runs. One year's realized mean can
+  // differ. The week total is chosen first, then split evenly across
+  // seven days.
   var DEMAND_FACTORS = {
     small: [0.9, 1.1],
     medium: [0.7, 1.3],
-    large: [0.5, 1.5],
+    large: [0, 2],
   };
 
   var DELIVERY_PCT = { small: 5, medium: 10, large: 15 };
@@ -401,31 +411,114 @@
   }
 
   function unitsSoldInWeek(week) {
+    if (week.openSevenths != null && week.demandSevenths != null) {
+      var available7 = week.openSevenths > 0 ? week.openSevenths : 0;
+      var sold7 = week.demandSevenths < available7 ? week.demandSevenths : available7;
+      return sold7 / DAYS_PER_WEEK;
+    }
     var onHand = week.beginningSoh > 0 ? week.beginningSoh : 0;
-    var supply = week.plannedSupply > 0 ? week.plannedSupply : 0;
     var demand = week.simulatedDemand > 0 ? week.simulatedDemand : 0;
-    var available = onHand + supply;
-    return demand < available ? demand : available;
+    return demand < onHand ? demand : onHand;
+  }
+
+  // Same plotted points as the teaching engine. No receipt: pre-receipt
+  // stock only. A receipt: that point, then the close.
+  function plottedSohPoints(weeks) {
+    if (!weeks || !weeks.length) {
+      return [];
+    }
+    var points = [];
+    for (var i = 0; i < weeks.length; i += 1) {
+      var week = weeks[i] || {};
+      var pre = week.preReceiptSoh;
+      if (pre == null || pre === "") {
+        pre = week.endingSoh;
+      }
+      points.push(Number(pre));
+      if (Number(week.plannedSupply) > 0) {
+        points.push(Number(week.endingSoh));
+      }
+    }
+    return points;
   }
 
   function computeMetrics(weeks, unitCost, sellingPrice) {
+    var rows = weeks || [];
+    var daily = rows.length > HORIZON && rows[0] && rows[0].demandSevenths != null;
     var oosWeeks = 0;
-    var sumEnding = 0;
     var sumFloored = 0;
+    var plottedCount = 0;
     var annualDemand = 0;
     var unitsSold = 0;
-    for (var i = 0; i < weeks.length; i += 1) {
-      var ending = weeks[i].endingSoh;
-      if (ending < 0) {
+    var points = plottedSohPoints(rows);
+    for (var p = 0; p < points.length; p += 1) {
+      var point = points[p];
+      sumFloored += point > 0 ? point : 0;
+      plottedCount += 1;
+    }
+    if (daily) {
+      var seen = {};
+      var bad = {};
+      var demand7 = 0;
+      var sold7 = 0;
+      for (var d = 0; d < rows.length; d += 1) {
+        demand7 += rows[d].demandSevenths;
+        var available7 = rows[d].openSevenths > 0 ? rows[d].openSevenths : 0;
+        sold7 += rows[d].demandSevenths < available7 ? rows[d].demandSevenths : available7;
+        seen[rows[d].week] = true;
+        var dailyPre = rows[d].preReceiptSoh;
+        if (dailyPre == null || dailyPre === "") {
+          dailyPre = rows[d].endingSoh;
+        }
+        if (dailyPre < 0 || Number(rows[d].endingSoh) < 0) {
+          bad[rows[d].week] = true;
+        }
+      }
+      annualDemand = demand7 / DAYS_PER_WEEK;
+      unitsSold = sold7 / DAYS_PER_WEEK;
+      var weekCount = 0;
+      for (var seenKey in seen) {
+        if (Object.prototype.hasOwnProperty.call(seen, seenKey)) {
+          weekCount += 1;
+        }
+      }
+      for (var badKey in bad) {
+        if (Object.prototype.hasOwnProperty.call(bad, badKey)) {
+          oosWeeks += 1;
+        }
+      }
+      var dailyN = weekCount || HORIZON;
+      var dailyAvg = plottedCount ? sumFloored / plottedCount : 0;
+      var dailyTurns = dailyAvg === 0 ? null : annualDemand / dailyAvg;
+      var dailyGp = sellingPrice - unitCost;
+      return {
+        oosWeeks: oosWeeks,
+        csl: ((dailyN - oosWeeks) / dailyN) * 100,
+        annualDemand: annualDemand,
+        unitsSold: unitsSold,
+        unmetDemand: annualDemand - unitsSold,
+        avgSohTurns: dailyAvg,
+        inventoryTurns: dailyTurns,
+        averageWc: dailyAvg * unitCost,
+        annualGp: unitsSold * dailyGp,
+        unitCost: unitCost,
+        sellingPrice: sellingPrice,
+        unitGp: dailyGp,
+      };
+    }
+    for (var i = 0; i < rows.length; i += 1) {
+      var pre = rows[i].preReceiptSoh;
+      if (pre == null || pre === "") {
+        pre = rows[i].endingSoh;
+      }
+      if (pre < 0) {
         oosWeeks += 1;
       }
-      sumEnding += ending;
-      sumFloored += ending > 0 ? ending : 0;
-      annualDemand += weeks[i].simulatedDemand;
-      unitsSold += unitsSoldInWeek(weeks[i]);
+      annualDemand += rows[i].simulatedDemand;
+      unitsSold += unitsSoldInWeek(rows[i]);
     }
-    var n = weeks.length || HORIZON;
-    var avgSohTurns = sumFloored / n;
+    var n = rows.length || HORIZON;
+    var avgSohTurns = plottedCount ? sumFloored / plottedCount : 0;
     var inventoryTurns = avgSohTurns === 0 ? null : annualDemand / avgSohTurns;
     var gpEach = sellingPrice - unitCost;
     return {
@@ -436,7 +529,7 @@
       unmetDemand: annualDemand - unitsSold,
       avgSohTurns: avgSohTurns,
       inventoryTurns: inventoryTurns,
-      averageWc: (sumEnding / n) * unitCost,
+      averageWc: avgSohTurns * unitCost,
       annualGp: unitsSold * gpEach,
       unitCost: unitCost,
       sellingPrice: sellingPrice,
@@ -506,6 +599,269 @@
     };
   }
 
+  function planReview(spec) {
+    var weekIndex = spec.weekIndex;
+    var base = spec.base;
+    var safetyStock = spec.safetyStock;
+    var nominalLot = spec.nominalLot;
+    var leadTimeWeeks = spec.leadTimeWeeks;
+    var outstanding = spec.outstanding || [];
+    var horizon = spec.horizon || HORIZON;
+    var suggestions = [];
+    var projection = [];
+    var start = spec.onHand;
+    var earliest = weekIndex + leadTimeWeeks;
+    var w;
+    for (w = weekIndex; w < horizon; w += 1) {
+      var forecast = base[w];
+      var incoming = 0;
+      var i;
+      for (i = 0; i < outstanding.length; i += 1) {
+        var knownWeek = Math.floor((outstanding[i].knownDueDay - 1) / DAYS_PER_WEEK);
+        if (knownWeek === w) {
+          incoming += outstanding[i].nominalQuantity;
+        }
+      }
+      for (i = 0; i < suggestions.length; i += 1) {
+        if (suggestions[i].dueWeekIndex === w) {
+          incoming += suggestions[i].nominalQuantity;
+        }
+      }
+      var end = start + incoming - forecast;
+      var added = 0;
+      var lots = 0;
+      if (end < safetyStock - 1e-9 && w >= earliest) {
+        var gap = safetyStock - end;
+        lots = Math.ceil((gap - 1e-9) / nominalLot);
+        if (lots < 1) {
+          lots = 1;
+        }
+        added = lots * nominalLot;
+        suggestions.push({
+          dueWeekIndex: w,
+          releaseWeekIndex: w - leadTimeWeeks,
+          lots: lots,
+          nominalQuantity: added,
+        });
+        end += added;
+      }
+      projection.push({
+        week: w + 1,
+        forecast: forecast,
+        knownIncoming: incoming,
+        addedNominal: added,
+        lots: lots,
+        end: end,
+      });
+      start = end;
+    }
+    return { suggestions: suggestions, projection: projection };
+  }
+
+  function simulateReplenishment(gen, controls, base, demand, nominalLot, safetyStock, startingSoh) {
+    var orders = [];
+    var reviews = [];
+    var days = [];
+    var weeks = [];
+    var open7 = startingSoh * DAYS_PER_WEEK;
+    var nextId = 1;
+
+    function dueWeekIndex(dayNumber) {
+      return Math.floor((dayNumber - 1) / DAYS_PER_WEEK);
+    }
+
+    function releaseOrder(suggestion) {
+      var lotReceipts = [];
+      var actualQty = 0;
+      var lot;
+      for (lot = 0; lot < suggestion.lots; lot += 1) {
+        var qty = sampleLotReceipt(gen, controls, base, nominalLot);
+        lotReceipts.push(qty);
+        actualQty += qty;
+      }
+      var delayWeeks = 0;
+      var extraMax = leadTimeExtraMax(controls.leadTimeWeeks, controls.leadTimeVariability);
+      if (extraMax > 0) {
+        delayWeeks = nextInt(gen, 0, extraMax);
+      }
+      var releaseDay = suggestion.releaseWeekIndex * DAYS_PER_WEEK + 1;
+      var plannedDueDay = suggestion.dueWeekIndex * DAYS_PER_WEEK + 1;
+      var actualArrivalDay = plannedDueDay + delayWeeks * DAYS_PER_WEEK;
+      var order = {
+        id: nextId,
+        releaseWeek: suggestion.releaseWeekIndex + 1,
+        releaseDay: releaseDay,
+        lots: suggestion.lots,
+        nominalLot: nominalLot,
+        nominalQuantity: suggestion.nominalQuantity,
+        plannedDueDay: plannedDueDay,
+        plannedDueWeek: suggestion.dueWeekIndex + 1,
+        knownDueDay: plannedDueDay,
+        knownDueWeek: suggestion.dueWeekIndex + 1,
+        delayRecognized: false,
+        delayRecognizedDay: null,
+        privateDelayWeeks: delayWeeks,
+        delay: delayWeeks,
+        lotReceipts: lotReceipts,
+        privateQuantity: actualQty,
+        received: actualQty,
+        actualArrivalDay: actualArrivalDay,
+        arrivalDay: actualArrivalDay,
+        actualArrivalWeek: dueWeekIndex(actualArrivalDay) + 1,
+        arrivalWeek: dueWeekIndex(actualArrivalDay) + 1,
+        hasArrived: false,
+        receivedDay: null,
+        receivedQuantity: null,
+      };
+      nextId += 1;
+      orders.push(order);
+      return order;
+    }
+
+    function snapshotOrder(order) {
+      return {
+        id: order.id,
+        nominalQuantity: order.nominalQuantity,
+        plannerQuantity: order.nominalQuantity,
+        plannedDueDay: order.plannedDueDay,
+        plannedDueWeek: order.plannedDueWeek,
+        knownDueDay: order.knownDueDay,
+        knownDueWeek: dueWeekIndex(order.knownDueDay) + 1,
+        delayRecognized: order.delayRecognized,
+        privateQuantity: order.privateQuantity,
+        privateDelayWeeks: order.privateDelayWeeks,
+        actualArrivalDay: order.actualArrivalDay,
+      };
+    }
+
+    function weeklyReview(weekIndex, onHand) {
+      var openOrders = [];
+      var i;
+      for (i = 0; i < orders.length; i += 1) {
+        if (!orders[i].hasArrived) {
+          openOrders.push({
+            nominalQuantity: orders[i].nominalQuantity,
+            knownDueDay: orders[i].knownDueDay,
+          });
+        }
+      }
+      var plan = planReview({
+        weekIndex: weekIndex,
+        onHand: onHand,
+        base: base,
+        safetyStock: safetyStock,
+        nominalLot: nominalLot,
+        leadTimeWeeks: controls.leadTimeWeeks,
+        outstanding: openOrders,
+      });
+      var suggestions = plan.suggestions;
+      var projection = plan.projection;
+      var releasedNow = [];
+      var futurePlans = [];
+      for (var s = 0; s < suggestions.length; s += 1) {
+        var suggestion = suggestions[s];
+        if (suggestion.releaseWeekIndex === weekIndex) {
+          releasedNow.push(snapshotOrder(releaseOrder(suggestion)));
+        } else {
+          futurePlans.push({
+            releaseWeek: suggestion.releaseWeekIndex + 1,
+            dueWeek: suggestion.dueWeekIndex + 1,
+            nominalQuantity: suggestion.nominalQuantity,
+            lots: suggestion.lots,
+          });
+        }
+      }
+      var outstanding = [];
+      for (var o = 0; o < orders.length; o += 1) {
+        if (!orders[o].hasArrived && releasedNow.every(function (item) { return item.id !== orders[o].id; })) {
+          outstanding.push(snapshotOrder(orders[o]));
+        }
+      }
+      reviews.push({
+        week: weekIndex + 1,
+        onHand: onHand,
+        outstanding: outstanding,
+        releasedNow: releasedNow,
+        futurePlans: futurePlans,
+        projection: projection,
+      });
+    }
+
+    for (var weekIndex = 0; weekIndex < HORIZON; weekIndex += 1) {
+      weeklyReview(weekIndex, open7 / DAYS_PER_WEEK);
+      var baseWeek = base[weekIndex];
+      var sim7 = demand.simulatedDemand[weekIndex];
+      var weekNo = weekIndex + 1;
+      for (var dow = 0; dow < DAYS_PER_WEEK; dow += 1) {
+        var t = weekIndex * DAYS_PER_WEEK + dow;
+        var dayNumber = t + 1;
+        var n;
+        var supplyUnits = 0;
+        for (n = 0; n < orders.length; n += 1) {
+          var arriving = orders[n];
+          if (!arriving.hasArrived && arriving.actualArrivalDay === dayNumber) {
+            supplyUnits += arriving.privateQuantity;
+            arriving.hasArrived = true;
+            arriving.receivedDay = dayNumber;
+            arriving.receivedQuantity = arriving.privateQuantity;
+          }
+        }
+        for (n = 0; n < orders.length; n += 1) {
+          var missed = orders[n];
+          if (!missed.hasArrived && missed.knownDueDay === dayNumber) {
+            if (!missed.delayRecognized) {
+              missed.delayRecognized = true;
+              missed.delayRecognizedDay = dayNumber;
+            }
+            missed.knownDueDay = dayNumber + DAYS_PER_WEEK;
+            missed.knownDueWeek = dueWeekIndex(missed.knownDueDay) + 1;
+          }
+        }
+        var existing7 = supplyUnits * DAYS_PER_WEEK;
+        var before7 = open7;
+        var end7 = before7 + existing7 - sim7;
+        var before = before7 / DAYS_PER_WEEK;
+        var end = end7 / DAYS_PER_WEEK;
+        var pre = supplyUnits > 0 ? before : end;
+        var supply = supplyUnits;
+        if (dow === 0) {
+          weeks.push({
+            week: weekNo,
+            baseDemand: baseWeek,
+            simulatedDemand: demand.simulatedDemand[weekIndex],
+            beginningSoh: open7 / DAYS_PER_WEEK,
+            plannedSupply: 0,
+            preReceiptSoh: pre,
+            endingSoh: end,
+            safetyStock: safetyStock,
+          });
+        }
+        var weekRow = weeks[weekIndex];
+        if (pre < weekRow.preReceiptSoh) {
+          weekRow.preReceiptSoh = pre;
+        }
+        weekRow.plannedSupply += supply;
+        weekRow.endingSoh = end;
+        days.push({
+          day: dayNumber,
+          week: weekNo,
+          baseDemand: baseWeek / DAYS_PER_WEEK,
+          simulatedDemand: sim7 / DAYS_PER_WEEK,
+          demandSevenths: sim7,
+          openSevenths: open7 + existing7,
+          beginningSoh: open7 / DAYS_PER_WEEK,
+          plannedSupply: supply,
+          preReceiptSoh: pre,
+          endingSoh: end,
+          safetyStock: safetyStock,
+        });
+        open7 = end7;
+      }
+    }
+
+    return { days: days, weeks: weeks, releases: orders, reviews: reviews };
+  }
+
   function runYear(sku, globals, seed, options) {
     var g = globals || {};
     var opts = options || {};
@@ -538,67 +894,19 @@
       }
     }
     var startingSoh = sku.currentStock;
-    var due = repeat(0, HORIZON);
-    var weeks = [];
-    var releases = [];
-    var previousEnding = null;
-
-    for (var w = 0; w < HORIZON; w += 1) {
-      var beginning = w === 0 ? startingSoh : previousEnding;
-      var existing = due[w];
-      var weekBase = base[w];
-      var weekDemand = demand.simulatedDemand[w];
-      var calculated = beginning + existing - weekBase;
-      var threshold = safetyStock > 0 ? safetyStock : 0;
-      var newReceipt = 0;
-
-      if (calculated < threshold) {
-        var lots = calculated + nominalLot > 0 ? 1 : 2;
-        var lotReceipts = [];
-        var received = 0;
-        for (var lot = 0; lot < lots; lot += 1) {
-          var qty = sampleLotReceipt(gen, controls, base, nominalLot);
-          lotReceipts.push(qty);
-          received += qty;
-        }
-        var delay = 0;
-        var extraMax = leadTimeExtraMax(
-          controls.leadTimeWeeks,
-          controls.leadTimeVariability
-        );
-        if (extraMax > 0) {
-          delay = nextInt(gen, 0, extraMax);
-        }
-        var arrivalIndex = w + delay;
-        if (arrivalIndex === w) {
-          newReceipt = received;
-        } else if (arrivalIndex < HORIZON) {
-          due[arrivalIndex] += received;
-        }
-        releases.push({
-          requirementWeek: w + 1,
-          lots: lots,
-          nominalLot: nominalLot,
-          lotReceipts: lotReceipts,
-          received: received,
-          delay: delay,
-          arrivalWeek: w + 1 + delay,
-        });
-      }
-
-      var plannedSupply = existing + newReceipt;
-      var endingSoh = beginning + plannedSupply - weekDemand;
-      weeks.push({
-        week: w + 1,
-        baseDemand: base[w],
-        simulatedDemand: weekDemand,
-        beginningSoh: beginning,
-        plannedSupply: plannedSupply,
-        endingSoh: endingSoh,
-        safetyStock: safetyStock,
-      });
-      previousEnding = endingSoh;
-    }
+    var simulated = simulateReplenishment(
+      gen,
+      controls,
+      base,
+      demand,
+      nominalLot,
+      safetyStock,
+      startingSoh
+    );
+    var days = simulated.days;
+    var weeks = simulated.weeks;
+    var releases = simulated.releases;
+    var reviews = simulated.reviews;
 
     var sigma = populationStdev(demand.normalDemand);
     return {
@@ -627,9 +935,11 @@
         safetyStock: safetyStock,
         frozen: safetyStockFrozen,
       },
+      days: days,
       weeks: weeks,
       releases: releases,
-      metrics: computeMetrics(weeks, sku.unitCost, sku.sellingPrice),
+      reviews: reviews,
+      metrics: computeMetrics(days, sku.unitCost, sku.sellingPrice),
     };
   }
 
@@ -1422,7 +1732,11 @@
       }
     }
     for (var w = 0; w < result.weeks.length; w += 1) {
-      if (result.weeks[w].endingSoh < 0 && result.weeks[w].week >= earliest) {
+      var position = result.weeks[w].preReceiptSoh;
+      if (position == null || position === "") {
+        position = result.weeks[w].endingSoh;
+      }
+      if (position < 0 && result.weeks[w].week >= earliest) {
         return true;
       }
     }
@@ -1541,12 +1855,6 @@
       rules.push({
         id: 6,
         text: "In the scenario you ran, big lots raise average stock and working capital, which lowers turns.",
-      });
-    }
-    if (ctx.averageWc != null && isFinite(ctx.averageWc) && ctx.averageWc < 0) {
-      rules.push({
-        id: 7,
-        text: "In the scenario you ran, negative average stock means backorders outweighed stock on hand.",
       });
     }
     if (ctx.mode === "monte-carlo" && ctx.oosSpread != null && ctx.oosSpread >= 4) {
@@ -1792,6 +2100,7 @@
     populationStdev: populationStdev,
     formulaSafetyStock: formulaSafetyStock,
     leadTimeExtraMax: leadTimeExtraMax,
+    planReview: planReview,
     percentileLinear: percentileLinear,
     spawnSeeds: spawnSeeds,
     formulaReferenceSeed: formulaReferenceSeed,
@@ -1820,7 +2129,6 @@
       [1, 2],
       [2, 3],
       [2, 4],
-      [2, 7],
       [1, 6],
     ],
   };

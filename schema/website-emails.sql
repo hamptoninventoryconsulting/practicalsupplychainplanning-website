@@ -48,3 +48,15 @@ CREATE TABLE IF NOT EXISTS rate_hits (
 
 CREATE INDEX IF NOT EXISTS rate_hits_email_created ON rate_hits (email, created_at);
 CREATE INDEX IF NOT EXISTS rate_hits_ip_created ON rate_hits (ip, created_at);
+
+-- FAQ question form. Email, network address, and time only. The question
+-- text stays in the support inbox and is not written here. Pruned after 48 hours.
+CREATE TABLE IF NOT EXISTS ask_hits (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL,
+  ip TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS ask_hits_email_created ON ask_hits (email, created_at);
+CREATE INDEX IF NOT EXISTS ask_hits_ip_created ON ask_hits (ip, created_at);

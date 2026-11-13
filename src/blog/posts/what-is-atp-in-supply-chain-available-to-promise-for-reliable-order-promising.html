@@ -1,0 +1,143 @@
+---json
+{
+  "title": "What Is ATP in Supply Chain? Available to Promise for Reliable Order Promising",
+  "seo_title": "What Is ATP in Supply Chain? Available to Promise for Reliable Order Promising",
+  "summary": "Available to Promise (ATP) shows how much supply remains uncommitted to existing customer orders, and when it can be promised to a new customer. This article explains how to read ATP period by period, use cumulative ATP to give a realistic promise date, and distinguish ATP from projected available stock.",
+  "published_datetime": "2026-11-11 10:14:45.222547",
+  "featured_image": "IMG000011.webp",
+  "schema_image": "IMG000011.webp",
+  "author": "Daniel Hampton",
+  "reading_time": "6 minutes",
+  "keywords": "inventory planning",
+  "about": "Inventory Planning",
+  "in_language": "English",
+  "publisher": "Practical Supply Chain Planning"
+}
+---
+<p>When a customer asks, “When can you deliver 130 units?”, looking only at today's stock balance is rarely enough. Some of that stock may already be committed to other customers, and the next supply may not arrive for several weeks.</p>
+<p>That is the problem <strong>available to promise (ATP)</strong> is designed to solve. ATP supports better <strong>order promising</strong> by showing what quantity is still uncommitted to customer orders, and when that quantity becomes available. For anyone asking what is ATP in supply chain, the simplest answer is: it is the supply you can still promise without taking it away from an existing customer commitment.</p>
+<h2>Why current stock can give the wrong answer</h2>
+<p>A stock-on-hand figure tells you what is physically available at this moment. It does not necessarily tell you what can be offered to a new customer.</p>
+<p>For example, a business may have 120 units in the warehouse today. That sounds encouraging until you see that 70 units are already committed to customer orders due before the next delivery arrives. Only 50 units are genuinely free to promise.</p>
+<p>The same issue applies to incoming supply. A purchase order due next week may look like available supply, but some or all of it may already be needed for orders that have been accepted. ATP separates committed supply from uncommitted supply so that a delivery promise is based on the plan, not a guess.</p>
+<h2>ATP works from a time-phased plan</h2>
+<p>ATP is calculated across time periods, often days or weeks. The key question is not just how much supply exists, but when it will be available compared with when existing customers need it.</p>
+<p>In the first period, ATP is generally:</p>
+<ul>
+<li>stock on hand, plus any supply due before the next receipt</li>
+<li>less customer orders already committed before that next receipt arrives</li>
+</ul>
+<p>For later periods that have an incoming supply receipt, ATP is:</p>
+<ul>
+<li>the incoming supply</li>
+<li>less customer orders committed from that receipt until the next receipt</li>
+</ul>
+<p>Periods without a new supply receipt normally do not have a separate ATP quantity. Their customer demand has already been included in the calculation for the preceding stock or supply receipt.</p>
+<p>This approach matters because stock on hand must cover all committed orders before more supply arrives. Likewise, each future receipt must cover the customer orders due before the following receipt.</p>
+<h2>A six-week ATP example</h2>
+<p>Assume one product starts Week 1 with 120 units on hand. New supply is due in Week 3 and Week 5. The table shows customer orders that have already been committed.</p>
+<table>
+<thead>
+<tr>
+<th>Week</th>
+<th style="text-align: right;">1</th>
+<th style="text-align: right;">2</th>
+<th style="text-align: right;">3</th>
+<th style="text-align: right;">4</th>
+<th style="text-align: right;">5</th>
+<th style="text-align: right;">6</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Opening stock on hand</td>
+<td style="text-align: right;">120</td>
+<td style="text-align: right;">-</td>
+<td style="text-align: right;">-</td>
+<td style="text-align: right;">-</td>
+<td style="text-align: right;">-</td>
+<td style="text-align: right;">-</td>
+</tr>
+<tr>
+<td>Incoming supply</td>
+<td style="text-align: right;">-</td>
+<td style="text-align: right;">-</td>
+<td style="text-align: right;">180</td>
+<td style="text-align: right;">-</td>
+<td style="text-align: right;">150</td>
+<td style="text-align: right;">-</td>
+</tr>
+<tr>
+<td>Committed customer orders</td>
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">70</td>
+<td style="text-align: right;">40</td>
+</tr>
+<tr>
+<td>ATP</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">-</td>
+<td style="text-align: right;">70</td>
+<td style="text-align: right;">-</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">-</td>
+</tr>
+<tr>
+<td>Cumulative ATP</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">120</td>
+<td style="text-align: right;">120</td>
+<td style="text-align: right;">160</td>
+<td style="text-align: right;">160</td>
+</tr>
+</tbody>
+</table>
+<p>The calculations are:</p>
+<ul>
+<li><strong>Week 1 ATP:</strong> 120 units on hand, less 30 units committed in Week 1 and 40 units in Week 2. ATP is 50 units.</li>
+<li><strong>Week 3 ATP:</strong> 180 units incoming, less 60 units committed in Week 3 and 50 units in Week 4. ATP is 70 units.</li>
+<li><strong>Week 5 ATP:</strong> 150 units incoming, less 70 units committed in Week 5 and 40 units in Week 6. ATP is 40 units.</li>
+</ul>
+<p>The cumulative ATP line adds the uncommitted quantities as supply becomes available. It gives a useful answer to the sales question: when will enough uncommitted supply exist for this new request?</p>
+<p>If a customer requests <strong>130 units</strong> as soon as possible, the business cannot promise Week 1 because only 50 units are free. By Week 3, cumulative ATP is 120 units, which is still short. By Week 5, cumulative ATP reaches 160 units.</p>
+<p>The earliest realistic promise date is therefore <strong>Week 5</strong>.</p>
+<p>Once that order is accepted, it needs to be added to the committed-order plan. It is no longer supply that can be promised to another customer.</p>
+<h2>Available to Promise vs. Projected Available Stock</h2>
+<p>ATP is often confused with projected available stock, but they answer different questions.</p>
+<p><strong>Projected available stock</strong> shows how inventory is expected to change over time after demand has been considered. It subtracts the forecast from supply, so it helps planners see whether the business is carrying enough inventory to support expected demand.</p>
+<p><strong>Available to Promise</strong> subtracts only real customer orders that have already been committed. Forecast demand is not a customer commitment. It may drive purchasing or production decisions, but it does not tell a customer that their order has already been reserved.</p>
+<p>This distinction is particularly useful when demand is forecast but customer orders have not yet arrived. Projected available stock may look tight because the forecast consumes future inventory. ATP may still show some supply that can be promised against actual orders.</p>
+<p>Neither view is wrong. They support different decisions:</p>
+<ul>
+<li>Projected available stock helps the planner assess the future inventory position.</li>
+<li>ATP helps the business make a credible commitment to a specific customer.</li>
+</ul>
+<p>Using projected stock alone for order promising can lead to overly cautious dates. Using ATP without maintaining a sensible forward supply plan can lead to promises that are technically possible today but difficult to sustain as demand develops.</p>
+<h2>The promise date is only as good as the supply dates</h2>
+<p>ATP does not create supply. It simply identifies what remains uncommitted in the existing plan.</p>
+<p>That makes supply timing particularly important. Open purchase orders, production orders, and their expected receipt dates determine when future quantity becomes available to promise. If an incoming order slips by two weeks, the ATP date may also move by two weeks.</p>
+<p>Before relying on ATP, planners should check that the underlying information is credible:</p>
+<ul>
+<li>Is the stock on hand genuinely usable?</li>
+<li>Are customer order dates and quantities accurate?</li>
+<li>Are incoming purchase or production orders still expected when the plan says they are?</li>
+<li>Have recently accepted orders been added to the commitments?</li>
+</ul>
+<p>ATP is most useful when sales, customer service, and planning work from the same current plan. If one team promises from an old report while another team changes supply dates, the delivery promise quickly loses value.</p>
+<h2>Available to Promise and order promising in practice</h2>
+<p>A practical order-promising process does not need to be complicated. When a new request arrives, start with the item and its relevant supply plan. Review the existing customer commitments, identify the ATP by period, and use cumulative ATP to find the first date that can cover the requested quantity.</p>
+<p>The result may be a date the customer did not initially want, but it is a date grounded in available supply rather than optimism. That gives the business a better chance of protecting existing commitments while setting realistic expectations for the new order.</p>
+<h2>Going further</h2>
+<p>ATP becomes more complex when supply must be allocated across customers or sales channels, when stock is held across multiple locations, or when the business needs to check whether capacity or supplier lead time can support a new request. That broader check is often called capable to promise, or CTP. These are useful extensions, but the starting point remains the same: understand which supply is already committed and when the remaining supply is available.</p>
+<h2>Key Takeaways</h2>
+<ul>
+<li>Available to Promise is the quantity not yet committed to customer orders that can still be promised to new orders.</li>
+<li>ATP is time-phased because the timing of supply and committed demand matters as much as the total quantity.</li>
+<li>Cumulative ATP shows the earliest period in which a new order of a given size can be met.</li>
+<li>ATP subtracts actual customer orders; projected available stock subtracts forecast demand.</li>
+<li>A reliable ATP promise depends on accurate stock, customer commitments, and incoming supply dates.</li>
+</ul>

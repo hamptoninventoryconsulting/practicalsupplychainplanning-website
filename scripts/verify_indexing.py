@@ -89,12 +89,14 @@ CORE_PAGES = (
     "/learn/safety-stock-simulator/own-data/",
     "/learn/starter-forecast/",
     "/learn/difot-calculator/",
+    "/learn/glossary/",
     "/products/",
     "/products/practical-stock-planner/",
     "/terms/",
     "/refunds/",
     "/privacy/",
     "/contact/",
+    "/faq/",
 )
 
 CANONICAL_PAGES = (
@@ -109,12 +111,14 @@ CANONICAL_PAGES = (
     ),
     ("learn/starter-forecast/index.html", f"{SITE_ORIGIN}/learn/starter-forecast/"),
     ("learn/difot-calculator/index.html", f"{SITE_ORIGIN}/learn/difot-calculator/"),
+    ("learn/glossary/index.html", f"{SITE_ORIGIN}/learn/glossary/"),
     ("products/index.html", f"{SITE_ORIGIN}/products/"),
     ("products/practical-stock-planner/index.html", f"{SITE_ORIGIN}/products/practical-stock-planner/"),
     ("terms/index.html", f"{SITE_ORIGIN}/terms/"),
     ("refunds/index.html", f"{SITE_ORIGIN}/refunds/"),
     ("privacy/index.html", f"{SITE_ORIGIN}/privacy/"),
     ("contact/index.html", f"{SITE_ORIGIN}/contact/"),
+    ("faq/index.html", f"{SITE_ORIGIN}/faq/"),
 )
 
 LEGACY_PATHS = (
@@ -989,6 +993,11 @@ PADDLE_RESELLER_SENTENCES = (
     "Paddle.com is the Merchant of Record for all our orders.",
     "Paddle provides all customer service inquiries and handles returns.",
 )
+FOUNDING_QUESTIONNAIRE = (
+    "A short feedback questionnaire is requested, about two weeks after you start. "
+    "The founding price is not withdrawn if you don&rsquo;t fill it in. "
+    "Giving a quote is optional."
+)
 
 
 def verify_policy_pages(errors: list[str]) -> None:
@@ -1063,7 +1072,7 @@ def verify_policy_pages(errors: list[str]) -> None:
             "for the first 12 months",
             "first 20 customers",
             "31 Jan 2027",
-            "20-minute feedback call",
+            "A short feedback questionnaire is requested, about two weeks after you start.",
             "FOUNDING29",
             "FOUNDINGAU",
             "available from launch on 16 Nov 2026",
@@ -1079,7 +1088,7 @@ def verify_policy_pages(errors: list[str]) -> None:
             "deleted within 30 days of the call",
             "within 14 days of the Guided setup payment",
             "A Guided setup booked later still has its 14-day refund counted from that payment.",
-            "The founding price is not withdrawn if you can&rsquo;t make the call.",
+            "The founding price is not withdrawn if you don&rsquo;t fill it in.",
             "buy button for it yet",
             "Windows 10 or 11, 64-bit",
             "7 days from the first failed payment",
@@ -1089,6 +1098,13 @@ def verify_policy_pages(errors: list[str]) -> None:
         ):
             if phrase not in pricing:
                 fail(f"the product page is missing approved copy: {phrase}", errors)
+        if pricing.count(FOUNDING_QUESTIONNAIRE) != 2:
+            fail(
+                "the product page must use the founding questionnaire sentence in the Price section and the founding-price question",
+                errors,
+            )
+        if re.search(r"feedback\s+call", pricing, re.I):
+            fail("the product page must not keep the old founding-call sentence", errors)
         if "may not be created" in pricing or "may not apply" in pricing:
             fail("the product page must not say the Australian founding code may be missing", errors)
         if "buy.paddle" in pricing or "checkout.paddle" in pricing:
@@ -1192,7 +1208,8 @@ def verify_policy_pages(errors: list[str]) -> None:
             "for the first 12 months",
             "FOUNDING29",
             "FOUNDINGAU",
-            "The founding price is not withdrawn if you can&rsquo;t make the call.",
+            "A short feedback questionnaire is requested, about two weeks after you start.",
+            "The founding price is not withdrawn if you don&rsquo;t fill it in.",
             "A Guided setup booked later still has its 14-day refund counted from that payment.",
             "deleted within 30 days of the call",
             "Daniel Hampton",
@@ -1201,6 +1218,10 @@ def verify_policy_pages(errors: list[str]) -> None:
         ):
             if phrase not in terms:
                 fail(f"/terms/ is missing approved copy: {phrase}", errors)
+        if terms.count(FOUNDING_QUESTIONNAIRE) != 1:
+            fail("/terms/ must use the founding questionnaire sentence once", errors)
+        if re.search(r"feedback\s+call", terms, re.I):
+            fail("/terms/ must not keep the old founding-call sentence", errors)
         if "may not be created" in terms or "may not apply" in terms:
             fail("/terms/ must not say the Australian founding code may be missing", errors)
         if 'class="site-address">practicalsupplychainplanning.com' not in terms:
@@ -1321,6 +1342,119 @@ def verify_seller(errors: list[str]) -> None:
             fail(f"{relative} is missing the seller name", errors)
 
 
+def verify_glossary(errors: list[str]) -> None:
+    """Planning glossary: public page, anchors, JSON-LD, and copy limits."""
+    page_path = SITE / "learn" / "glossary" / "index.html"
+    if not page_path.is_file():
+        fail("/learn/glossary/ is missing from the build", errors)
+        return
+    text = page_path.read_text(encoding="utf-8")
+    if "<title>Supply Chain Planning Glossary | Practical Supply Chain Planning</title>" not in text:
+        fail("/learn/glossary/ title is not the approved SEO title", errors)
+    if (
+        '<meta name="description" content="Plain-English definitions of safety stock, lead time, MOQ, forecasting and more, from a working supply chain planner."'
+        not in text
+    ):
+        fail("/learn/glossary/ meta description is not the approved text", errors)
+    if '<h1 class="page-title">Planning glossary</h1>' not in text:
+        fail("/learn/glossary/ h1 must be Planning glossary", errors)
+    if len(H1_RE.findall(text)) != 1:
+        fail("/learn/glossary/ must have exactly one h1", errors)
+    if "from a working supply chain planner" not in text:
+        fail("/learn/glossary/ intro must say from a working supply chain planner", errors)
+    if "projects stock forward against the forecast, open orders and lead times" not in text:
+        fail("/learn/glossary/ intro must use the time-phased framing", errors)
+    if "Forecasting is the process of estimating future demand for a product." not in text:
+        fail("/learn/glossary/ is missing the general forecast definition", errors)
+    if "The forecast horizon is how far ahead the forecast runs." not in text:
+        fail("/learn/glossary/ is missing the general forecast horizon definition", errors)
+    if "Intermittent demand has many weeks with no sales." not in text:
+        fail("/learn/glossary/ is missing the general intermittent demand definition", errors)
+    if 'id="forecast-reliability"' not in text:
+        fail("/learn/glossary/ must keep the forecast-reliability anchor", errors)
+    if "Sales history variability" not in text:
+        fail("/learn/glossary/ is missing the sales history variability term", errors)
+    old_reliability = "Forecast reliability is influenced by the variability of historical demand."
+    if old_reliability in text:
+        fail("/learn/glossary/ still uses the old forecast reliability wording", errors)
+    for phrase in (
+        "26, 52, and 78 weeks",
+        "how many future months will be generated",
+        "weeks that sold in the last 26 weeks",
+        "This simplified logic demonstrates",
+        "Products exist in the SKU Master",
+        "grey cell",
+        "Below Safety Stock on Expedite",
+    ):
+        if phrase in text:
+            fail(f"/learn/glossary/ still has app-specific material: {phrase}", errors)
+    for phrase in (
+        'id="forecast-profile"',
+        'id="demand-bucket"',
+        'id="trend"',
+        'id="seasonality"',
+        "Application Behavior",
+        "How Recommended Is Decided",
+        "Step 3 - Create Forecast Profile",
+        "Practical Stock Planner",
+        "Practical Demand Planner",
+    ):
+        if phrase in text:
+            fail(f"/learn/glossary/ still has app-specific material: {phrase}", errors)
+    for banned in (
+        r"reorder point",
+        r"\breorder\b",
+        r"\bre-order\b",
+        r"\bROP\b",
+        r"min-?max",
+        r"minmax",
+        r"croston",
+        r"\bexcel\b",
+        r"option\s*[123]",
+        r"4-4-5",
+    ):
+        if re.search(banned, text, re.I):
+            fail(f"/learn/glossary/ contains banned copy: {banned}", errors)
+    headings = re.findall(r'<h2 class="glossary-group__title"[^>]*>([^<]+)</h2>', text)
+    if headings != ["Supply &amp; ordering", "Stock &amp; service", "Demand &amp; forecasting"]:
+        fail(f"/learn/glossary/ groups are {headings!r}", errors)
+    blocks = re.findall(
+        r'<details class="sim-details" id="([^"]+)">\s*<summary>([^<]+)</summary>',
+        text,
+    )
+    if len(blocks) < 20:
+        fail(f"/learn/glossary/ has {len(blocks)} term expanders", errors)
+    ids = [item[0] for item in blocks]
+    if len(ids) != len(set(ids)):
+        fail("/learn/glossary/ term ids are not unique", errors)
+    for needed in ("planned-order", "mrp"):
+        if needed not in ids:
+            fail(f"/learn/glossary/ is missing the term anchor {needed}", errors)
+    if "function openFromHash" not in text:
+        fail("/learn/glossary/ must open a term when its anchor is used", errors)
+    if '"@type": "DefinedTermSet"' not in text:
+        fail("/learn/glossary/ is missing DefinedTermSet JSON-LD", errors)
+    term_urls = re.findall(
+        r'"@type": "DefinedTerm"[\s\S]*?"url": "https://practicalsupplychainplanning.com/learn/glossary/#([^"]+)"',
+        text,
+    )
+    if term_urls != ids:
+        fail("/learn/glossary/ JSON-LD terms do not match the page anchors", errors)
+    if text.count("Used in:") != len(ids):
+        fail("/learn/glossary/ each term needs a Used in tag", errors)
+    learn = (SITE / "learn" / "index.html").read_text(encoding="utf-8")
+    if learn.count('class="learn-card"') != 5:
+        fail("/learn/ must show five cards, including the glossary", errors)
+    if 'href="/learn/glossary/"' not in learn:
+        fail("/learn/ must link to the planning glossary", errors)
+    about = (SITE / "about" / "index.html").read_text(encoding="utf-8")
+    if 'href="/learn/glossary/"' not in about:
+        fail("/about/ must link to the planning glossary", errors)
+    footer = (ROOT / "src" / "_includes" / "partials" / "footer.njk").read_text(encoding="utf-8")
+    if 'href="/learn/glossary/"' not in footer:
+        fail("footer must link to the planning glossary", errors)
+
+
 def verify_difot_sent(errors: list[str]) -> None:
     sent = SITE / "learn" / "difot-calculator" / "sent" / "index.html"
     if not sent.is_file():
@@ -1422,6 +1556,260 @@ def verify_simulator_assets(errors: list[str]) -> None:
         fail("scenarios.json was not copied into _site", errors)
 
 
+START_PAGES = (
+    "start/plan-ahead/index.html",
+    "start/planning-guides/index.html",
+)
+PREEXISTING_NOINDEX = {
+    "404.html": "noindex",
+    "welcome/index.html": "noindex",
+    "learn/safety-stock-simulator/sent/index.html": "noindex",
+    "learn/starter-forecast/sent/index.html": "noindex",
+    "learn/difot-calculator/sent/index.html": "noindex",
+}
+ROBOTS_META_RE = re.compile(
+    r'<meta\s+name=["\']robots["\']\s+content=["\']([^"\']*)["\']',
+    re.I,
+)
+START_BANNED = (
+    r"reorder point",
+    r"reorder-point",
+    r"\bROP\b",
+    r"min-?max",
+    r"min/max",
+    r"minmax",
+    r"\bmin max\b",
+    r"croston",
+)
+
+
+def learn_tool_hrefs() -> list[str]:
+    text = (ROOT / "src" / "_data" / "learnTools.js").read_text(encoding="utf-8")
+    return re.findall(r'href:\s*"([^"]+)"', text)
+
+
+def verify_start_pages(errors: list[str]) -> None:
+    """Pages under /start/ are hidden by path and keep their query string."""
+    source_robots = (ROOT / "robots.txt").read_text(encoding="utf-8")
+    built_robots = ROBOTS_PATH.read_text(encoding="utf-8") if ROBOTS_PATH.is_file() else ""
+    if built_robots != source_robots:
+        fail("robots.txt in _site must match the source file", errors)
+    if "/start/" in source_robots:
+        fail("robots.txt must not block or mention /start/", errors)
+
+    sitemap = SITEMAP_PATH.read_text(encoding="utf-8") if SITEMAP_PATH.is_file() else ""
+    if "/start/" in sitemap:
+        fail("sitemap.xml must not include a /start/ URL", errors)
+
+    for relative in (
+        "src/_includes/partials/header.njk",
+        "src/_includes/partials/footer.njk",
+    ):
+        menu = (ROOT / relative).read_text(encoding="utf-8")
+        if "/start/" in menu:
+            fail(f"{relative} must not link to /start/", errors)
+
+    found_start: set[str] = set()
+    for path in sorted(SITE.rglob("*.html")):
+        relative = path.relative_to(SITE).as_posix()
+        text = path.read_text(encoding="utf-8")
+        metas = ROBOTS_META_RE.findall(text)
+        under_start = relative == "start" or relative.startswith("start/")
+        if under_start:
+            found_start.add(relative)
+            if metas != ["noindex, nofollow"]:
+                fail(
+                    f"{relative} must have exactly one noindex, nofollow robots meta, found {metas!r}",
+                    errors,
+                )
+            if "history.replaceState" in text or REFRESH_RE.search(text):
+                fail(f"{relative} must keep utm_ and ref in the address bar", errors)
+            if re.search(r"location\.(?:replace|assign|href)\s*=", text):
+                fail(f"{relative} must not send the browser to a URL that drops the query", errors)
+            for banned in START_BANNED:
+                if re.search(banned, text, re.I):
+                    fail(f"{relative} contains banned copy: {banned}", errors)
+            if "cdn.paddle.com" in text or "pricing-checkout.js" in text:
+                fail(f"{relative} must not load Paddle", errors)
+            if re.search(r"FOUNDING|US\$|A\$|\bpri_|\blive_", text):
+                fail(f"{relative} must not add prices, tokens or discount codes", errors)
+            if text.lower().count("<h1") != 1:
+                fail(f"{relative} must have exactly one h1", errors)
+            continue
+        if any("nofollow" in value.lower() for value in metas):
+            fail(f"{relative} gained a nofollow robots meta", errors)
+        if relative in PREEXISTING_NOINDEX:
+            if metas != [PREEXISTING_NOINDEX[relative]]:
+                fail(f"{relative} robots meta changed to {metas!r}", errors)
+        elif any("noindex" in value.lower() for value in metas):
+            fail(f"{relative} gained a noindex robots meta", errors)
+        if 'href="/start/' in text or 'href="/start"' in text:
+            fail(f"{relative} links to a /start/ page", errors)
+
+    if found_start != set(START_PAGES):
+        fail(
+            f"/start/ pages are {sorted(found_start)!r}, expected {list(START_PAGES)!r}",
+            errors,
+        )
+
+    plan_source = (ROOT / "src" / "start" / "plan-ahead.njk").read_text(encoding="utf-8")
+    guides_source = (ROOT / "src" / "start" / "planning-guides.njk").read_text(encoding="utf-8")
+    for label, source in (("plan-ahead", plan_source), ("planning-guides", guides_source)):
+        if re.search(r'"robots"\s*:', source):
+            fail(f"/start/{label}/ must not set robots in front matter", errors)
+
+    plan = (SITE / "start" / "plan-ahead" / "index.html").read_text(encoding="utf-8")
+    for phrase in (
+        "See your stock position weeks ahead, before it runs short or piles up.",
+        "projects stock forward against your forecast, open orders and lead times.",
+        "Reordering by gut feel or spreadsheet, and finding out too late.",
+        "week by week from your forecast, open orders and lead times.",
+        "Planned orders are timed to arrive before stock drops below safety stock.",
+        "Small product businesses with CSV exports, for example Shopify, Xero or Cin7.",
+        "Built by Daniel Hampton, a working supply chain planner.",
+        "Your data stays in CSV files. No integration is needed.",
+        "/images/IMG000009.webp",
+        'alt="Practical Stock Planner inventory projection, with projected stock across the weeks of the plan."',
+        "/assets/brand/daniel-hampton-312.png",
+    ):
+        if phrase not in plan:
+            fail(f"/start/plan-ahead/ is missing approved copy: {phrase}", errors)
+    if "paddle.checkoutOpen" not in plan_source or "Join the list" not in plan_source:
+        fail("/start/plan-ahead/ must switch the sign-up CTA on checkoutOpen", errors)
+    if "/products/practical-stock-planner/#price" not in plan_source or "Start your free trial" not in plan_source:
+        fail("/start/plan-ahead/ must use the product trial path when checkout is open", errors)
+    if checkout_open():
+        if 'href="/products/practical-stock-planner/#price"' not in plan or "Start your free trial" not in plan:
+            fail("/start/plan-ahead/ must show the product trial path while checkout is open", errors)
+        if 'id="signup"' in plan:
+            fail("/start/plan-ahead/ must not show the email sign-up while checkout is open", errors)
+    else:
+        if plan.count("Join the list") != 1 or 'id="signup"' not in plan or "keep-in-touch.js" not in plan:
+            fail("/start/plan-ahead/ must use one email sign-up while checkout is closed", errors)
+        if 'href="#signup"' in plan:
+            fail("/start/plan-ahead/ must not repeat Join the list as a link above the form", errors)
+        if "Start your free trial" in plan:
+            fail("/start/plan-ahead/ must not show the trial path while checkout is closed", errors)
+
+    guides = (SITE / "start" / "planning-guides" / "index.html").read_text(encoding="utf-8")
+    for phrase in (
+        "Practical planning guides from a working supply chain planner.",
+        "projects stock forward against your forecast, open orders and lead times.",
+        "New guides and tools, monthly.",
+        '<a class="learn-card" href="/learn/">',
+        'href="/learn/glossary/"',
+        'href="/products/practical-stock-planner/"',
+        "keep-in-touch.js",
+        "Learn articles",
+        "Free tools",
+    ):
+        if phrase not in guides:
+            fail(f"/start/planning-guides/ is missing {phrase}", errors)
+    for href in learn_tool_hrefs():
+        if href == "/learn/glossary/":
+            continue
+        page = public_file_for_path(href)
+        if not page.is_file():
+            fail(f"/start/planning-guides/ must not link a missing free tool: {href}", errors)
+            continue
+        if f'href="{href}"' not in guides:
+            fail(f"/start/planning-guides/ must link the existing free tool {href}", errors)
+    if "difot" in guides.lower():
+        difot_page = SITE / "learn" / "difot-calculator" / "index.html"
+        if not difot_page.is_file():
+            fail("/start/planning-guides/ mentions DIFOT, but that page is not built", errors)
+    if 'class="home-button"' in guides:
+        fail("/start/planning-guides/ should keep the Stock Planner link soft", errors)
+
+
+def verify_faq_links(errors: list[str]) -> None:
+    """Public FAQ page, linked from the menus and the buyer pages."""
+    sources = (
+        (ROOT / "src" / "_includes" / "partials" / "header.njk", "header"),
+        (ROOT / "src" / "_includes" / "partials" / "footer.njk", "site footer"),
+        (ROOT / "src" / "_includes" / "layouts" / "sales.njk", "sales footer"),
+        (ROOT / "src" / "welcome.njk", "welcome"),
+        (ROOT / "src" / "start" / "plan-ahead.njk", "plan-ahead"),
+        (ROOT / "src" / "contact.njk", "contact"),
+        (ROOT / "src" / "products" / "practical-stock-planner.njk", "product page"),
+    )
+    for path, label in sources:
+        text = path.read_text(encoding="utf-8")
+        if 'href="/faq/"' not in text:
+            fail(f"{label} must link to /faq/", errors)
+        if label in ("header", "site footer", "sales footer"):
+            if text.find('href="/faq/"') > text.find('href="/contact/"'):
+                fail(f"{label} FAQ link must sit before Contact", errors)
+    product = (ROOT / "src" / "products" / "practical-stock-planner.njk").read_text(encoding="utf-8")
+    if 'or see the <a href="/contact/">Contact page</a>.' not in product:
+        fail("the product Questions block must keep its Contact sentence", errors)
+    plan = (ROOT / "src" / "start" / "plan-ahead.njk").read_text(encoding="utf-8")
+    if "More answers are on the" not in plan or 'href="/faq/"' not in plan:
+        fail("/start/plan-ahead/ must point to the FAQ page from its Questions block", errors)
+    faq_source = (ROOT / "src" / "faq.njk").read_text(encoding="utf-8")
+    if 'href="/start/' in faq_source:
+        fail("/faq/ must not link to /start/", errors)
+    built = SITE / "faq" / "index.html"
+    if not built.is_file():
+        fail("/faq/ was not built", errors)
+        return
+    page = built.read_text(encoding="utf-8")
+    if NOINDEX_RE.search(page):
+        fail("/faq/ must not be noindex", errors)
+    if "FAQPage" not in page:
+        fail("/faq/ must emit FAQPage JSON-LD for the published questions", errors)
+    for question in (
+        "How do I get started?",
+        "What files does it use? Does it connect to Shopify, Xero or Cin7?",
+        "How does the licence work?",
+        "Who takes payment, and how do I cancel?",
+        "Does it run on a Mac, or only on Windows?",
+        "Where does my planning data go?",
+        "What is the founding-customer price?",
+        "When am I charged?",
+        "What does Practical Stock Planner actually do?",
+        "What doesn\u2019t it do?",
+        "Can I get help with setup?",
+        "How do I ask a question that isn\u2019t covered here?",
+    ):
+        if f"<h2>{question}</h2>" not in page:
+            fail(f"/faq/ is missing the question: {question}", errors)
+    if (
+        "In return, a short feedback questionnaire is requested about two weeks after you start. "
+        "The founding price is not withdrawn if you don\u2019t fill it in. Giving a quote is optional."
+    ) not in page:
+        fail("/faq/ is missing the founding questionnaire answer", errors)
+    if (
+        "Can\u2019t see your question answered above? Send it here and Daniel will reply by email "
+        "within 2 business days (Brisbane time)."
+    ) not in page:
+        fail("/faq/ is missing the Ask a question help text", errors)
+    if "outgrown simple reorder triggers" not in page:
+        fail("/faq/ is missing the approved reorder-triggers wording", errors)
+    if "30\u201345 minute video call" not in page or "It is not the founding feedback questionnaire." not in page:
+        fail("/faq/ must keep Guided setup separate from the founding questionnaire", errors)
+    if re.search(r"feedback\s+call", page, re.I):
+        fail("/faq/ must not mention a founding call", errors)
+    if re.search(r"reorder-point|reorder point|min-max|min/max|minmax", page, re.I):
+        fail("/faq/ must not use reorder-point or min-max wording", errors)
+    for href in (
+        'href="/products/practical-stock-planner/"',
+        'href="/refunds/"',
+        'href="/privacy/"',
+        'href="/contact/"',
+        'href="https://www.paddle.net" rel="noopener noreferrer" target="_blank"',
+        'href="mailto:support@practicalsupplychainplanning.com"',
+    ):
+        if href not in page:
+            fail(f"/faq/ is missing {href}", errors)
+    if 'href="/start/' in page:
+        fail("/faq/ must not link to /start/", errors)
+    if page.lower().count("<h1") != 1:
+        fail("/faq/ must have exactly one h1", errors)
+    if "Ask a question" not in page or "Send question" not in page:
+        fail("/faq/ must include the question form", errors)
+
+
 def main() -> int:
     errors: list[str] = []
     verify_legacy_sources(errors)
@@ -1449,7 +1837,10 @@ def main() -> int:
         verify_internal_links(errors)
         verify_simulator_assets(errors)
         verify_difot_sent(errors)
+        verify_glossary(errors)
         verify_seller(errors)
+        verify_start_pages(errors)
+        verify_faq_links(errors)
     except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
         fail(str(exc), errors)
     if errors:

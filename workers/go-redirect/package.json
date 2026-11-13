@@ -1,0 +1,17 @@
+{
+  "name": "go-redirect",
+  "private": true,
+  "description": "Cloudflare Worker for go.getpracticalplanning.com outreach tracking links.",
+  "type": "module",
+  "scripts": {
+    "test": "wrangler types && tsc --noEmit && vitest run",
+    "types": "wrangler types",
+    "check": "wrangler types && tsc --noEmit && vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.45.0"
+  }
+}

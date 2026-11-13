@@ -1,0 +1,40 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "go-redirect",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-02",
+  "compatibility_flags": ["nodejs_compat"],
+  "upload_source_maps": true,
+  // This Worker is the origin for the go hostname only. Leave the
+  // getpracticalplanning.com mail records (MX, SPF, DKIM, DMARC) alone.
+  "workers_dev": false,
+  "observability": {
+    "enabled": true,
+    // Invocation logs include the request URL. The token is in that path, and
+    // the same record carries the user agent, so those logs stay off.
+    // Custom logs below record only an outcome, never the token or the secret.
+    "redact_query_string": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false,
+      "head_sampling_rate": 1
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 1
+    }
+  },
+  "routes": [
+    {
+      "pattern": "go.getpracticalplanning.com",
+      "custom_domain": true
+    }
+  ],
+  // Plain config. CLICK_SECRET is a Worker secret, never a var.
+  "vars": {
+    "CLICK_API_URL": "https://web-production-aa173b.up.railway.app/track/click"
+  },
+  "secrets": {
+    "required": ["CLICK_SECRET"]
+  }
+}

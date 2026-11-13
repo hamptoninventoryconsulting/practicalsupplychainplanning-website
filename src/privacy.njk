@@ -12,9 +12,9 @@
 
 <section class="card">
   <div class="content">
-    <p class="policy-updated">Last updated: 31 October 2026</p>
+    <p class="policy-updated">Last updated: 12 November 2026</p>
     <p>
-      This policy explains what personal information we collect, why, and what we do with it. We keep it to the minimum we need to run this website, sell you a licence and support you.
+      This policy explains what personal information we collect, why, and what we do with it. We keep it to the minimum we need to run this website, sell you a licence, support you and, if you accept, measure ads for the free Safety Stock Simulator.
     </p>
     <p>
       &ldquo;We&rdquo; means Daniel Hampton, a sole trader in Queensland, Australia, trading under the registered business name Practical Supply Chain Planning, ABN 56 757 743 802. Contact: <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a>.
@@ -28,10 +28,13 @@
       <li><strong>DIFOT Calculator.</strong> The supplier list and purchase order file are processed in the browser and are never sent.</li>
       <li><strong>Usage tracking.</strong> The app doesn&rsquo;t send usage analytics or telemetry.</li>
       <li><strong>Card details.</strong> Paddle handles payment. We never see or store your card number.</li>
-      {%- if site.webAnalyticsToken %}
-      <li><strong>Advertising and tracking cookies.</strong> This website does not use advertising or tracking cookies.</li>
+      {%- if not site.webAnalyticsToken %}
+      <li><strong>Website analytics.</strong> This website does not use a Cloudflare analytics beacon.</li>
+      {%- endif %}
+      {%- if metaPixel.enabled %}
+      <li><strong>Meta Pixel.</strong> The home page, the Learn pages and the Safety Stock Simulator can load a Meta Pixel. That Pixel uses an advertising cookie. It does not load unless you accept it.</li>
       {%- else %}
-      <li><strong>Website tracking.</strong> Our website has no analytics, advertising or tracking cookies.</li>
+      <li><strong>Meta Pixel.</strong> The Meta Pixel is not switched on. If we switch it on, the home page, the Learn pages and the Safety Stock Simulator can load it. It uses an advertising cookie and does not load unless you accept it.</li>
       {%- endif %}
     </ul>
     <p>
@@ -87,6 +90,9 @@
     <p>
       If you email or leave a voicemail, we keep your message, your email address or phone number, and our reply, so we can help you. Voicemails are recorded by our phone provider and sent to our support inbox as an audio file.
     </p>
+    <p>
+      If you use the question form on the FAQ page, we send that message to our support inbox. It contains the name you gave, if any, your email address, the topic, and your question. We keep it with our other support emails for 2 years, and we do not add you to a mailing list.
+    </p>
 
     <h2>5. When you visit our website</h2>
     <p>
@@ -95,6 +101,40 @@
     {%- if site.webAnalyticsToken %}
     <p>
       We count page views with Cloudflare Web Analytics. It does not use cookies, and it does not collect your name or email address. It records the page you opened, the site you came from, your country, your browser, and how fast the page loaded.
+    </p>
+    {%- endif %}
+    <h3>Meta Pixel</h3>
+    <p>
+      On the home page, the Learn pages and the Safety Stock Simulator we can use a Meta Pixel to measure ads for the free Safety Stock Simulator. The Pixel is a small script from Meta (Meta Platforms, Inc. and related companies). Meta is outside Australia, including in the United States. We use it to see whether those ads are opened, and whether someone later asks us to email their simulator results.
+    </p>
+    {%- if metaPixel.enabled %}
+    <p>
+      The Pixel does not load unless you accept it. The banner offers Accept and Reject as equal choices. Reject leaves the Pixel unloaded. We remember the choice in this browser until you change it, or until you clear this site&rsquo;s stored data. Cookie choices in the footer opens the same choice again.
+    </p>
+    {%- else %}
+    <p>
+      The Meta Pixel is not switched on, so no page views are sent to Meta.
+    </p>
+    {%- endif %}
+    {%- if metaPixel.enabled %}
+    <p>
+      This choice is separate from the &ldquo;Email me my results&rdquo; tick box. That tick box only sends you the email you asked for. It does not accept the Pixel.
+    </p>
+    <p>
+      If you accept, Meta receives a page view. After a successful &ldquo;Email me my results&rdquo; send, Meta can also receive one lead event. In our notes that lead event is &ldquo;Simulator results emailed&rdquo;. It is sent only after the email send succeeds, not when the form is opened.
+    </p>
+    <p>
+      The Pixel collects technical information: a cookie identifier, the page address, the site you came from, and what your browser normally sends, such as IP address and browser type. Advertising tags on the address (such as <code>utm_</code> values, <code>ref</code> and <code>fbclid</code>) can be included. Scenario settings are not. We never send scenario data, SKU names, forecasts, stock figures or result numbers to Meta. We do not send your email address to Meta. We do not send these events from our server.
+    </p>
+    <p>
+      We do not keep a copy of Pixel events on our servers. Your accept or reject choice stays in this browser. Meta&rsquo;s Pixel cookies last about 90 days. Meta keeps the event data under its own <a href="https://www.facebook.com/privacy/policy/" rel="noopener noreferrer" target="_blank">privacy policy</a>.
+    </p>
+    <p>
+      To opt out, choose Reject, or open Cookie choices in the footer and choose Reject. You can also email <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a> with any question about this.
+    </p>
+    {%- else %}
+    <p>
+      While the Pixel is switched off, this site does not send page views to Meta.
     </p>
     {%- endif %}
 
@@ -107,9 +147,12 @@
       <li>To answer your questions.</li>
       <li>To check CSV files you send for Guided setup, and to prepare for that call. We use those files only for your setup.</li>
       <li>To ask for your feedback (see below) and improve the software.</li>
+      <li>To measure ads for the free Safety Stock Simulator, and only if you have accepted the Meta Pixel.</li>
       <li>To meet our legal obligations (for example tax and record-keeping).</li>
     </ul>
-    <p>We don&rsquo;t sell your information. We don&rsquo;t use it for advertising.</p>
+    <p>
+      We don&rsquo;t sell your information for money. We don&rsquo;t use your planning data, your email address, or your purchase details to advertise to you. If you accept the Meta Pixel, a page view, and a lead event after a results email is sent, are shared with Meta to measure ads for the Safety Stock Simulator.
+    </p>
     <h3>Emails we send to customers</h3>
     <ul>
       <li><strong>Your licence key.</strong> Sent from <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a> straight after checkout. It includes your key, the download link and how to activate.</li>
@@ -165,6 +208,12 @@
             <td>Your phone number and voicemail recording</td>
             <td>Europe and other countries where Zadarma operates</td>
           </tr>
+          <tr>
+            <th scope="row">Meta (Meta Platforms, Inc. and related companies)</th>
+            <td>Measures ads for the Safety Stock Simulator, if you accept the Pixel</td>
+            <td>A page view, and a lead event after a results email is sent. Not your planning data, email address, or scenario results</td>
+            <td>United States and other countries where Meta operates</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -183,6 +232,7 @@
       <li>Licence and customer records: while you&rsquo;re a customer and for 7 years after, for tax, record-keeping and disputes.</li>
       <li>Support emails and voicemails: 2 years.</li>
       <li>Guided setup files: deleted within 30 days of the call.</li>
+      <li>Meta Pixel events: we do not keep them. If the Pixel is switched on, your accept or reject choice stays in this browser until you change it or clear stored site data. Meta&rsquo;s Pixel cookies last about 90 days. Meta keeps the events under its own privacy policy.</li>
       <li>After that we delete it or make it anonymous.</li>
     </ul>
 
@@ -198,6 +248,15 @@
       <li>correct it;</li>
       <li>delete it. We may need to keep some records for legal reasons, and deleting your licence record will stop the software working.</li>
     </ul>
+    {%- if metaPixel.enabled %}
+    <p>
+      To stop the Meta Pixel, choose Reject on the banner, or open Cookie choices in the footer and choose Reject.
+    </p>
+    {%- else %}
+    <p>
+      The Meta Pixel is not switched on, so no page views are sent to Meta.
+    </p>
+    {%- endif %}
     <p>
       Email <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a>. We&rsquo;ll reply within 30 days.
     </p>

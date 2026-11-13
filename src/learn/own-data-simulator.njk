@@ -7,9 +7,9 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/own-data/",
   "scripts": [
-    "/assets/own-data-engine.js?v=4",
-    "/assets/sim-results-form.js?v=7",
-    "/assets/own-data-simulator.js?v=4"
+    "/assets/own-data-engine.js?v=15",
+    "/assets/sim-results-form.js?v=8",
+    "/assets/own-data-simulator.js?v=9"
   ]
 }
 ---
@@ -35,21 +35,29 @@
             <ul>
               <li>A single average weekly forecast stands in for the whole year.</li>
               <li>Demand, lead time, and delivery quantity move inside fixed variability bands.</li>
-              <li>The reorder rule places an order only when calculated stock is strictly below safety stock.</li>
+              <li>Each week's forecast is split evenly across seven days. Once a week the plan is rebuilt from the forecast and from orders already released. A new receipt cannot arrive until the full lead time has passed, and the plan keeps the normal lot quantity until the goods actually arrive.</li>
             </ul>
             <p id="own-storage-off">
               The calculation runs in this browser. SKU names, forecasts, stock,
-              and prices are not stored and are not sent to a server. After you
-              edit, the page address holds those numbers after the #, in a
-              #d= fragment. That part of the address stays on your device.
-              Anyone with the link can read the numbers.
+              and prices are kept in the #d= part of the page address, on your
+              device. That fragment is not sent when the browser requests the
+              page. Anyone with the link can read the numbers. We do not store
+              them on our server. If you accept advertising cookies, Meta may
+              receive a page view. That view does not include the #d= fragment
+              or the scenario.
             </p>
             <p id="own-storage-on" hidden>
               SKU names, forecasts, stock, and prices stay in this browser and
-              in the #d= part of the link. They are not stored on a server. If
-              you ask to email yourself the results, the email contains a
-              summary and a reopen link. Anyone who has that email can read the
-              numbers. We do not keep the summary or the link.
+              in the #d= part of the link. That fragment is not stored on our
+              server. If you ask to email yourself the results, the email
+              contains a summary and a reopen link. Anyone who has that email
+              can read the numbers. We do not keep the summary or the link. We
+              do keep your email address, the time, your network address, and
+              the page address for 24 months. The page address does not include
+              the #d= fragment. It can include other scenario settings from the
+              query string. If you accept advertising cookies, Meta may receive
+              a page view. That view does not include the #d= fragment or the
+              scenario.
             </p>
             <p>
               Practical Stock Planner is a separate Windows app that plans stock by weeks
@@ -76,7 +84,7 @@
             </button>
             <button type="button" id="own-mode-mc" class="sim-scenario" aria-pressed="false">
               <span class="sim-scenario__name">Monte Carlo</span>
-              <span class="sim-scenario__summary">Fifty years under the same settings. Summary only, no chart.</span>
+              <span class="sim-scenario__summary">The same one-year simulation run 50 times with these settings. Summary only, no chart.</span>
             </button>
           </div>
         </section>
@@ -226,13 +234,28 @@
           </div>
           <p id="own-formula-note" class="sim-meta" hidden></p>
           <p class="sim-help">
-            An order is placed only when calculated stock on hand is strictly
-            below safety stock. Calculated stock is beginning stock, plus
-            supply already due this week, minus this week's forecast. One lot
-            is ordered, or two if that lot would not lift calculated stock
-            above zero. The base lead time is any whole number of weeks from
-            1 to 26. It is not added onto the arrival week. It scales the
-            formula and the extra delay when lead-time variability is on.
+            Each week's forecast is split evenly across seven days, and those
+            days add up to the week. A receipt due on a day is in stock
+            before that day's demand. A day with no receipt takes demand
+            off the opening stock. At the start of
+            each week the plan is rebuilt from the forecast and from orders
+            already released, counted on the date they are still expected. A
+            new receipt cannot arrive until the full lead time has passed.
+            An order released in week 1 with a 5-week lead time is due on the
+            first day of week 6, before that day's demand. Until the goods
+            arrive the plan keeps the normal lot quantity. A miss is
+            recognised when that day passes with no receipt. The plan then
+            expects that same quantity one week later, and moves the
+            expectation forward again if the goods still have not arrived.
+            It does not learn the actual arrival date in advance. A short
+            shipment is recognised only when the goods arrive. The release is
+            as many normal lots as the forecast needs to finish the week at
+            or above safety stock. An order already on the way is counted on
+            its expected date, and another lot can be due that same week if
+            the forecast still finishes below safety stock. Lead time is any
+            whole number of weeks from 1 to 26.
+            Lead-time variability adds whole extra weeks after that lead time
+            and cannot bring the receipt forward.
           </p>
           <p class="sim-help">
             Formula safety stock is round(Z × σD × √L). Z comes from the
@@ -280,8 +303,14 @@
           </div>
           <p class="sim-help">
             Demand variability defaults to Medium. Off uses the weekly forecast
-            as the demand. Small, Medium, and Large are the same teaching bands
-            as the other simulator. Delivery quantity is shared by every SKU.
+            as the demand. Small and Medium stay nearer the forecast. Large is
+            the extreme band, from none of the weekly forecast up to double it.
+            The forecast is the expected mean. Across many runs those weeks
+            average to the forecast. One year's realized mean can sit above or
+            below it. These are the same bands as the teaching simulator. The
+            draw is for the whole week, then that week is split evenly across
+            its seven days. Delivery
+            quantity is shared by every SKU.
           </p>
         </section>
 
@@ -322,25 +351,40 @@
             <div id="own-commentary" class="own-commentary"></div>
             <div class="sim-metrics" id="own-metrics"></div>
             <p class="sim-note">
-              Annual gross profit counts only units actually sold. Demand
-              that could not be filled in a stockout is left out.
+              Annual gross profit counts only units actually sold. Demand is
+              filled from the stock available that morning, after a receipt
+              due that day. Stock that is already below zero before the
+              receipt is still a stockout. Inventory turns and working
+              capital use the daily points on the chart. A plotted point
+              below zero counts as zero, so working capital is not negative.
+              The table stays one row per week. A week is out of stock if
+              stock is below zero before a receipt due that morning, or
+              after demand when nothing arrives.
             </p>
             <figure class="sim-figure">
-              <svg id="own-chart" class="sim-chart" role="img" aria-label="Ending stock, safety stock, and zero"></svg>
+              <svg id="own-chart" class="sim-chart" role="img" aria-label="Stock on hand, safety stock, and zero"></svg>
               <figcaption>
                 <ul class="sim-legend">
-                  <li class="sim-legend__ending">Ending SOH</li>
+                  <li class="sim-legend__ending">Stock on hand</li>
                   <li class="sim-legend__ss">Safety stock</li>
                   <li class="sim-legend__zero">Zero</li>
                 </ul>
-                <p class="sim-meta">One year only. Monte Carlo does not draw this chart.</p>
+                <p class="sim-meta">
+                  One year, one point per day: the stock after that day's demand.
+                  A receipt day also shows the stock just before the receipt.
+                  Monte Carlo does not draw this chart.
+                </p>
               </figcaption>
             </figure>
             <p class="sim-help">
-              SOH means stock on hand, the units in stock. Beginning SOH is
-              the stock at the start of the week. Ending SOH is the stock
-              after this week's supply and demand. Ending below zero is a
-              stockout.
+              SOH means stock on hand, the units in stock. The table is one
+              row per week. Beginning SOH is the stock at the start of the
+              week. Pre-receipt SOH is the lowest stock before a receipt is
+              added: the morning stock on a receipt day, and the stock after
+              demand on every other day. It is not the lowest close after a
+              receipt. Ending SOH is the stock at the end of the week. A week
+              is out of stock if stock is below zero before a receipt due that
+              morning, or after demand. Touching zero is not a stockout.
             </p>
             <details class="sim-details">
               <summary>Weekly table</summary>
@@ -353,7 +397,8 @@
                       <th scope="col">Base demand</th>
                       <th scope="col">Simulated demand</th>
                       <th scope="col">Beginning SOH</th>
-                      <th scope="col">Planned supply</th>
+                      <th scope="col">Pre-receipt SOH</th>
+                      <th scope="col">Receipts</th>
                       <th scope="col">Ending SOH</th>
                       <th scope="col">Safety stock</th>
                     </tr>
@@ -361,6 +406,9 @@
                   <tbody id="own-weeks-body"></tbody>
                 </table>
               </div>
+              <p class="sim-actions">
+                <button id="own-download-weeks" class="sim-button sim-button--secondary" type="button">Download weekly CSV</button>
+              </p>
             </details>
             <p class="sim-note">
               These numbers are an illustrative estimate from a teaching
@@ -384,8 +432,8 @@
               Out-of-stock weeks, customer service, inventory turns, and
               average working capital show the median and the P10–P90 band.
               Annual gross profit (units sold) shows the median only. It
-              counts only units actually sold. Demand that could not be
-              filled in a stockout is left out.
+              counts only units actually sold. Demand that the morning stock,
+              after a receipt due that day, could not fill is left out.
             </p>
             <details class="sim-details">
               <summary>Per-run results</summary>

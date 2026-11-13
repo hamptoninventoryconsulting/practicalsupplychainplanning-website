@@ -123,12 +123,51 @@ assert.strictEqual(quiet.metrics.annualDemand, 520);
 assert.strictEqual(quiet.metrics.unitsSold, 520);
 assert.strictEqual(quiet.metrics.unmetDemand, 0);
 assert.strictEqual(quiet.metrics.annualGp, 2600);
-assertClose(quiet.metrics.averageWc, 7350, "working capital");
+assertClose(quiet.metrics.averageWc, (269100 / 364) * 10, "working capital");
 assert.strictEqual(quiet.weeks[51].endingSoh, 480);
 assert.ok(quiet.releases.length === 0, "a full opening stock does not order");
 
 const zeroStock = own.runYear(sku({ currentStock: 0, ssQty: 0, demandVariability: "off" }), globals(), 4);
 assert.strictEqual(zeroStock.startingSoh, 0);
+const typedOpening = own.runYear(
+  sku({
+    forecast: 40,
+    currentStock: 80,
+    lotMode: "weeks",
+    lotWeeks: 10,
+    lotQty: 400,
+    ssMode: "fixed",
+    ssQty: 300,
+    demandVariability: "off",
+  }),
+  globals(),
+  1
+);
+assert.strictEqual(typedOpening.nominalLot, 400);
+assert.strictEqual(typedOpening.safetyStock, 300);
+assert.strictEqual(typedOpening.startingSoh, 80);
+assert.strictEqual(typedOpening.weeks[0].beginningSoh, 80);
+const morningOwn = own.runYear(
+  sku({
+    forecast: 40,
+    currentStock: 1,
+    lotMode: "fixed",
+    lotQty: 1,
+    ssMode: "fixed",
+    ssQty: 0,
+    leadTimeWeeks: 2,
+    demandVariability: "large",
+    leadTimeVariability: "off",
+  }),
+  globals({ deliveryVariability: "off" }),
+  1
+);
+const morningOwnDay = morningOwn.days[154];
+assert.strictEqual(morningOwnDay.beginningSoh, 11);
+assert.strictEqual(morningOwnDay.plannedSupply, 4);
+assert.strictEqual(morningOwnDay.endingSoh, 4);
+assert.strictEqual(morningOwnDay.preReceiptSoh, 11);
+assert.strictEqual(Number(morningOwn.metrics.avgSohTurns.toFixed(3)), 13.957);
 assert.ok(zeroStock.releases.length > 0, "zero stock still places an order");
 assert.strictEqual(zeroStock.metrics.unitsSold + zeroStock.metrics.unmetDemand, zeroStock.metrics.annualDemand);
 assert.strictEqual(zeroStock.metrics.annualGp, zeroStock.metrics.unitsSold * 30);
@@ -136,7 +175,7 @@ assert.strictEqual(zeroStock.metrics.annualGp, zeroStock.metrics.unitsSold * 30)
 const lostSales = own.runYear(
   sku({
     forecast: 10,
-    currentStock: 4,
+    currentStock: 0,
     lotQty: 1,
     ssQty: 0,
     demandVariability: "off",
@@ -148,16 +187,51 @@ const lostSales = own.runYear(
   globals(),
   1
 );
-assert.strictEqual(lostSales.weeks[0].plannedSupply, 2, "week 1 receives two lots");
-assert.strictEqual(lostSales.weeks[0].endingSoh, -4, "week 1 ends short");
+assert.ok(lostSales.days[0].preReceiptSoh < 0, "day 1 demand is taken before any receipt");
+assert.ok(lostSales.metrics.oosWeeks > 0);
+
+const recoverySku = own.runYear(
+  sku({
+    forecast: 40,
+    currentStock: 80,
+    lotQty: 40,
+    ssQty: 0,
+    demandVariability: "off",
+    leadTimeVariability: "large",
+    leadTimeWeeks: 1,
+  }),
+  globals({ deliveryVariability: "off" }),
+  1
+);
+const weekFour = recoverySku.reviews[3];
+assert.ok(weekFour.outstanding.length > 0);
+assert.ok(weekFour.releasedNow.some((order) => order.plannedDueWeek === 5));
+assert.ok(
+  weekFour.releasedNow.every((order) => order.plannedDueWeek >= 4 + 1),
+  "lead time 1 still cannot receipt inside the fence"
+);
+const sharedSpec = {
+  weekIndex: 3,
+  onHand: -80,
+  base: Array.from({ length: 52 }, function () { return 40; }),
+  safetyStock: 0,
+  nominalLot: 40,
+  leadTimeWeeks: 1,
+  outstanding: [
+    { nominalQuantity: 40, knownDueDay: 29, actualArrivalDay: 36, privateQuantity: 10 },
+    { nominalQuantity: 40, knownDueDay: 29, actualArrivalDay: 99, privateQuantity: 40 },
+  ],
+};
+assert.deepStrictEqual(own.planReview(sharedSpec), teaching.planReview(sharedSpec));
+const recovered = own.planReview(sharedSpec);
+assert.ok(recovered.suggestions.some(function (item) { return item.dueWeekIndex === 4; }));
 lostSales.weeks.forEach(function (week, index) {
   assert.strictEqual(week.simulatedDemand, 10, "demand " + (index + 1));
-  assert.strictEqual(week.plannedSupply, 2, "supply " + (index + 1));
 });
 assert.strictEqual(lostSales.metrics.annualDemand, 520);
-assert.strictEqual(lostSales.metrics.unitsSold, 108, "opening stock plus two units a week");
-assert.strictEqual(lostSales.metrics.unmetDemand, 412);
-assert.strictEqual(lostSales.metrics.annualGp, 108 * 30);
+assert.ok(lostSales.metrics.unitsSold < lostSales.metrics.annualDemand, "receipts do not fill the day they arrive");
+assert.strictEqual(lostSales.metrics.unitsSold + lostSales.metrics.unmetDemand, lostSales.metrics.annualDemand);
+assert.ok(Math.abs(lostSales.metrics.annualGp - lostSales.metrics.unitsSold * 30) < 1e-6);
 assert.ok(lostSales.metrics.annualGp < lostSales.metrics.annualDemand * 30);
 
 const ownBig = own.runYear(sku({ lotQty: 2500, demandVariability: "off", currentStock: 80 }), globals(), 1);
@@ -184,7 +258,7 @@ const teachingLead = teaching.runYear(
 );
 assert.strictEqual(teachingLead.controls.leadTimeWeeks, 5);
 
-function parityControls(controls) {
+function parityControls(controls, startingSoh) {
   const forecast = 40;
   const nominal = controls.lotMode === "weeks" ? forecast * (controls.lotWeeks || 4) : (controls.lotQty == null ? 40 : controls.lotQty);
   return sku({
@@ -193,7 +267,7 @@ function parityControls(controls) {
     demandVariability: controls.demandVariability || "off",
     leadTimeWeeks: controls.leadTimeWeeks || 5,
     leadTimeVariability: controls.leadTimeVariability || "off",
-    currentStock: forecast + nominal,
+    currentStock: startingSoh == null ? nominal : startingSoh,
     unitCost: 70,
     sellingPrice: 100,
     lotMode: controls.lotMode || "fixed",
@@ -206,10 +280,15 @@ function parityControls(controls) {
   });
 }
 
-function soldFromWeeks(weeks) {
-  return weeks.reduce(function (sum, week) {
-    const available = Math.max(0, week.beginningSoh) + Math.max(0, week.plannedSupply);
-    return sum + Math.min(week.simulatedDemand, available);
+function soldFromWeeks(days) {
+  return days.reduce(function (sum, day) {
+    if (day.openSevenths != null && day.demandSevenths != null) {
+      const available = day.openSevenths > 0 ? day.openSevenths : 0;
+      const sold = day.demandSevenths < available ? day.demandSevenths : available;
+      return sum + sold / 7;
+    }
+    const available = Math.max(0, day.beginningSoh);
+    return sum + Math.min(day.simulatedDemand, available);
   }, 0);
 }
 
@@ -218,12 +297,16 @@ function assertSameYear(left, right, label) {
   assert.strictEqual(left.safetyStock, right.safetyStock, label + " ss");
   assert.deepStrictEqual(left.shockWeeks, right.shockWeeks, label + " shock");
   for (let week = 0; week < 52; week += 1) {
+    assert.strictEqual(left.weeks[week].preReceiptSoh, right.weeks[week].preReceiptSoh, label + " pre " + (week + 1));
     assert.strictEqual(left.weeks[week].endingSoh, right.weeks[week].endingSoh, label + " end " + (week + 1));
     assert.strictEqual(left.weeks[week].simulatedDemand, right.weeks[week].simulatedDemand, label + " demand " + (week + 1));
     assert.strictEqual(left.weeks[week].plannedSupply, right.weeks[week].plannedSupply, label + " supply " + (week + 1));
   }
   assert.strictEqual(left.metrics.oosWeeks, right.metrics.oosWeeks, label + " oos");
-  assert.strictEqual(left.metrics.unitsSold, soldFromWeeks(left.weeks), label + " units sold");
+  assert.ok(
+    Math.abs(left.metrics.unitsSold - soldFromWeeks(left.days)) < 1e-6,
+    label + " units sold"
+  );
   assert.strictEqual(
     left.metrics.unmetDemand,
     left.metrics.annualDemand - left.metrics.unitsSold,
@@ -269,8 +352,20 @@ function assertSameYear(left, right, label) {
                 shock: shock,
               };
               const taught = teaching.runYear(controls, seed);
-              const ours = own.runYear(parityControls(controls), globals({ deliveryVariability: delivery, shock: shock }), seed);
-              assertSameYear(ours, taught, "y" + seed + ":" + lead + ":" + demand + ":" + ssMode + ":" + shock);
+              const ours = own.runYear(
+                parityControls(controls, taught.startingSoh),
+                globals({ deliveryVariability: delivery, shock: shock }),
+                seed
+              );
+              const label = "y" + seed + ":" + lead + ":" + demand + ":" + ssMode + ":" + shock;
+              const teachingPipeline = taught.releases.some(function (release) { return release.releaseWeek < 1; });
+              assert.ok(ours.releases.every(function (release) { return release.releaseWeek >= 1; }), label + " own-data invents no pipeline");
+              if (teachingPipeline) {
+                assert.deepStrictEqual(ours.simulatedDemand, taught.simulatedDemand, label + " demand");
+                assert.ok(taught.releases.some(function (release) { return release.openedBeforeStart; }), label);
+              } else {
+                assertSameYear(ours, taught, label);
+              }
             });
           });
         });
@@ -292,11 +387,39 @@ const weekControls = {
   deliveryVariability: "medium",
   shock: true,
 };
-assertSameYear(
-  own.runYear(parityControls(weekControls), globals({ deliveryVariability: "medium", shock: true }), 9),
-  teaching.runYear(weekControls, 9),
-  "weeks lot"
+const taughtWeeks = teaching.runYear(weekControls, 9);
+const ownWeeks = own.runYear(
+  parityControls(weekControls, taughtWeeks.startingSoh),
+  globals({ deliveryVariability: "medium", shock: true }),
+  9
 );
+assert.ok(ownWeeks.releases.every(function (release) { return release.releaseWeek >= 1; }));
+if (taughtWeeks.releases.some(function (release) { return release.releaseWeek < 1; })) {
+  assert.deepStrictEqual(ownWeeks.simulatedDemand, taughtWeeks.simulatedDemand);
+} else {
+  assertSameYear(ownWeeks, taughtWeeks, "weeks lot");
+}
+
+const largeDemandControls = {
+  patternId: "level",
+  lotMode: "fixed",
+  lotQty: 40,
+  ssMode: "fixed",
+  ssQty: 20,
+  leadTimeWeeks: 5,
+  demandVariability: "large",
+  leadTimeVariability: "off",
+  deliveryVariability: "off",
+  shock: false,
+};
+const taughtLarge = teaching.runYear(largeDemandControls, 42);
+const ownLarge = own.runYear(parityControls(largeDemandControls, taughtLarge.startingSoh), globals(), 42);
+assert.ok(ownLarge.releases.every(function (release) { return release.releaseWeek >= 1; }));
+if (taughtLarge.releases.some(function (release) { return release.releaseWeek < 1; })) {
+  assert.deepStrictEqual(ownLarge.simulatedDemand, taughtLarge.simulatedDemand);
+} else {
+  assertSameYear(ownLarge, taughtLarge, "large demand");
+}
 
 const mcControls = {
   patternId: "level",
@@ -312,16 +435,22 @@ const mcControls = {
   shock: true,
 };
 const taughtMc = teaching.runMonteCarlo(mcControls, 7, { runs: 50 });
+const ownMcSku = parityControls(mcControls, taughtMc.runs[0].startingSoh);
 const ownMc = own.runMonteCarlo(
-  parityControls(mcControls),
+  ownMcSku,
   globals({ deliveryVariability: "off", shock: true }),
   7
 );
-assert.strictEqual(ownMc.summary.oosWeeks.median, taughtMc.summary.oosWeeks.median);
+assert.strictEqual(ownMc.runs[0].safetyStock, taughtMc.runs[0].safetyStock);
+assert.ok(taughtMc.runs[0].releases.some(function (release) { return release.releaseWeek < 1; }));
+assert.ok(ownMc.runs[0].releases.every(function (release) { return release.releaseWeek >= 1; }));
+taughtMc.runs.forEach(function (run) {
+  assert.strictEqual(run.startingSoh, taughtMc.runs[0].startingSoh);
+});
 ownMc.runs.forEach(function (run, index) {
   const taughtRun = taughtMc.runs[index];
   assert.strictEqual(run.metrics.annualDemand, taughtRun.metrics.annualDemand, "mc demand " + index);
-  assert.strictEqual(run.metrics.unitsSold, soldFromWeeks(run.weeks), "mc sold " + index);
+  assert.ok(Math.abs(run.metrics.unitsSold - soldFromWeeks(run.days)) < 1e-6, "mc sold " + index);
   assert.strictEqual(run.metrics.annualGp, run.metrics.unitsSold * 30, "mc gp " + index);
   if (run.metrics.unmetDemand === 0) {
     assert.strictEqual(run.metrics.annualGp, taughtRun.metrics.annualGp, "mc gp parity " + index);
@@ -336,7 +465,7 @@ const chunkScenario = own.validateScenario({
   seed: 7,
   deliveryVariability: "off",
   shock: true,
-  skus: [parityControls(mcControls)],
+  skus: [ownMcSku],
 }).scenario;
 const jobs = own.portfolioJobs(chunkScenario, "monte-carlo", 7);
 const grouped = [];
@@ -398,7 +527,7 @@ assert.deepStrictEqual(
   idsOf({ lotMode: "weeks", lotWeeks: 6, inventoryTurns: 4, oosWeeks: 2, safetyStock: 10 }),
   [6, 9]
 );
-assert.deepStrictEqual(idsOf({ averageWc: -25, oosWeeks: 3, safetyStock: 0 }), [7, 9]);
+assert.deepStrictEqual(idsOf({ averageWc: -25, oosWeeks: 3, safetyStock: 0 }), [9]);
 assert.deepStrictEqual(
   idsOf({ mode: "monte-carlo", oosSpread: 5, oosWeeks: 2, safetyStock: 4 }),
   [8, 9]
@@ -425,7 +554,6 @@ const phrases = {
   4: /doubled-demand/,
   5: /textbook formula/,
   6: /working capital/,
-  7: /backorders/,
   8: /year to year/,
   9: /one setting at a time/,
 };
@@ -436,8 +564,7 @@ Object.keys(phrases).forEach(function (id) {
         : id === "3" ? { oosWeeks: 2, deliveryVariability: "medium", safetyStock: 0 }
           : id === "4" ? { oosWeeks: 2, shock: true, shockStockout: true }
             : id === "5" ? { ssMode: "formula", leadTimeVariability: "small", oosWeeks: 0, csl: 100, safetyStock: 4 }
-              : id === "6" ? { lotMode: "weeks", lotWeeks: 10, inventoryTurns: 3, oosWeeks: 1 }
-                : id === "7" ? { averageWc: -1, oosWeeks: 4 }
+                : id === "6" ? { lotMode: "weeks", lotWeeks: 10, inventoryTurns: 3, oosWeeks: 1 }
                   : id === "8" ? { mode: "monte-carlo", oosSpread: 6, oosWeeks: 3 }
                     : {}
   ));
@@ -549,7 +676,7 @@ own.commentaryFromYear(bigLots, globals(), bigLotsRun).rules.forEach(function (r
   assertClean(rule.text, "big lots");
 });
 assert.ok(bigLotsRun.metrics.inventoryTurns < 6);
-[1, 2, 3, 4, 5, 6, 7, 9].forEach(function (id) {
+[1, 2, 3, 4, 5, 6, 9].forEach(function (id) {
   assert.ok(seen[id], "matrix did not fire rule " + id);
 });
 
@@ -799,7 +926,13 @@ assert.ok((page.match(/Illustrative estimate/g) || []).length >= 4);
 assert.match(flat, /not a forecast, a recommendation, or advice for your business/);
 assert.match(flat, /single average weekly forecast/);
 assert.match(flat, /variability bands/);
-assert.match(flat, /reorder rule/);
+assert.match(flat, /full lead time has passed/);
+assert.match(flat, /normal lot quantity until the goods actually arrive/);
+assert.match(flat, /expects that same quantity one week later/);
+assert.match(flat, /split evenly across seven days/);
+assert.match(flat, /The forecast is the expected mean/);
+assert.match(flat, /One year's realized mean can sit above or below it/);
+assert.doesNotMatch(flat, /still average to the forecast/);
 assert.match(flat, /does not calculate safety stock/);
 assert.match(page, /#d=/);
 assert.match(page, /href="\/assets\/simulator-example\.csv"/);
@@ -810,14 +943,17 @@ assert.match(page, /Inventory turns/);
 assert.match(page, /Average working capital/);
 assert.match(page, /Annual gross profit \(units sold\)/);
 assert.match(flat, /only units actually sold/);
-assert.match(flat, /could not be filled in a stockout is left out/);
+assert.match(flat, /Demand that the morning stock/);
+assert.match(flat, /morning stock on a receipt day/);
+assert.match(flat, /not the lowest close after a receipt/);
+assert.match(flat, /could not fill is left out/);
 assert.match(flat, /SOH means stock on hand/);
 assert.match(flat, /In 8 out of 10 simulated years, the result falls inside it/);
 assert.match(flat, /Z comes from the service level you pick/);
 assert.match(flat, /square root of L spreads that weekly variation/);
-assert.match(page, /src="\/assets\/own-data-engine\.js\?v=4"/);
-assert.match(page, /src="\/assets\/sim-results-form\.js\?v=7"/);
-assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=4"/);
+assert.match(page, /src="\/assets\/own-data-engine\.js\?v=15"/);
+assert.match(page, /src="\/assets\/sim-results-form\.js\?v=8"/);
+assert.match(page, /src="\/assets\/own-data-simulator\.js\?v=9"/);
 assert.ok(page.indexOf("own-data-engine.js") < page.indexOf("own-data-simulator.js"));
 assert.match(page, /id="own-results-email" hidden/);
 assert.match(page, /data-results-email="on"/);

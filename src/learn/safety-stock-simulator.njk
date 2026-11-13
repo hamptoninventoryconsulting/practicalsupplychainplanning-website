@@ -7,9 +7,9 @@
   "nav": "learn",
   "permalink": "/learn/safety-stock-simulator/",
   "scripts": [
-    "/assets/safety-stock-engine.js?v=4",
-    "/assets/sim-results-form.js?v=7",
-    "/assets/safety-stock-simulator.js?v=6"
+    "/assets/safety-stock-engine.js?v=19",
+    "/assets/sim-results-form.js?v=8",
+    "/assets/safety-stock-simulator.js?v=15"
   ]
 }
 ---
@@ -30,16 +30,21 @@
               operational use, and it is not a planner or an optimiser.
             </p>
             <p id="sim-storage-off">
-              The simulation runs in this browser. Nothing is stored on a
-              server. Temporary choices stay in
+              The simulation runs in this browser. Temporary choices stay in
               <code>sessionStorage</code> for this tab and clear when the tab
-              closes.
+              closes. We do not store the scenario on our server. If you accept
+              advertising cookies, Meta may receive a page view. That view does
+              not include the scenario settings.
             </p>
             <p id="sim-storage-on" hidden>
-              The simulation runs in this browser. Nothing is stored on a
-              server unless you ask to email yourself the results. That email
-              contains a summary of the scenario you ran. We do not keep that
-              summary.
+              The simulation runs in this browser. Temporary choices stay in
+              <code>sessionStorage</code> for this tab and clear when the tab
+              closes. If you ask to email yourself the results, we keep your
+              email address, the time, your network address, and the page
+              address for 24 months. The page address can include the scenario
+              settings from the link. We do not keep the result summary. If you
+              accept advertising cookies, Meta may receive a page view. That
+              view does not include the scenario settings.
             </p>
             <p>
               To use your own forecast, stock, and prices, open the separate
@@ -77,7 +82,7 @@
             </button>
             <button type="button" id="sim-mode-mc" class="sim-scenario" aria-pressed="false">
               <span class="sim-scenario__name">Monte Carlo</span>
-              <span class="sim-scenario__summary">Fifty years under the same settings. Summary only, no chart.</span>
+              <span class="sim-scenario__summary">The same one-year simulation run 50 times with these settings. Summary only, no chart.</span>
             </button>
           </div>
         </section>
@@ -92,7 +97,7 @@
               aria-pressed="true"
             >
               <span class="sim-scenario__name">Level</span>
-              <span class="sim-scenario__summary">The same forecast every week (40 units).</span>
+              <span class="sim-scenario__summary">The same forecast every week: 40 units.</span>
             </button>
             <button
               type="button"
@@ -101,7 +106,7 @@
               aria-pressed="false"
             >
               <span class="sim-scenario__name">Seasonal</span>
-              <span class="sim-scenario__summary">A smooth peak and trough around 40 units.</span>
+              <span class="sim-scenario__summary">Peaks near 58 and dips near 22 a week, averaging 40.</span>
             </button>
             <button
               type="button"
@@ -110,7 +115,7 @@
               aria-pressed="false"
             >
               <span class="sim-scenario__name">Rising</span>
-              <span class="sim-scenario__summary">Forecast starts at 22 and steps up through the year.</span>
+              <span class="sim-scenario__summary">Starts at 22 a week and climbs to about 58, averaging about 40.</span>
             </button>
           </div>
           <p class="sim-help">
@@ -132,6 +137,7 @@
             <label class="sim-field" id="sim-lot-qty-field" for="sim-lot-qty">
               Fixed lot quantity
               <input id="sim-lot-qty" type="number" min="1" max="1000" step="1" value="40" />
+              <span class="sim-cover-hint" id="sim-lot-cover-hint">Average demand is about 40 a week, so 40 is about 1 week of cover. This quantity is 1.0 week of cover.</span>
             </label>
             <label class="sim-field" id="sim-lot-weeks-field" for="sim-lot-weeks" hidden>
               Weeks of cover
@@ -153,6 +159,7 @@
             <label class="sim-field" id="sim-ss-qty-field" for="sim-ss-qty">
               Fixed safety stock
               <input id="sim-ss-qty" type="number" min="0" max="1000" step="1" value="20" />
+              <span class="sim-cover-hint" id="sim-ss-cover-hint">Average demand is about 40 a week, so 40 is about 1 week of cover. This quantity is 0.5 weeks of cover.</span>
             </label>
             <label class="sim-field" id="sim-ss-weeks-field" for="sim-ss-weeks" hidden>
               Safety stock cover
@@ -183,22 +190,43 @@
           </div>
           <p id="sim-formula-note" class="sim-meta" hidden></p>
           <p class="sim-help">
-            An order is placed only when calculated stock on hand is strictly
-            below safety stock. Calculated stock is beginning stock, plus
-            supply already due this week, minus this week's base forecast
-            demand. Ending stock subtracts simulated demand. Landing on
-            the safety-stock line does not order. With safety stock at zero,
-            the line is zero. The order is one lot unless that lot would not
-            lift calculated stock above zero, in which case it is two lots.
-            That rule looks at calculated stock against zero, not at whether
-            last week ended negative, and it does not keep ordering until
-            safety stock is rebuilt.
+            Each week's demand is split evenly across seven days, and those
+            seven days add up to the week. A receipt due on a day is in stock
+            before that day's demand. A day with no receipt takes demand off
+            the opening stock. At the
+            start of each week the plan is rebuilt from the forecast and from
+            orders already released, counted on the date they are still
+            expected. A new receipt cannot arrive until the full base lead
+            time has passed. An order released in week 1 with a 5-week lead
+            time is due on the first day of week 6, before that day's demand.
+            Until the goods arrive the plan keeps the normal lot quantity. A
+            miss is recognised when that day passes with no receipt. The plan
+            then expects that same quantity one week later, and moves the
+            expectation forward again if the goods still have not arrived. It
+            does not learn the actual arrival date in advance. A short
+            shipment is recognised only when the goods arrive. The release is
+            as many normal lots as the forecast needs to finish the week at
+            or above safety stock. An order already on the way is counted on
+            its expected date, and another lot can be due that same week if
+            the forecast still finishes below safety stock. Lead-time
+            variability adds whole extra weeks after the base lead time. It
+            cannot bring the receipt forward.
           </p>
           <p class="sim-help">
             Fixed lots are a whole number from 1 to 1000. Fixed safety stock is
             a whole number from 0 to 1000. Weeks cover sums the first 2, 4, 6,
-            or 10 weeks of base demand. Starting stock is week-1 base demand
-            plus that nominal lot, with no delivery-quantity noise.
+            or 10 weeks of base demand. Starting stock is that full normal
+            lot plus the safety stock for this run. Fixed and weeks cover
+            use the quantity you set. Formula uses the computed result.
+            Monte Carlo uses the one frozen quantity for every year in the
+            batch. The week-1 forecast is not added, and delivery
+            variability does not change this opening lot. The year is a
+            snapshot of a plan already running. Orders that plan would
+            already have released before week 1 are still on the way. They
+            show up as receipts on their due dates, at the normal lot
+            quantity until the goods arrive. They are not added into the
+            opening stock. A new order placed during the year still waits
+            the full base lead time.
           </p>
           <p class="sim-help">
             <strong>Base lead time</strong> is the time it takes from placing a purchase order to receiving the
@@ -231,8 +259,9 @@
             and before any shock. L is the base lead time: short 2, medium 5,
             or long 10. The result is constant across the 52 weeks. Monte
             Carlo keeps that same quantity for every year in the batch. The
-            base lead time is not added onto the arrival week. It is used for
-            √L and for the maximum extra delay when lead-time variability is on.
+            base lead time is the earliest gap between releasing an order and
+            receiving it. It is also used for √L and for the maximum extra
+            delay when lead-time variability is on.
           </p>
         </section>
 
@@ -271,6 +300,12 @@
             Sales often fluctuate around a mean. A forecast of 100 a week does
             not mean you expect to sell exactly 100 every week — some weeks
             will be more, some less. That is <strong>demand</strong> variability.
+            Large is the extreme band: each week can be anywhere from none of
+            that week's forecast up to double it. The forecast is the expected
+            mean. Across many runs those weeks average to the forecast. One
+            year's realized mean can sit above or below it. Small and Medium
+            stay nearer the forecast. The draw is for the whole week, then
+            that week is split evenly across its seven days.
             <strong>Lead time</strong> variability is stock arriving earlier or
             later than expected. That can come from things like vessel
             availability, port congestion, or manufacturing delays.
@@ -327,11 +362,17 @@
             <svg id="sim-chart" class="sim-chart" role="img" aria-labelledby="sim-chart-title"></svg>
             <figcaption id="sim-chart-title">
               <ul class="sim-legend">
-                <li class="sim-legend__ending">Ending SOH</li>
+                <li class="sim-legend__ending">Stock on hand</li>
+                <li class="sim-legend__avg">Average SOH</li>
                 <li class="sim-legend__ss">Safety stock</li>
                 <li class="sim-legend__zero">Zero</li>
               </ul>
-              <p class="sim-meta">One year only. Monte Carlo does not draw this chart.</p>
+              <p id="sim-chart-avg" class="visually-hidden"></p>
+              <p class="sim-meta">
+                One year, one point per day: the stock after that day's demand.
+                A receipt day also shows the stock just before the receipt. Week
+                numbers mark the chart. Monte Carlo does not draw this chart.
+              </p>
             </figcaption>
           </figure>
           <details class="sim-details">
@@ -339,8 +380,8 @@
             <div class="sim-table-wrap sim-scroll--weeks">
               <table class="sim-table">
                 <caption>
-                  Weekly results for this year. Planned order quantity and planned
-                  arrival week are not shown.
+                  Weekly results for this year. Receipts are the stock that arrived
+                  during the week. Planned orders are not listed here.
                 </caption>
                 <thead>
                   <tr>
@@ -348,7 +389,8 @@
                     <th scope="col">Base demand</th>
                     <th scope="col">Simulated demand</th>
                     <th scope="col">Beginning SOH</th>
-                    <th scope="col">Planned supply</th>
+                    <th scope="col">Pre-receipt SOH</th>
+                    <th scope="col">Receipts</th>
                     <th scope="col">Ending SOH</th>
                     <th scope="col">Safety stock</th>
                   </tr>
@@ -356,24 +398,35 @@
                 <tbody id="sim-weeks-body"></tbody>
               </table>
             </div>
+            <p class="sim-actions">
+              <button id="sim-download-weeks" class="sim-button sim-button--secondary" type="button">Download weekly CSV</button>
+            </p>
           </details>
           </div>
           <p class="sim-note">
-            Inventory turns use on-hand stock only: each week's ending stock
-            counts as zero when it is negative, then the year's simulated
-            demand is divided by that average. A stockout does not improve
-            turns. If the average is zero, turns are not applicable. Working
-            capital is different on purpose: it averages ending stock with the
-            negatives still in, then multiplies by the $70 cost. Gross profit
-            is simulated demand times $30 and does not change because of
-            backorders.
+            Inventory turns, average stock, and working capital use the daily
+            points drawn on the chart. A day with no receipt contributes the
+            stock after demand. A receipt day contributes the stock just
+            before the receipt and the stock after that day's demand. A
+            plotted point below zero counts as zero
+            in that average, for the chart label, for turns, and for working
+            capital. A stockout does not improve turns or reduce working
+            capital. If the average is zero, turns are not applicable. Working
+            capital is that average times the $70 cost. The weekly table is
+            still one row per week. Its pre-receipt column is the lowest
+            stock before a receipt is added: the morning stock on a receipt
+            day, and the stock after demand on every other day. It is not
+            the lowest close after a receipt. Gross profit is simulated demand times
+            $30 and does not change because of backorders.
           </p>
           <p class="sim-help">
             High turns with weak service is a poor outcome. The warning appears
             when turns are at least 8 and either customer service is below 95%
-            or three or more weeks end below zero. Out-of-stock means ending
-            stock is below zero. Ending on zero is not a stockout. Customer
-            service is the share of the 52 weeks that are not out of stock.
+            or three or more weeks are out of stock. A week is out of stock
+            if stock is below zero before a receipt due that morning, or
+            after demand when nothing arrives.
+            Touching zero is not a stockout. Customer service is the share of
+            the 52 weeks that are not out of stock.
           </p>
         </section>
 

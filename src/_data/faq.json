@@ -1,0 +1,50 @@
+[
+  {
+    "question": "How do I get started?",
+    "answer": "Start with a 14-day free trial from the [Practical Stock Planner page](https://practicalsupplychainplanning.com/products/practical-stock-planner/). A secure Paddle checkout opens on that page. You enter your email and payment details, but you are not charged during the 14 days. Paddle emails a confirmation, you land on our welcome page, and within a few minutes we email your licence key and a download link from `support@practicalsupplychainplanning.com`. Install the app on your Windows PC, enter your licence key, fill in the CSV templates from your current systems, load the files and run your plan."
+  },
+  {
+    "question": "What files does it use? Does it connect to Shopify, Xero or Cin7?",
+    "answer": "No direct connection is needed. The app works from CSV files you export from your current systems, or save from Excel or Google Sheets, using the app’s templates: SKU Details, Supplier Details, SKU Supplier Details, stock on hand, open sales orders, open supply and forecast. Save them as CSV UTF-8. Practical Stock Planner does not place orders with your suppliers or change anything in your other systems. It gives you a plan; you decide."
+  },
+  {
+    "question": "How does the licence work?",
+    "answer": "Your subscription includes a licence to use Practical Stock Planner on one Windows PC, and all updates released while the subscription is active. Your licence key is emailed a few minutes after checkout. One licence works on one PC at a time. If you get a new PC, email us and we’ll move your licence across. If you need more PCs, buy a second subscription."
+  },
+  {
+    "question": "Who takes payment, and how do I cancel?",
+    "answer": "Paddle.com is the seller and Merchant of Record for all orders. Paddle takes the payment, charges the right tax for your country (including GST in Australia), and sends your receipts and tax invoices. The software comes from Daniel Hampton, trading as Practical Supply Chain Planning (ABN 56 757 743 802), Queensland, Australia.\n\nIt is a monthly subscription with no lock-in contract. Cancel at any time through the link in your Paddle email, or at [paddle.net](https://www.paddle.net) by looking up your order. If you cancel during the trial, you won’t be charged. If you cancel later, you can keep using the app until the end of the month you’ve paid for, and you won’t be charged again. You can also ask for a refund within 14 days of any payment; see the [Refund Policy](https://practicalsupplychainplanning.com/refunds/)."
+  },
+  {
+    "question": "Does it run on a Mac, or only on Windows?",
+    "answer": "It runs on Windows 10 or 11, 64-bit only. There is no Mac or browser version.\n\nWindows SmartScreen may show “Windows protected your PC” and “Unknown publisher”, because Practical Stock Planner isn’t code-signed yet. To continue, click “More info”, then “Run anyway”. The download comes only from practicalsupplychainplanning.com. Code signing is planned."
+  },
+  {
+    "question": "Where does my planning data go?",
+    "answer": "Your stock, sales, forecast, supplier and order data stay in CSV files on your own PC. The app never sends them to us. We never see them. The app only contacts our licence server to check your licence: it needs the internet to activate, then checks about once a week, and keeps working for up to 14 days without a connection. There is no usage tracking in the app.\n\nThe only exception is if you choose Guided setup. Then you send CSV files so they can be checked for your setup. They are used only for that setup, kept private, and deleted within 30 days of the Guided setup call. Day to day, the app still does not send your planning data. See the [Privacy Policy](https://practicalsupplychainplanning.com/privacy/)."
+  },
+  {
+    "question": "What is the founding-customer price?",
+    "answer": "From launch on 16 November 2026, the founding price is US$29 a month, or A$45 a month including GST in Australia, for the first 12 months, then US$49 a month, or A$75 a month including GST in Australia. It is for the first 20 customers, or until 31 January 2027, whichever comes first. In return, a short feedback questionnaire is requested about two weeks after you start. The founding price is not withdrawn if you don’t fill it in. Giving a quote is optional. The 14-day free trial still applies.\n\nThe founding price is a Paddle discount. Checkout applies FOUNDING29 for US dollars, or FOUNDINGAU for Australian dollars. You don’t type the code in. Paddle shows what you’ll pay, and when, before you confirm."
+  },
+  {
+    "question": "When am I charged?",
+    "answer": "You enter your card at checkout, but nothing is charged during the 14-day trial. Cancel before the trial ends and you pay nothing. If you keep going, your first monthly payment is taken when the trial ends, then on the same date each month. At the founding price, that payment is US$29, or A$45 including GST in Australia, and it stays at that founding price until 12 months of founding price are done, then the usual monthly price applies. One trial per customer.\n\nIf a payment fails, Paddle retries it and emails you. The app keeps working for 7 days from the first failed payment and shows a “payment required” message. If the payment still hasn’t gone through after those 7 days, the app stops until it is paid. If Paddle can’t collect the payment after its retries, the subscription is cancelled."
+  },
+  {
+    "question": "What does Practical Stock Planner actually do?",
+    "answer": "It is a Windows app, built by Daniel Hampton, a working supply chain planner, for businesses that have outgrown simple reorder triggers and need to see stock further ahead. It does time-phased planning: it projects each item’s stock forward, period by period, against your forecast, open orders and supplier lead times. It shows where you will run short, and it tells you what to order and when, so planned orders can arrive in time."
+  },
+  {
+    "question": "What doesn’t it do?",
+    "answer": "It plans one stock location. It does not plan multiple warehouses or stores. It is not manufacturing planning: there is no bill of materials (recipes or components) and no production scheduling. It does not place orders with your suppliers or change anything in your other systems."
+  },
+  {
+    "question": "Can I get help with setup?",
+    "answer": "Yes. Email support is included, from Daniel, with a reply within 2 business days (Brisbane time, UTC+10). There are also how-to videos and guides on getting your data out of different systems.\n\nIf you’d rather not set up your first plan alone, Guided setup is a separate one-off purchase at US$199 (A$299 including GST in Australia). It is not included in the founding price. You send your CSV files, they are checked, and there is one 30–45 minute video call to run your first plan on your own PC. That call is setup help. It is not the founding feedback questionnaire."
+  },
+  {
+    "question": "How do I ask a question that isn’t covered here?",
+    "answer": "Use the “Ask a question” form on this page, or email `support@practicalsupplychainplanning.com`. You can also leave a voicemail on +61 2 8317 3359, or use the [Contact page](https://practicalsupplychainplanning.com/contact/)."
+  }
+]

@@ -27,4 +27,10 @@ module.exports = [
       "On time and in full for each purchase order line. The files stay in your browser.",
     href: "/learn/difot-calculator/",
   },
+  {
+    title: "Planning glossary",
+    description:
+      "Plain-English definitions for time-phased planning: safety stock, lead time, MOQ, forecasting and the rest.",
+    href: "/learn/glossary/",
+  },
 ];

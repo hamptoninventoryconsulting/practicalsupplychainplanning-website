@@ -408,8 +408,8 @@
     var minValue = 0;
     var maxValue = 0;
     weeks.forEach(function (week) {
-      minValue = Math.min(minValue, week.endingSoh, week.safetyStock);
-      maxValue = Math.max(maxValue, week.endingSoh, week.safetyStock);
+      minValue = Math.min(minValue, week.preReceiptSoh, week.endingSoh, week.safetyStock);
+      maxValue = Math.max(maxValue, week.preReceiptSoh, week.endingSoh, week.safetyStock);
     });
     if (minValue === maxValue) {
       minValue -= 1;
@@ -432,6 +432,21 @@
           return (index === 0 ? "M" : "L") + x(index).toFixed(2) + " " + y(read(week)).toFixed(2);
         })
         .join(" ");
+    }
+    function stockPath() {
+      var commands = [];
+      var started = false;
+      weeks.forEach(function (week, index) {
+        var values = [week.preReceiptSoh];
+        if (week.plannedSupply > 0) {
+          values.push(week.endingSoh);
+        }
+        values.forEach(function (value) {
+          commands.push((started ? "L" : "M") + x(index).toFixed(2) + " " + y(value).toFixed(2));
+          started = true;
+        });
+      });
+      return commands.join(" ");
     }
     function add(name, attrs) {
       var node = document.createElementNS("http://www.w3.org/2000/svg", name);
@@ -464,12 +479,13 @@
       fill: "none",
       stroke: "#0e7490",
       "stroke-width": "2",
-      d: seriesPath(function (week) { return week.endingSoh; }),
+      d: stockPath(),
     });
     [1, 13, 26, 39, 52].forEach(function (weekNo) {
+      var labelIndex = weeks.length > 52 ? (weekNo === 52 ? weeks.length - 1 : (weekNo - 1) * 7) : weekNo - 1;
       var label = add("text", {
         class: "sim-chart__label",
-        x: x(weekNo - 1).toFixed(2),
+        x: x(labelIndex).toFixed(2),
         y: String(height - 10),
         "text-anchor": "middle",
       });
@@ -477,18 +493,51 @@
     });
   }
 
+  function weeksCsv(weeks) {
+    var lines = [
+      "Week,Base demand,Simulated demand,Beginning SOH,Pre-receipt SOH,Receipts,Ending SOH,Safety stock",
+    ];
+    weeks.forEach(function (week) {
+      lines.push(
+        [
+          String(week.week),
+          formatCount(week.baseDemand),
+          formatCount(week.simulatedDemand),
+          formatCount(week.beginningSoh),
+          formatCount(week.preReceiptSoh),
+          formatCount(week.plannedSupply),
+          formatCount(week.endingSoh),
+          formatCount(week.safetyStock),
+        ].join(",")
+      );
+    });
+    return lines.join("\r\n");
+  }
+
+  function downloadCsv(name, text) {
+    var blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   function renderWeeks(weeks) {
     var body = $("own-weeks-body");
     body.innerHTML = "";
     weeks.forEach(function (week) {
       var tr = document.createElement("tr");
-      [week.week, week.baseDemand, week.simulatedDemand, week.beginningSoh, week.plannedSupply, week.endingSoh, week.safetyStock].forEach(function (value, index) {
+      [week.week, week.baseDemand, week.simulatedDemand, week.beginningSoh, week.preReceiptSoh, week.plannedSupply, week.endingSoh, week.safetyStock].forEach(function (value, index) {
         var cell = document.createElement(index === 0 ? "th" : "td");
         if (index === 0) {
           cell.scope = "row";
         }
-        cell.textContent = String(value);
-        if (index === 5 && value < 0) {
+        cell.textContent = index === 0 ? String(value) : formatCount(value);
+        if ((index === 4 || index === 6) && value < 0) {
           cell.className = "sim-negative";
         }
         tr.appendChild(cell);
@@ -553,7 +602,7 @@
     host.appendChild(metricCard("Inventory turns", formatTurns(metrics.inventoryTurns)));
     host.appendChild(metricCard("Average working capital", formatMoney(metrics.averageWc)));
     host.appendChild(metricCard("Annual gross profit (units sold)", formatMoney(metrics.annualGp)));
-    renderChart(result.weeks);
+    renderChart(result.days);
     renderWeeks(result.weeks);
   }
 
@@ -980,6 +1029,13 @@
     $("own-copy").addEventListener("click", copyLink);
     $("own-preview-btn").addEventListener("click", previewPaste);
     $("own-apply").addEventListener("click", applyPaste);
+    $("own-download-weeks").addEventListener("click", function () {
+      var row = state.yearRows ? state.yearRows[state.selected] : null;
+      if (!row || !row.result || !row.result.weeks) {
+        return;
+      }
+      downloadCsv("own-data-weekly.csv", weeksCsv(row.result.weeks));
+    });
     $("own-run-year").addEventListener("click", function () {
       state.mode = "year";
       applyMode();
@@ -1030,7 +1086,7 @@
         var chain = Promise.resolve();
         state.yearRows.forEach(function (row) {
           chain = chain.then(function () {
-            renderChart(row.result.weeks);
+            renderChart(row.result.days);
             return window.SimResultsForm.snapshotChart($("own-chart")).then(function (png) {
               if (!png) {
                 throw new Error("chart");
@@ -1041,7 +1097,7 @@
         });
         return chain.then(function () {
           if (state.yearRows[saved]) {
-            renderChart(state.yearRows[saved].result.weeks);
+            renderChart(state.yearRows[saved].result.days);
           }
           summary.charts = charts;
           return summary;
