@@ -2086,6 +2086,41 @@ a.home-button--secondary:is(:link, :visited, :hover, :focus, :focus-visible, :ac
   color: var(--color-text);
 }
 
+.guide-note {
+  margin: 1.25rem 0 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--card-radius);
+  background: var(--color-surface);
+}
+
+.guide-note p {
+  margin: 0;
+}
+
+.guide-download {
+  margin: 1rem 0 0;
+  font-weight: 600;
+}
+
+.guide-body blockquote {
+  margin: 0 0 1rem;
+  padding: 0.15rem 0 0.15rem 1rem;
+  border-left: 3px solid var(--color-border);
+}
+
+.guide-body code {
+  font-size: 0.92em;
+}
+
+.guide-body pre {
+  overflow-x: auto;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-surface);
+  border-radius: var(--card-radius);
+}
+
 .content ul,
 .content ol {
   margin: 0 0 1rem;

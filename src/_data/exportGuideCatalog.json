@@ -1,0 +1,164 @@
+[
+  {
+    "id": "index",
+    "source": "00_Index.md",
+    "pdf": "00_Index.pdf",
+    "slug": "",
+    "note": "index",
+    "title": "Getting your data in — Practical Stock Planner",
+    "description": "Which file to export from Shopify, WooCommerce, Xero, QuickBooks or Excel for Practical Stock Planner."
+  },
+  {
+    "id": "shopify-products",
+    "source": "Shopify_SKU_Details.md",
+    "pdf": "Shopify_SKU_Details.pdf",
+    "slug": "shopify-products",
+    "note": "guide",
+    "title": "Export your product list from Shopify for Practical Stock Planner",
+    "description": "Export SKU details from Shopify and save them as a CSV for Practical Stock Planner."
+  },
+  {
+    "id": "woocommerce-products",
+    "source": "WooCommerce_SKU_Details.md",
+    "pdf": "WooCommerce_SKU_Details.pdf",
+    "slug": "woocommerce-products",
+    "note": "guide",
+    "title": "Export your product list from WooCommerce for Practical Stock Planner",
+    "description": "Export SKU details from WooCommerce and save them as a CSV for Practical Stock Planner."
+  },
+  {
+    "id": "xero-products",
+    "source": "Xero_SKU_Details.md",
+    "pdf": "Xero_SKU_Details.pdf",
+    "slug": "xero-products",
+    "note": "guide",
+    "title": "Export your product list from Xero for Practical Stock Planner",
+    "description": "Export SKU details from Xero and save them as a CSV for Practical Stock Planner."
+  },
+  {
+    "id": "quickbooks-products",
+    "source": "QuickBooks_SKU_Details.md",
+    "pdf": "QuickBooks_SKU_Details.pdf",
+    "slug": "quickbooks-products",
+    "note": "guide",
+    "title": "Export your product list from QuickBooks for Practical Stock Planner",
+    "description": "Export SKU details from QuickBooks Online and save them as a CSV for Practical Stock Planner."
+  },
+  {
+    "id": "excel-templates",
+    "source": "Excel_Type_Into_Templates.md",
+    "pdf": "Excel_Type_Into_Templates.pdf",
+    "slug": "excel-templates",
+    "note": "guide",
+    "title": "Type your data into the Practical Stock Planner templates",
+    "description": "Type products, stock, orders and suppliers into the Practical Stock Planner CSV templates in Excel."
+  },
+  {
+    "id": "shopify-stock-on-hand",
+    "source": "Shopify_SOH.md",
+    "pdf": "Shopify_SOH.pdf",
+    "slug": "shopify-stock-on-hand",
+    "note": "guide",
+    "title": "Export stock on hand from Shopify for Practical Stock Planner",
+    "description": "Export stock on hand from Shopify and save it as a CSV for Practical Stock Planner."
+  },
+  {
+    "id": "woocommerce-stock-on-hand",
+    "source": "WooCommerce_SOH.md",
+    "pdf": "WooCommerce_SOH.pdf",
+    "slug": "woocommerce-stock-on-hand",
+    "note": "guide",
+    "title": "Export stock on hand from WooCommerce for Practical Stock Planner",
+    "description": "Export stock on hand from WooCommerce and save it as a CSV for Practical Stock Planner."
+  },
+  {
+    "id": "xero-stock-on-hand",
+    "source": "Xero_SOH.md",
+    "pdf": "Xero_SOH.pdf",
+    "slug": "xero-stock-on-hand",
+    "note": "guide",
+    "title": "Export stock on hand from Xero for Practical Stock Planner",
+    "description": "Export stock on hand from Xero and save it as a CSV for Practical Stock Planner."
+  },
+  {
+    "id": "quickbooks-stock-on-hand",
+    "source": "QuickBooks_SOH.md",
+    "pdf": "QuickBooks_SOH.pdf",
+    "slug": "quickbooks-stock-on-hand",
+    "note": "guide",
+    "title": "Export stock on hand from QuickBooks for Practical Stock Planner",
+    "description": "Export stock on hand from QuickBooks Online and save it as a CSV for Practical Stock Planner."
+  },
+  {
+    "id": "shopify-open-sales-orders",
+    "source": "Shopify_Open_SO.md",
+    "pdf": "Shopify_Open_SO.pdf",
+    "slug": "shopify-open-sales-orders",
+    "note": "guide",
+    "title": "Export open sales orders from Shopify for Practical Stock Planner",
+    "description": "Export open customer orders from Shopify and save them as a CSV for Practical Stock Planner."
+  },
+  {
+    "id": "woocommerce-open-sales-orders",
+    "source": "WooCommerce_Open_SO.md",
+    "pdf": "WooCommerce_Open_SO.pdf",
+    "slug": "woocommerce-open-sales-orders",
+    "note": "guide",
+    "title": "Export open sales orders from WooCommerce for Practical Stock Planner",
+    "description": "Export open customer orders from WooCommerce and save them as a CSV for Practical Stock Planner."
+  },
+  {
+    "id": "xero-open-purchase-orders",
+    "source": "Xero_Open_Supply.md",
+    "pdf": "Xero_Open_Supply.pdf",
+    "slug": "xero-open-purchase-orders",
+    "note": "guide",
+    "title": "Export open purchase orders from Xero for Practical Stock Planner",
+    "description": "Export open purchase orders from Xero and save them as a CSV for Practical Stock Planner."
+  },
+  {
+    "id": "quickbooks-open-purchase-orders",
+    "source": "QuickBooks_Open_Supply.md",
+    "pdf": "QuickBooks_Open_Supply.pdf",
+    "slug": "quickbooks-open-purchase-orders",
+    "note": "guide",
+    "title": "Export open purchase orders from QuickBooks for Practical Stock Planner",
+    "description": "Export open purchase orders from QuickBooks Online and save them as a CSV for Practical Stock Planner."
+  },
+  {
+    "id": "xero-suppliers",
+    "source": "Xero_Supplier_Details.md",
+    "pdf": "Xero_Supplier_Details.pdf",
+    "slug": "xero-suppliers",
+    "note": "guide",
+    "title": "Export your supplier list from Xero for Practical Stock Planner",
+    "description": "Export supplier details from Xero and save them as a CSV for Practical Stock Planner."
+  },
+  {
+    "id": "quickbooks-suppliers",
+    "source": "QuickBooks_Supplier_Details.md",
+    "pdf": "QuickBooks_Supplier_Details.pdf",
+    "slug": "quickbooks-suppliers",
+    "note": "guide",
+    "title": "Export your supplier list from QuickBooks for Practical Stock Planner",
+    "description": "Export supplier details from QuickBooks Online and save them as a CSV for Practical Stock Planner."
+  },
+  {
+    "id": "excel-buying-terms",
+    "source": "Excel_SKU_Supplier_Details.md",
+    "pdf": "Excel_SKU_Supplier_Details.pdf",
+    "slug": "excel-buying-terms",
+    "note": "guide",
+    "title": "Enter buying terms in Excel for Practical Stock Planner",
+    "description": "Fill in supplier, lead time, pack size, MOQ and price for each SKU in the Practical Stock Planner template."
+  },
+  {
+    "id": "excel-forecast",
+    "source": "Excel_Forecast.md",
+    "pdf": "Excel_Forecast.pdf",
+    "slug": "excel-forecast",
+    "note": "guide",
+    "title": "Build a forecast in Excel for Practical Stock Planner",
+    "description": "Turn recent sales into a weekly forecast CSV for Practical Stock Planner."
+  }
+]
