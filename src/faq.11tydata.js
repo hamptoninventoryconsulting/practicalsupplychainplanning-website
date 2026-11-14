@@ -1,4 +1,4 @@
-const { faqPlainText, publishedFaqItems } = require("../scripts/faq-items");
+const { faqPageSchema, publishedFaqItems } = require("../scripts/faq-items");
 
 module.exports = {
   eleventyComputed: {
@@ -6,28 +6,7 @@ module.exports = {
       return publishedFaqItems(data.faq);
     },
     schemaJson: function (data) {
-      const items = publishedFaqItems(data.faq);
-      if (!items.length) {
-        return "";
-      }
-      return JSON.stringify(
-        {
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: items.map(function (item) {
-            return {
-              "@type": "Question",
-              name: item.question,
-              acceptedAnswer: {
-                "@type": "Answer",
-                text: faqPlainText(item.answer),
-              },
-            };
-          }),
-        },
-        null,
-        2
-      ).replace(/</g, "\\u003c");
+      return faqPageSchema(data.faq);
     },
   },
 };

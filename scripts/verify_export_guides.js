@@ -170,7 +170,10 @@ assert.ok(
   "product page link"
 );
 
-const faq = fs.readFileSync(path.join(SITE, "faq", "index.html"), "utf8");
+const faq = fs.readFileSync(
+  path.join(SITE, "faq", "practical-stock-planner", "index.html"),
+  "utf8"
+);
 assert.ok(faq.includes('href="/guides/getting-your-data-in/"'), "FAQ link");
 
 console.log("export guides ok");

@@ -1,16 +1,28 @@
+function faqSlug(question) {
+  return String(question || "")
+    .replace(/[\u2018\u2019\u201B']/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function publishedFaqItems(list) {
   if (!Array.isArray(list)) {
     return [];
   }
   return list
     .map(function (item) {
+      const question = String(item && item.question != null ? item.question : "").trim();
+      const answer = String(item && item.answer != null ? item.answer : "").trim();
+      const given = String(item && item.id != null ? item.id : "").trim();
       return {
-        question: String(item && item.question != null ? item.question : "").trim(),
-        answer: String(item && item.answer != null ? item.answer : "").trim(),
+        id: given || faqSlug(question),
+        question: question,
+        answer: answer,
       };
     })
     .filter(function (item) {
-      return item.question && item.answer;
+      return item.question && item.answer && item.id;
     });
 }
 
@@ -78,9 +90,36 @@ function faqPlainText(value) {
     .replace(/`([^`]+)`/g, "$1");
 }
 
+function faqPageSchema(list) {
+  const items = publishedFaqItems(list);
+  if (!items.length) {
+    return "";
+  }
+  return JSON.stringify(
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: items.map(function (item) {
+        return {
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: faqPlainText(item.answer),
+          },
+        };
+      }),
+    },
+    null,
+    2
+  ).replace(/</g, "\\u003c");
+}
+
 module.exports = {
   publishedFaqItems: publishedFaqItems,
   plainParagraphs: plainParagraphs,
   faqInline: faqInline,
   faqPlainText: faqPlainText,
+  faqSlug: faqSlug,
+  faqPageSchema: faqPageSchema,
 };

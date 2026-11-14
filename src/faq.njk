@@ -1,27 +1,47 @@
 ---json
 {
   "layout": "layouts/page.njk",
-  "title": "Practical Stock Planner FAQ — Practical Supply Chain Planning",
-  "description": "Questions about Practical Stock Planner for buyers and trial users, and a form to ask Daniel.",
+  "title": "FAQ — Practical Supply Chain Planning",
+  "description": "Questions about Practical Supply Chain Planning, the free tools, the guides, privacy and how to contact Daniel.",
   "canonical": "https://practicalsupplychainplanning.com/faq/",
   "nav": "faq",
   "permalink": "/faq/"
 }
 ---
-<h1 class="page-title">Questions about Practical Stock Planner</h1>
-<p class="tagline">For the trial and the app. Daniel answers.</p>
+<h1 class="page-title">Questions</h1>
+<p class="tagline">About this site, the free tools, the guides, privacy and contact. Daniel answers.</p>
 
 {%- if faqItems and faqItems.length %}
 <section class="card">
   <div class="content">
-    {%- for item in faqItems %}
-    <h2>{{ item.question }}</h2>
-    {%- for paragraph in item.answer | plainParagraphs %}
-    <p>{{ paragraph | faqInline | safe }}</p>
-    {%- endfor %}
-    {%- endfor %}
+    {%- set faqList = faqItems %}
+    {% include "partials/faq-list.njk" %}
   </div>
 </section>
+{%- endif %}
+
+{%- if faqApps and faqApps.length %}
+<ul class="learn-list{% if faqApps.length < 2 %} learn-list--stack{% endif %}">
+  {% for app in faqApps %}
+  <li class="learn-list__item">
+    <a class="learn-card product-card" href="{{ app.href }}">
+      {%- if app.logo %}
+      <img
+        class="product-card__logo"
+        src="{{ app.logo }}"
+        alt="{{ app.logoAlt or (app.title ~ ' logo') }}"
+        width="48"
+        height="48"
+      />
+      {%- endif %}
+      <span class="product-card__body">
+        <h2 class="learn-card__title">{{ app.title }}</h2>
+        <p class="learn-card__summary">{{ app.description }}</p>
+      </span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
 {%- endif %}
 
 <section class="card" aria-labelledby="ask-heading">
