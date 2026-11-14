@@ -64,10 +64,7 @@ EXPORT_GUIDE_RE = re.compile(
     r'label:\s*(["\'])(?P<label>.*?)\1\s*,\s*href:\s*(["\'])(?P<href>.*?)\3',
     re.S,
 )
-REQUIRED_EXPORT_GUIDES = (
-    "Export your data from Shopify",
-    "Export your data from Xero",
-)
+REQUIRED_EXPORT_GUIDES = ("Getting your data in",)
 REDIRECTS_SOURCE = ROOT / "_redirects"
 REDIRECTS_BUILT = SITE / "_redirects"
 MIDDLEWARE_PATH = ROOT / "functions" / "_middleware.js"
@@ -190,8 +187,20 @@ def content_posts() -> list[dict]:
     return posts
 
 
+def guide_urls() -> list[dict]:
+    catalog_path = ROOT / "src" / "_data" / "exportGuideCatalog.json"
+    catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+    urls = []
+    for entry in catalog:
+        slug = str(entry.get("slug") or "").strip()
+        path = "/guides/getting-your-data-in/" if not slug else f"/guides/getting-your-data-in/{slug}/"
+        urls.append({"loc": f"{SITE_ORIGIN}{path}"})
+    return urls
+
+
 def expected_urls(posts: list[dict]) -> list[dict]:
     urls = [{"loc": f"{SITE_ORIGIN}{path}"} for path in CORE_PAGES]
+    urls.extend(guide_urls())
     for post in posts:
         urls.append(
             {
@@ -555,7 +564,7 @@ def verify_sitemap(errors: list[str], posts: list[dict]) -> None:
     if [entry["loc"] for entry in committed] != [entry["loc"] for entry in expected]:
         fail(
             "sitemap.xml URLs do not match the public page list "
-            "(core pages, simulator, then articles newest first)",
+            "(core pages, export guides, then articles newest first)",
             errors,
         )
 
@@ -641,8 +650,8 @@ def export_guides() -> list[dict]:
     labels = [guide["label"] for guide in guides]
     if labels != list(REQUIRED_EXPORT_GUIDES):
         raise ValueError(
-            "src/_data/exportGuides.js must list Shopify then Xero, "
-            f"with labels {list(REQUIRED_EXPORT_GUIDES)!r}"
+            "src/_data/exportGuides.js must list "
+            f"{list(REQUIRED_EXPORT_GUIDES)!r}"
         )
     return guides
 
