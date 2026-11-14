@@ -44,7 +44,7 @@ If a Xero label differs slightly, pick the closest match.
 | **Number** (e.g. `PO-0006`) | **Supply Order ID** | [T] |
 | Item code on the line | **SKU** | Lines with no item (description-only) can't be planned – skip them. |
 | **Remaining** quantity | **Supply Qty** | [T]. Convert cartons to single units. |
-| **Expected arrival** (else **Delivery date**) | **Due Date** | [T]. Both can be blank (the demo PO had neither) – blank → plan start + default lead time. |
+| **Expected arrival** (else **Delivery date**) | **Due Date** | [T]. Both can be blank – blank → plan start + default lead time. |
 
 ## Option B – weekly totals instead of PO lines (many POs)
 
@@ -54,12 +54,12 @@ From the Approved tab, total the remaining quantity **per SKU per expected-arriv
 You lose the link to individual PO numbers, but the plan is the same.
 
 **Check total quantities:** each tracked item's record shows **Quantity on order** – "the number of items in approved purchase orders" [V]
-([Search and view inventory items](https://central.xero.com/s/article/View-inventory-items)), and the Open Backorders report has **Total On Order** [V]. Your
+([Search and view inventory items](https://central.xero.com/s/article/View-inventory-items)), and the Open Backorders report has **Total On Order** [V].
 Your Open_Supply total per SKU should match **Quantity on order** (or **Total On Order** on the Open Backorders report).
 
 **Goods received but not yet billed:** if you added them to SOH by hand, leave that PO line out of this file.
 
-> **Not recommended – Payable Invoice Detail › Outstanding purchase orders detail.** This report *can* be exported to Excel [T], but in the test it was unreliable for planning:
+> **Not recommended – Payable Invoice Detail › Outstanding purchase orders detail.** This report *can* be exported to Excel [T], but it is unreliable for planning:
 > its default filters mix payable invoices with POs; even filtered to *Source contains Purchase Order* and *Status contains Approved* the PO line had a **blank Item Code**
 > and a **Quantity of −1**, and it has no Delivery date or Expected arrival column [T]. Use it only as a rough cross-check of which POs are open.
 

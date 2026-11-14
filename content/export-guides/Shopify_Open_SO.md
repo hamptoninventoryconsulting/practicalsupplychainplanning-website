@@ -42,7 +42,7 @@ Delete rows where Committed = 0 or `not stocked`. ⚠ Committed can include draf
 | 1 | Go to **Orders** and filter by **fulfillment status**. The values offered are **Fulfilled, Unfulfilled, Partially fulfilled, Scheduled, On hold, Request declined** – tick **Unfulfilled** and **Partially fulfilled** (add *Scheduled* / *On hold* if you still intend to ship those). | [T] |
 | 2 | From the Orders page, click **Export**. | [T] |
 | 3 | In the **Export orders** window choose **Current page** – with a filter applied, this exports the filtered list. (The other options are **All orders** and **Selected: N orders**; there is no separate "filtered orders" option.) Choose CSV and click **Export orders**. | [T] |
-| 4 | In the test the file (`orders_export_….csv`) **downloaded straight away**. Shopify's help says larger exports are emailed instead [V – [Exporting orders](https://help.shopify.com/en/manual/fulfillment/managing-orders/exporting-orders)]. | [T] / [V] |
+| 4 | A smaller file (`orders_export_….csv`) **downloads straight away**. Shopify's help says larger exports are emailed instead [V – [Exporting orders](https://help.shopify.com/en/manual/fulfillment/managing-orders/exporting-orders)]. | [T] / [V] |
 
 ⚠ **Page-size risk:** *Current page* only exports the orders shown on the current page of the list. If you have more open orders than fit on one page,
 either show more orders per page / work through each page, or choose **All orders** and delete the fulfilled and cancelled rows in Excel.

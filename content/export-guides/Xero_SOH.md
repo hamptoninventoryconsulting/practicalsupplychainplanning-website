@@ -13,7 +13,7 @@ Use this guide if you track your stock in Xero's **Products and services**. If y
 ## Before you start
 
 1. **Download the SOH template** from the Practical Stock Planner sidebar (*📥 Templates*). Practical Stock Planner accepts **CSV files only** – one CSV file per input file; this one starts from `template_SOH.csv`. **Keep the template's header row exactly as it is.** After filling it in Excel, save it with **File › Save As › CSV UTF-8 (Comma delimited)**.
-2. **Tracked vs untracked items.** Only **tracked** inventory items have a stock quantity, average cost and total value in Xero [V] ([About tracked inventory](https://central.xero.com/s/article/Track-your-inventory)); in the test, untracked items showed a blank or zero quantity [T].
+2. **Tracked vs untracked items.** Only **tracked** inventory items have a stock quantity, average cost and total value in Xero [V] ([About tracked inventory](https://central.xero.com/s/article/Track-your-inventory)). Untracked items show a blank or zero quantity [T].
    Untracked items can still be planned, but you count their stock outside Xero. To make an item tracked, tick **Track inventory item** and choose an Inventory Asset account [V] ([Add an inventory item](https://central.xero.com/s/article/Add-an-inventory-item)) – talk to your accountant first, because it changes your accounts.
 3. **Your user role.** To open this report you need the *administrator*, *standard + reports*, or *viewer* role [V].
 4. **Export on the day you plan.** Do it first thing in the morning, and set Practical Stock Planner's *Plan Start Date* to that day (Practical Stock Planner's glossary: the plan start date "should match when the SOH data is captured"). The report opens on today's date by default [T].
@@ -43,7 +43,7 @@ The report lists **untracked items too** (with 0 quantity and value), grouped in
 |---|---|---|
 | **Item Code** | **SKU** | [T] |
 | **Quantity** (if **zero or more**) | **SOH** | [T]. If the number is **negative**, the item is on backorder – put **0** here (see *Backorders* below). |
-| **Total Value** ÷ **Quantity** | → **Cost Price** in SKU_Details | Total value = "Quantity x Average cost" [V]. In the test this equalled *Unit Cost Price* for every tracked item [T]. |
+| **Total Value** ÷ **Quantity** | → **Cost Price** in SKU_Details | Total value = "Quantity x Average cost" [V]. For a tracked item this is often the same as *Unit Cost Price* [T]. |
 
 Xero Central says the report shows "the quantity of each item available to sell", with quantity available "calculated as quantity on hand minus open backorders" [V]. The exported column is simply called **Quantity** [T].
 

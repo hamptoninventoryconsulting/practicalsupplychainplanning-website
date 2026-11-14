@@ -31,7 +31,7 @@ Columns: `Supplier Code`, `Supplier Name`, `Supplier Contact`, `Minimum Order Va
 | Practical Stock Planner column | What to type | Notes |
 |---|---|---|
 | **Supplier Code** | Your own short code (e.g. `BAYSIDE`) or the supplier name | Must be unique, and must match the *Supplier Code* in your SKU_Supplier_Details file exactly. |
-| **Supplier Name** | The contact name as shown in Xero (e.g. *Bayside Wholesale* in the demo) [T] | Blank → "Supplier TBC". |
+| **Supplier Name** | The contact name as shown in Xero (e.g. *Bayside Wholesale*) [T] | Blank → "Supplier TBC". |
 | **Supplier Contact** | Person, email or phone – open the contact in Xero to copy it | Optional. Shown only on Planned Order Details, not on the Draft PO. |
 | **Minimum Order Value** | The supplier's minimum order, if any | Blank → 0. It only marks lines Recommended Yes/No (a 0 marks every line No); it does not change order quantities. |
 | **Currency** | The currency you buy in, e.g. `USD` | ⚠ Blank → USD. |

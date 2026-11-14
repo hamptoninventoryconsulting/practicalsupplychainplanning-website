@@ -2,6 +2,7 @@
  * Public export guides: cleaned HTML, PDF downloads, and the approved wording.
  * Run after `npm run build`.
  */
+const { spawnSync } = require("child_process");
 const assert = require("assert");
 const fs = require("fs");
 const path = require("path");
@@ -29,7 +30,54 @@ const BANNED = [
   /min-max/i,
   /"empty" Open_/,
   /At least one data row\. No open/,
+  /in the test/i,
+  /test customer/i,
+  /\bYour Your\b/,
 ];
+
+function doubledWords(text) {
+  const hits = [];
+  const re = /\b([A-Za-z][A-Za-z']*)\s+\1\b/g;
+  let match;
+  while ((match = re.exec(text))) {
+    hits.push(match[0]);
+  }
+  return hits;
+}
+
+function htmlBlocks(html) {
+  const blocks = [];
+  const re = /<(p|li|t[dh]|blockquote|h[1-6])\b[^>]*>([\s\S]*?)<\/\1>/gi;
+  let match;
+  while ((match = re.exec(html))) {
+    blocks.push(match[2].replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/gi, " "));
+  }
+  return blocks;
+}
+
+function pdfText(pdfPath) {
+  const result = spawnSync("pdftotext", ["-layout", pdfPath, "-"], {
+    encoding: "utf8",
+    maxBuffer: 8 * 1024 * 1024,
+  });
+  if (result.error) {
+    throw new Error("pdftotext is required to check guide PDFs (" + result.error.message + ")");
+  }
+  if (result.status !== 0) {
+    throw new Error("pdftotext failed for " + pdfPath + "\n" + (result.stderr || ""));
+  }
+  return result.stdout;
+}
+
+function doubledInLayout(text) {
+  const hits = [];
+  for (const line of text.split("\n")) {
+    for (const part of line.split(/\s{2,}/)) {
+      hits.push(...doubledWords(part));
+    }
+  }
+  return hits;
+}
 
 const pages = buildGuidePages();
 assert.strictEqual(pages.length, 18, "expected the index and 17 guides");
@@ -59,7 +107,10 @@ for (const page of pages) {
   assert.ok(!page.html.includes("[U]"), `${page.id} HTML still shows [U]`);
   assert.ok(page.html.includes('class="page-title"'), `${page.id} is missing its heading`);
   assert.strictEqual((page.html.match(/<h1\b/g) || []).length, 1, `${page.id} should have one h1 in the body`);
-  assert.ok(page.html.includes("support-email"), `${page.id} support email is not a mail link`);
+  assert.ok(!/<t[dh]\b[^>]*>\s*\.(?:\s|&nbsp;)/i.test(page.html), `${page.id} has a table cell that starts with a period`);
+  const doubled = htmlBlocks(page.html).flatMap(doubledWords);
+  assert.deepStrictEqual(doubled, [], `${page.id} has a doubled word: ${doubled.join(", ")}`);
+  assert.deepStrictEqual(doubledWords(page.prepared), [], `${page.id} markdown has a doubled word`);
   if (page.id !== "index") {
     assert.ok(
       page.prepared.includes("Open **Load Data**, then open **Templates**") ||
@@ -80,6 +131,13 @@ for (const page of pages) {
   const size = fs.statSync(pdf).size;
   assert.ok(size > 1000, `${page.pdf} looks empty`);
   assert.strictEqual(size, fs.statSync(path.join(PDF_DIR, page.pdf)).size, `${page.pdf} size changed`);
+  const extracted = pdfText(path.join(PDF_DIR, page.pdf));
+  for (const banned of BANNED) {
+    assert.ok(!banned.test(extracted), `${page.pdf} matches ${banned}`);
+  }
+  assert.ok(!/^\s*\.\s+\S/m.test(extracted), `${page.pdf} has a line that starts with a period`);
+  const pdfDoubled = doubledInLayout(extracted);
+  assert.deepStrictEqual(pdfDoubled, [], `${page.pdf} has a doubled word: ${pdfDoubled.join(", ")}`);
 }
 
 const xero = pages.find((page) => page.id === "xero-stock-on-hand");

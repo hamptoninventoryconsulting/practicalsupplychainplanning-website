@@ -42,8 +42,7 @@ Actual header row (row 5) [T]: `SKU, Qty, Asset Value, Calc. Avg` – with the *
 
 ## Option B – the Product/Service List
 
-Use the **Quantity on hand** column of the Product/Service List (steps in the QuickBooks SKU Details guide) [T]. One export fewer – **but** ⚠ in the test the two reports **did not agree**: *Quantity on hand* in the Product/Service List was 3,150 / 20 / 550 for the three inventory items,
-while the Inventory Valuation Summary showed 5,000 / 20 / 1,100 [T]. **Compare both for a few items before relying on Option B**, and prefer Option A.
+Use the **Quantity on hand** column of the Product/Service List (steps in the QuickBooks SKU Details guide) [T]. One export fewer – **but** ⚠ the two reports can disagree. **Compare both for a few items before relying on Option B**, and prefer Option A.
 
 **What changes "on hand"?** Invoices and sales receipts reduce the quantity on hand [U]. A **sales order** reserves items and may leave **Quantity on hand** unchanged [V]. Use the quantity you physically hold.
 Bills/cheques/expenses that receive a PO increase on hand – "the quantity on hand automatically increases by the number of items you receive" [V] ([Set up and track your inventory](https://quickbooks.intuit.com/learn-support/en-us/help-article/inventory-management/set-track-inventory-quickbooks-online/L22FZLBGN_US_en_US)).

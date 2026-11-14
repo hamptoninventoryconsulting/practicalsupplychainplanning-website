@@ -32,13 +32,13 @@ If a QuickBooks label differs slightly, pick the closest match.
 |---|---|---|
 | 1 | **Reports › Standard reports**. | [T] · [Run purchase order reports](https://quickbooks.intuit.com/learn-support/en-us/help-article/vendor-management/run-purchase-order-reports/L9o7cz3sj_US_en_US) |
 | 2 | Search **Open Purchase Order** and open **Open Purchase Order Detail** (not *Open Purchase Order List by Supplier*). | [T] |
-| 3 | Set the date range to **All Dates**. ⚠ The default range left out an older open PO in the test (dated Dec 2025) – with *All Dates* it appeared [T]. | [T] |
+| 3 | Set the date range to **All Dates**. ⚠ The default range can leave out an older open purchase order – with *All Dates* it is included [T]. | [T] |
 | 4 | No customising needed – the quantity columns are there by default [T]. | [T] |
 | 5 | **Export ▼ › Export to Excel** (or CSV/PDF). | [T] |
 
 Actual header row (row 5) [T]:
 `Transaction date, No., Supplier display name, Product/Service full name, Account Name, Quantity, Billed quantity, Received quantity, Backordered quantity, Total amount, Received amount, PO open balance`
-Data rows start in column B; column A holds product/category heading rows, then **Total for …** and **TOTAL** rows [T]. Example from the test: `24/12/2025 | 1005 | Hall's Promotional International | Promotional items:Misc | … | 100 | 0 | 0 | 100 | 113.43 | 0 | 113.43`.
+Data rows start in column B; column A holds product/category heading rows, then **Total for …** and **TOTAL** rows [T]. Example: `24/12/2025 | 1005 | Hall's Promotional International | Promotional items:Misc | … | 100 | 0 | 0 | 100 | 113.43 | 0 | 113.43`.
 
 ## Column mapping
 
@@ -46,7 +46,7 @@ Data rows start in column B; column A holds product/category heading rows, then 
 |---|---|---|
 | **No.** (PO number) | **Supply Order ID** | [T] |
 | **Product/Service full name** | **SKU** | There's **no SKU column** by default [T] – look the SKU up from your Product/Service List by full name (`=XLOOKUP(E6, ProductList!A:A, ProductList!G:G)`). If *Customize* does not offer a SKU column, keep using that lookup. Drop lines whose product isn't an Inventory item. |
-| **Backordered quantity** | **Supply Qty** | The quantity still to come [T] (in the test: ordered 100, received 0, backordered 100). Cross-check: Quantity − Received quantity. |
+| **Backordered quantity** | **Supply Qty** | The quantity still to come [T] (for example: ordered 100, received 0, backordered 100). Cross-check: Quantity − Received quantity. |
 | *(no due date column)* | **Due Date** | Type the expected date, or leave blank → plan start + default lead time. Don't use *Transaction date* – that's the order date. |
 
 **How "still to receive" works:** you receive a PO by adding it to a **bill, cheque or expense** [V – article [Add purchase orders to expenses, bills, or checks](https://quickbooks.intuit.com/learn-support/en-us/help-article/purchase-orders/add-purchase-orders-expenses-bills-checks-online/L9pRK49uC_US_en_US)].

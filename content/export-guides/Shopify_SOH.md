@@ -26,7 +26,7 @@ If a Shopify label differs slightly, pick the closest match.
 | 1 | From your Shopify admin, go to **Products > Inventory**. | [T] · [Exporting and importing inventory with a CSV file](https://help.shopify.com/en/manual/products/inventory/setup/inventory-csv) |
 | 2 | Click **Export**. | [T] |
 | 3 | In **Export from**, choose **All locations** (or just your warehouse if only one location is the planning site). | [V] same page |
-| 4 | Under **Inventory states shown**, choose **All states**. | [V] same page (the test file contained all the state columns below [T]) |
+| 4 | Under **Inventory states shown**, choose **All states**. | [V] same page (that export includes the state columns below [T]) |
 | 5 | Under **Export**, choose **All variants**, choose the CSV format, then click **Export variants**. | Button name [T]; other options [V] |
 | 6 | The file is **emailed to the store owner as a download link** – download `inventory_export_1.csv` from the email. | [T] |
 

@@ -97,6 +97,8 @@ function stripVerificationTags(markdown) {
   text = text.replace(/\s+([.,;:])/g, "$1");
   text = text.replace(/\(\s+/g, "(");
   text = text.replace(/\s+\)/g, ")");
+  // A note written "| [T]. Keep the header" becomes "|. Keep" once the tag is removed.
+  text = text.replace(/\|\.(?=\s)/g, "| ");
   return text;
 }
 

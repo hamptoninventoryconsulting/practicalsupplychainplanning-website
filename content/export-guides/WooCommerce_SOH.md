@@ -50,7 +50,7 @@ WooCommerce reduces stock when an order becomes **Processing** or **On hold** �
 Stock falls as soon as orders are set to Processing **or On hold** [T]. Practical Stock Planner deducts open orders itself (File 3 – Open_SO). Choose **one** of:
 
 - **(a) Recommended – dated demand:** **SOH = WooCommerce Stock + quantity on Processing and On hold orders** (the orders not yet shipped), and list those orders in your Open_SO file.
-  In the test, Belt showed 23 = 28 on the shelf − 3 (Processing) − 2 (Completed, shipped) [T]; the physical stock for planning is 23 + 3 = 26.
+  For example, a belt showing 23 might be 28 on the shelf, minus 3 Processing and 2 already shipped [T]. The physical stock for planning is 23 + 3 = 26.
 - **(b) Simple:** **SOH = WooCommerce Stock as it is**, and **leave Processing / On hold orders out of Open_SO** (they're already deducted). You lose their dates, but nothing is counted twice.
 
 **Pending payment** orders don't reduce stock (no payment yet) [V]; WooCommerce's *Hold Stock* setting only reserves stock for a while [V]. Leave them out, or treat them as open orders under (a).

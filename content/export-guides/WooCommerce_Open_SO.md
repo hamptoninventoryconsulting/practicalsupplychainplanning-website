@@ -38,7 +38,7 @@ If a WooCommerce label differs slightly, pick the closest match.
 Set the rows-per-page menu at the bottom of the table to 100 first – the choices are 25/50/75/100 [T]; whether this avoids the email is [U].
 
 Exact header row [T]: `Date,"Order #",Status,Customer,"Customer type",Product(s),"Items sold",Coupon(s),"Net sales",Attribution`
-Example row [T]: `"2026-09-27 10:00:00",57,processing,"Test Customer2",new,"4× Hoodie - Green, No, 1× T-Shirt",5,,198,Unknown`
+Example row [T]: `"2026-09-27 10:00:00",57,processing,"Jordan Lee",new,"4× Hoodie - Green, No, 1× T-Shirt",5,,198,Unknown`
 
 | WooCommerce | → Practical Stock Planner column | Notes |
 |---|---|---|
