@@ -1,0 +1,26 @@
+---json
+{
+  "layout": "layouts/page.njk",
+  "title": "Practical Stock Planner FAQ — Practical Supply Chain Planning",
+  "description": "Questions about Practical Stock Planner for buyers and trial users.",
+  "canonical": "https://practicalsupplychainplanning.com/faq/practical-stock-planner/",
+  "nav": "faq",
+  "permalink": "/faq/practical-stock-planner/"
+}
+---
+<h1 class="page-title">Questions about Practical Stock Planner</h1>
+<p class="tagline">For the trial and the app. Daniel answers.</p>
+
+{%- if stockPlannerFaqItems and stockPlannerFaqItems.length %}
+<section class="card">
+  <div class="content">
+    {%- set faqList = stockPlannerFaqItems %}
+    {% include "partials/faq-list.njk" %}
+    <p>
+      If your question isn&rsquo;t covered here, use
+      <a href="/faq/#ask-heading">Ask a question</a>
+      on the site FAQ.
+    </p>
+  </div>
+</section>
+{%- endif %}

@@ -9,6 +9,7 @@ import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import faqItems from "../scripts/faq-items.js";
 import faqPage from "../src/faq.11tydata.js";
+import stockPlannerFaqPage from "../src/faq/practical-stock-planner.11tydata.js";
 import {
   ASK_SUCCESS,
   ASK_TOPICS,
@@ -60,9 +61,26 @@ assert.match(
 assert.match(privacy, /we do not add you to a mailing list/);
 
 const shipped = JSON.parse(fs.readFileSync(path.join(ROOT, "src", "_data", "faq.json"), "utf8"));
+const appShipped = JSON.parse(
+  fs.readFileSync(path.join(ROOT, "src", "_data", "stockPlannerFaq.json"), "utf8")
+);
 const published = faqItems.publishedFaqItems(shipped);
+const appPublished = faqItems.publishedFaqItems(appShipped);
 assert.deepStrictEqual(
   published.map(function (item) {
+    return item.question;
+  }),
+  [
+    "Who is Daniel Hampton?",
+    "What free tools are on this site?",
+    "Where are the guides?",
+    "How do privacy and cookies work here?",
+    "How do I contact you?",
+    "How do I ask a question that isn\u2019t covered here?",
+  ]
+);
+assert.deepStrictEqual(
+  appPublished.map(function (item) {
     return item.question;
   }),
   [
@@ -77,20 +95,40 @@ assert.deepStrictEqual(
     "What does Practical Stock Planner actually do?",
     "What doesn\u2019t it do?",
     "Can I get help with setup?",
-    "How do I ask a question that isn\u2019t covered here?",
+  ]
+);
+assert.deepStrictEqual(
+  appPublished.map(function (item) {
+    return item.id;
+  }),
+  [
+    "how-do-i-get-started",
+    "what-files-does-it-use",
+    "how-does-the-licence-work",
+    "who-takes-payment-and-how-do-i-cancel",
+    "does-it-run-on-a-mac-or-only-on-windows",
+    "where-does-my-planning-data-go",
+    "what-is-the-founding-customer-price",
+    "when-am-i-charged",
+    "what-does-practical-stock-planner-actually-do",
+    "what-doesnt-it-do",
+    "can-i-get-help-with-setup",
   ]
 );
 assert.match(
-  published[0].answer,
+  appPublished[0].answer,
   /\[Practical Stock Planner page\]\(https:\/\/practicalsupplychainplanning.com\/products\/practical-stock-planner\/\)/
 );
-assert.match(published[0].answer, /`support@practicalsupplychainplanning.com`/);
+assert.match(appPublished[0].answer, /`support@practicalsupplychainplanning.com`/);
+assert.match(appPublished[6].answer, /^The founding price is US\$29 a month/);
+assert.doesNotMatch(appPublished[6].answer, /16 November 2026|from launch on 16/i);
 assert.match(
-  published[6].answer,
+  appPublished[6].answer,
   /In return, a short feedback questionnaire is requested about two weeks after you start\. The founding price is not withdrawn if you don\u2019t fill it in\./
 );
-assert.match(published[8].answer, /outgrown simple reorder triggers/);
+assert.match(appPublished[8].answer, /outgrown simple reorder triggers/);
 assert.doesNotMatch(JSON.stringify(shipped), /reorder-point|reorder point|min-max|min\/max|feedback\s+call/i);
+assert.doesNotMatch(JSON.stringify(appShipped), /reorder-point|reorder point|min-max|min\/max|feedback\s+call/i);
 assert.deepStrictEqual(faqItems.plainParagraphs("One line.\n\nTwo\nlines."), ["One line.", "Two lines."]);
 assert.strictEqual(
   faqItems.faqInline(
@@ -132,10 +170,20 @@ assert.doesNotMatch(filledSchema, /hidden/);
 
 const shippedSchema = faqPage.eleventyComputed.schemaJson({ faq: shipped });
 assert.match(shippedSchema, /"@type": "FAQPage"/);
-assert.match(shippedSchema, /short feedback questionnaire is requested about two weeks after you start/);
-assert.match(shippedSchema, /Practical Stock Planner page/);
+assert.match(shippedSchema, /Who is Daniel Hampton\?/);
+assert.match(shippedSchema, /Safety Stock Simulator/);
+assert.match(shippedSchema, /support@practicalsupplychainplanning.com/);
+assert.doesNotMatch(shippedSchema, /How do I get started\?/);
 assert.doesNotMatch(shippedSchema, /\]\(https:/);
 assert.doesNotMatch(shippedSchema, /`support@/);
+const appSchema = stockPlannerFaqPage.eleventyComputed.schemaJson({ stockPlannerFaq: appShipped });
+assert.match(appSchema, /"@type": "FAQPage"/);
+assert.match(appSchema, /short feedback questionnaire is requested about two weeks after you start/);
+assert.match(appSchema, /Practical Stock Planner page/);
+assert.doesNotMatch(appSchema, /How do I ask a question/);
+assert.doesNotMatch(appSchema, /\]\(https:/);
+assert.doesNotMatch(appSchema, /`support@/);
+assert.doesNotMatch(appSchema, /16 November 2026/);
 
 function adapter(sqlite) {
   return {
@@ -510,13 +558,10 @@ assert.match(
   html,
   /Can\u2019t see your question answered above\? Send it here and Daniel will reply by email within 2 business days \(Brisbane time\)\./
 );
-assert.match(html, /30\u201345 minute video call/);
-assert.match(html, /It is not the founding feedback questionnaire\./);
-assert.match(html, /href="\/products\/practical-stock-planner\/"/);
-assert.match(html, /href="\/refunds\/"/);
 assert.match(html, /href="\/privacy\/"/);
 assert.match(html, /href="\/contact\/"/);
-assert.match(html, /href="https:\/\/www\.paddle\.net" rel="noopener noreferrer" target="_blank"/);
+assert.match(html, /href="\/faq\/practical-stock-planner\/"/);
+assert.doesNotMatch(html, /30\u201345 minute video call/);
 assert.doesNotMatch(html, /feedback\s+call/i);
 assert.doesNotMatch(html, /reorder-point|reorder point|min-max|min\/max/i);
 assert.doesNotMatch(html, /`support@/);
@@ -525,5 +570,22 @@ ASK_TOPICS.forEach(function (topic) {
   assert.ok(html.includes(topic), "built page missing " + topic);
 });
 assert.doesNotMatch(html, /href="\/start\//);
+const appBuilt = path.join(ROOT, "_site", "faq", "practical-stock-planner", "index.html");
+assert.ok(fs.existsSync(appBuilt), "Built Practical Stock Planner FAQ is missing. Run npm run build first.");
+const appHtml = fs.readFileSync(appBuilt, "utf8");
+assert.match(appHtml, /"@type": "FAQPage"/);
+assert.match(appHtml, /30\u201345 minute video call/);
+assert.match(appHtml, /It is not the founding feedback questionnaire\./);
+assert.match(appHtml, /href="\/products\/practical-stock-planner\/"/);
+assert.match(appHtml, /href="\/refunds\/"/);
+assert.match(appHtml, /href="\/privacy\/"/);
+assert.match(appHtml, /href="https:\/\/www\.paddle\.net" rel="noopener noreferrer" target="_blank"/);
+assert.match(appHtml, /href="\/faq\/#ask-heading"/);
+assert.doesNotMatch(appHtml, /id="ask-question"/);
+assert.doesNotMatch(appHtml, /Send question/);
+assert.doesNotMatch(appHtml, /feedback\s+call/i);
+assert.doesNotMatch(appHtml, /reorder-point|reorder point|min-max|min\/max/i);
+assert.doesNotMatch(appHtml, /`support@/);
+assert.doesNotMatch(appHtml, /href="\/start\//);
 
 console.log("FAQ ask form OK.");

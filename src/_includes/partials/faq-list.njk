@@ -1,0 +1,6 @@
+{%- for item in faqList %}
+<h2 id="{{ item.id }}">{{ item.question }}</h2>
+{%- for paragraph in item.answer | plainParagraphs %}
+<p>{{ paragraph | faqInline | safe }}</p>
+{%- endfor %}
+{%- endfor %}

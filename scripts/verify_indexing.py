@@ -94,6 +94,7 @@ CORE_PAGES = (
     "/privacy/",
     "/contact/",
     "/faq/",
+    "/faq/practical-stock-planner/",
 )
 
 CANONICAL_PAGES = (
@@ -116,6 +117,10 @@ CANONICAL_PAGES = (
     ("privacy/index.html", f"{SITE_ORIGIN}/privacy/"),
     ("contact/index.html", f"{SITE_ORIGIN}/contact/"),
     ("faq/index.html", f"{SITE_ORIGIN}/faq/"),
+    (
+        "faq/practical-stock-planner/index.html",
+        f"{SITE_ORIGIN}/faq/practical-stock-planner/",
+    ),
 )
 
 LEGACY_PATHS = (
@@ -1084,7 +1089,6 @@ def verify_policy_pages(errors: list[str]) -> None:
             "A short feedback questionnaire is requested, about two weeks after you start.",
             "FOUNDING29",
             "FOUNDINGAU",
-            "available from launch on 16 Nov 2026",
             "Guided setup",
             "US$199 one-off",
             "A$299 including GST in Australia",
@@ -1107,6 +1111,13 @@ def verify_policy_pages(errors: list[str]) -> None:
         ):
             if phrase not in pricing:
                 fail(f"the product page is missing approved copy: {phrase}", errors)
+        for banned in (
+            "available from launch on 16 Nov 2026",
+            "From launch on 16 Nov 2026",
+            "From 16 Nov, checkout applies",
+        ):
+            if banned in pricing:
+                fail(f"the product page still dates the founding price: {banned}", errors)
         if pricing.count(FOUNDING_QUESTIONNAIRE) != 2:
             fail(
                 "the product page must use the founding questionnaire sentence in the Price section and the founding-price question",
@@ -1178,7 +1189,7 @@ def verify_policy_pages(errors: list[str]) -> None:
         catalog_phrases = [
             "Practical Stock Planner",
             "Plan stock period by period and see what to order and when.",
-            "Founding price US$29/month for the first 12 months from 16 Nov 2026, for the first 20 customers or until 31 Jan 2027, then US$49/month",
+            "Founding price US$29/month for the first 12 months, for the first 20 customers or until 31 Jan 2027, then US$49/month",
             'href="/products/practical-stock-planner/"',
             'href="/products/" aria-current="page"',
             'alt="Practical Stock Planner logo"',
@@ -1193,6 +1204,8 @@ def verify_policy_pages(errors: list[str]) -> None:
         for phrase in catalog_phrases:
             if phrase not in catalog:
                 fail(f"/products/ is missing {phrase}", errors)
+        if "from 16 Nov 2026" in catalog:
+            fail("/products/ still dates the founding price from 16 Nov 2026", errors)
         if not checkout_open() and "14-day free trial" in catalog:
             fail("/products/ must not offer the free trial while checkout is closed", errors)
         if "cdn.paddle.com" in catalog:
@@ -1227,6 +1240,8 @@ def verify_policy_pages(errors: list[str]) -> None:
         ):
             if phrase not in terms:
                 fail(f"/terms/ is missing approved copy: {phrase}", errors)
+        if "from launch on 16 Nov 2026" in terms:
+            fail("/terms/ still dates the founding price from launch on 16 Nov 2026", errors)
         if terms.count(FOUNDING_QUESTIONNAIRE) != 1:
             fail("/terms/ must use the founding questionnaire sentence once", errors)
         if re.search(r"feedback\s+call", terms, re.I):
@@ -1731,33 +1746,72 @@ def verify_start_pages(errors: list[str]) -> None:
         fail("/start/planning-guides/ should keep the Stock Planner link soft", errors)
 
 
+APP_FAQ_HREF = 'href="/faq/practical-stock-planner/"'
+APP_FAQ_QUESTIONS = (
+    ("how-do-i-get-started", "How do I get started?"),
+    (
+        "what-files-does-it-use",
+        "What files does it use? Does it connect to Shopify, Xero or Cin7?",
+    ),
+    ("how-does-the-licence-work", "How does the licence work?"),
+    ("who-takes-payment-and-how-do-i-cancel", "Who takes payment, and how do I cancel?"),
+    ("does-it-run-on-a-mac-or-only-on-windows", "Does it run on a Mac, or only on Windows?"),
+    ("where-does-my-planning-data-go", "Where does my planning data go?"),
+    ("what-is-the-founding-customer-price", "What is the founding-customer price?"),
+    ("when-am-i-charged", "When am I charged?"),
+    (
+        "what-does-practical-stock-planner-actually-do",
+        "What does Practical Stock Planner actually do?",
+    ),
+    ("what-doesnt-it-do", "What doesn\u2019t it do?"),
+    ("can-i-get-help-with-setup", "Can I get help with setup?"),
+)
+SITE_FAQ_QUESTIONS = (
+    "Who is Daniel Hampton?",
+    "What free tools are on this site?",
+    "Where are the guides?",
+    "How do privacy and cookies work here?",
+    "How do I contact you?",
+    "How do I ask a question that isn\u2019t covered here?",
+)
+
+
 def verify_faq_links(errors: list[str]) -> None:
-    """Public FAQ page, linked from the menus and the buyer pages."""
-    sources = (
+    """Site FAQ at /faq/. Practical Stock Planner answers live on their own page."""
+    menus = (
         (ROOT / "src" / "_includes" / "partials" / "header.njk", "header"),
         (ROOT / "src" / "_includes" / "partials" / "footer.njk", "site footer"),
         (ROOT / "src" / "_includes" / "layouts" / "sales.njk", "sales footer"),
-        (ROOT / "src" / "welcome.njk", "welcome"),
-        (ROOT / "src" / "start" / "plan-ahead.njk", "plan-ahead"),
-        (ROOT / "src" / "contact.njk", "contact"),
-        (ROOT / "src" / "products" / "practical-stock-planner.njk", "product page"),
     )
-    for path, label in sources:
+    for path, label in menus:
         text = path.read_text(encoding="utf-8")
         if 'href="/faq/"' not in text:
             fail(f"{label} must link to /faq/", errors)
-        if label in ("header", "site footer", "sales footer"):
-            if text.find('href="/faq/"') > text.find('href="/contact/"'):
-                fail(f"{label} FAQ link must sit before Contact", errors)
+        if text.find('href="/faq/"') > text.find('href="/contact/"'):
+            fail(f"{label} FAQ link must sit before Contact", errors)
+    contact = (ROOT / "src" / "contact.njk").read_text(encoding="utf-8")
+    if 'href="/faq/"' not in contact:
+        fail("contact must link to /faq/", errors)
+    if APP_FAQ_HREF not in contact:
+        fail("contact must link to the Practical Stock Planner FAQ", errors)
+    for path, label in (
+        (ROOT / "src" / "welcome.njk", "welcome"),
+        (ROOT / "src" / "start" / "plan-ahead.njk", "plan-ahead"),
+        (ROOT / "src" / "products" / "practical-stock-planner.njk", "product page"),
+    ):
+        text = path.read_text(encoding="utf-8")
+        if APP_FAQ_HREF not in text:
+            fail(f"{label} must link to the Practical Stock Planner FAQ", errors)
     product = (ROOT / "src" / "products" / "practical-stock-planner.njk").read_text(encoding="utf-8")
     if 'or see the <a href="/contact/">Contact page</a>.' not in product:
         fail("the product Questions block must keep its Contact sentence", errors)
     plan = (ROOT / "src" / "start" / "plan-ahead.njk").read_text(encoding="utf-8")
-    if "More answers are on the" not in plan or 'href="/faq/"' not in plan:
-        fail("/start/plan-ahead/ must point to the FAQ page from its Questions block", errors)
-    faq_source = (ROOT / "src" / "faq.njk").read_text(encoding="utf-8")
-    if 'href="/start/' in faq_source:
-        fail("/faq/ must not link to /start/", errors)
+    if "More answers are on the" not in plan or APP_FAQ_HREF not in plan:
+        fail("/start/plan-ahead/ must point to the Practical Stock Planner FAQ from its Questions block", errors)
+    for relative in ("src/faq.njk", "src/faq/practical-stock-planner.njk"):
+        source = (ROOT / relative).read_text(encoding="utf-8")
+        if 'href="/start/' in source:
+            fail(f"{relative} must not link to /start/", errors)
     built = SITE / "faq" / "index.html"
     if not built.is_file():
         fail("/faq/ was not built", errors)
@@ -1767,47 +1821,30 @@ def verify_faq_links(errors: list[str]) -> None:
         fail("/faq/ must not be noindex", errors)
     if "FAQPage" not in page:
         fail("/faq/ must emit FAQPage JSON-LD for the published questions", errors)
-    for question in (
-        "How do I get started?",
-        "What files does it use? Does it connect to Shopify, Xero or Cin7?",
-        "How does the licence work?",
-        "Who takes payment, and how do I cancel?",
-        "Does it run on a Mac, or only on Windows?",
-        "Where does my planning data go?",
-        "What is the founding-customer price?",
-        "When am I charged?",
-        "What does Practical Stock Planner actually do?",
-        "What doesn\u2019t it do?",
-        "Can I get help with setup?",
-        "How do I ask a question that isn\u2019t covered here?",
-    ):
-        if f"<h2>{question}</h2>" not in page:
+    for question in SITE_FAQ_QUESTIONS:
+        if f">{question}</h2>" not in page:
             fail(f"/faq/ is missing the question: {question}", errors)
-    if (
-        "In return, a short feedback questionnaire is requested about two weeks after you start. "
-        "The founding price is not withdrawn if you don\u2019t fill it in. Giving a quote is optional."
-    ) not in page:
-        fail("/faq/ is missing the founding questionnaire answer", errors)
+    for _heading_id, question in APP_FAQ_QUESTIONS:
+        if f">{question}</h2>" in page:
+            fail(f"/faq/ still has the Practical Stock Planner question: {question}", errors)
     if (
         "Can\u2019t see your question answered above? Send it here and Daniel will reply by email "
         "within 2 business days (Brisbane time)."
     ) not in page:
         fail("/faq/ is missing the Ask a question help text", errors)
-    if "outgrown simple reorder triggers" not in page:
-        fail("/faq/ is missing the approved reorder-triggers wording", errors)
-    if "30\u201345 minute video call" not in page or "It is not the founding feedback questionnaire." not in page:
-        fail("/faq/ must keep Guided setup separate from the founding questionnaire", errors)
     if re.search(r"feedback\s+call", page, re.I):
         fail("/faq/ must not mention a founding call", errors)
     if re.search(r"reorder-point|reorder point|min-max|min/max|minmax", page, re.I):
         fail("/faq/ must not use reorder-point or min-max wording", errors)
     for href in (
-        'href="/products/practical-stock-planner/"',
-        'href="/refunds/"',
         'href="/privacy/"',
         'href="/contact/"',
-        'href="https://www.paddle.net" rel="noopener noreferrer" target="_blank"',
         'href="mailto:support@practicalsupplychainplanning.com"',
+        APP_FAQ_HREF,
+        'alt="Practical Stock Planner logo"',
+        'class="product-card__logo"',
+        'src="/assets/brand/favicon.png"',
+        "Trial, files, licence, price and what the Windows app does.",
     ):
         if href not in page:
             fail(f"/faq/ is missing {href}", errors)
@@ -1817,6 +1854,54 @@ def verify_faq_links(errors: list[str]) -> None:
         fail("/faq/ must have exactly one h1", errors)
     if "Ask a question" not in page or "Send question" not in page:
         fail("/faq/ must include the question form", errors)
+
+    app_built = SITE / "faq" / "practical-stock-planner" / "index.html"
+    if not app_built.is_file():
+        fail("/faq/practical-stock-planner/ was not built", errors)
+        return
+    app = app_built.read_text(encoding="utf-8")
+    if NOINDEX_RE.search(app):
+        fail("/faq/practical-stock-planner/ must not be noindex", errors)
+    if "FAQPage" not in app:
+        fail("/faq/practical-stock-planner/ must emit FAQPage JSON-LD for the published questions", errors)
+    for heading_id, question in APP_FAQ_QUESTIONS:
+        if f'<h2 id="{heading_id}">{question}</h2>' not in app:
+            fail(f"/faq/practical-stock-planner/ is missing the question: {question}", errors)
+    for question in SITE_FAQ_QUESTIONS:
+        if f">{question}</h2>" in app:
+            fail(f"/faq/practical-stock-planner/ still has the site question: {question}", errors)
+    if (
+        "In return, a short feedback questionnaire is requested about two weeks after you start. "
+        "The founding price is not withdrawn if you don\u2019t fill it in. Giving a quote is optional."
+    ) not in app:
+        fail("/faq/practical-stock-planner/ is missing the founding questionnaire answer", errors)
+    if "From launch on 16 November 2026" in app or "16 November 2026" in app:
+        fail("/faq/practical-stock-planner/ still dates the founding price from launch", errors)
+    if "outgrown simple reorder triggers" not in app:
+        fail("/faq/practical-stock-planner/ is missing the approved reorder-triggers wording", errors)
+    if "30\u201345 minute video call" not in app or "It is not the founding feedback questionnaire." not in app:
+        fail("/faq/practical-stock-planner/ must keep Guided setup separate from the founding questionnaire", errors)
+    if re.search(r"feedback\s+call", app, re.I):
+        fail("/faq/practical-stock-planner/ must not mention a founding call", errors)
+    if re.search(r"reorder-point|reorder point|min-max|min/max|minmax", app, re.I):
+        fail("/faq/practical-stock-planner/ must not use reorder-point or min-max wording", errors)
+    for href in (
+        'href="/products/practical-stock-planner/"',
+        'href="/guides/getting-your-data-in/"',
+        'href="/refunds/"',
+        'href="/privacy/"',
+        'href="https://www.paddle.net" rel="noopener noreferrer" target="_blank"',
+        'href="mailto:support@practicalsupplychainplanning.com"',
+        'href="/faq/#ask-heading"',
+    ):
+        if href not in app:
+            fail(f"/faq/practical-stock-planner/ is missing {href}", errors)
+    if 'href="/start/' in app:
+        fail("/faq/practical-stock-planner/ must not link to /start/", errors)
+    if app.lower().count("<h1") != 1:
+        fail("/faq/practical-stock-planner/ must have exactly one h1", errors)
+    if 'id="ask-question"' in app or "Send question" in app:
+        fail("/faq/practical-stock-planner/ must not include the question form", errors)
 
 
 def main() -> int:
