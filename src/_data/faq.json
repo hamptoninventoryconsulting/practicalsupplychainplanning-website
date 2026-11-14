@@ -13,7 +13,7 @@
   },
   {
     "question": "How do privacy and cookies work here?",
-    "answer": "The [Privacy Policy](https://practicalsupplychainplanning.com/privacy/) explains what this site collects. Starter Forecast and the DIFOT Calculator keep your files in this browser. They are not sent. The Own-data Safety Stock Simulator runs in the browser and stores nothing.\n\nThe home page, the Learn pages and the Safety Stock Simulator can load a Meta Pixel to measure ads for the free Safety Stock Simulator. That Pixel uses an advertising cookie. It does not load unless you accept it. Cookie choices in the footer opens the same choice again. On the Practical Stock Planner page, Paddle may use cookies and device information for the checkout."
+    "answer": "The [Privacy Policy](https://practicalsupplychainplanning.com/privacy/) explains what this site collects. Starter Forecast and the DIFOT Calculator keep your files in this browser. They are not sent. The Own-data Safety Stock Simulator runs in the browser and stores nothing unless you ask for the results by email.\n\nThe home page, the Learn pages and the Safety Stock Simulator can load a Meta Pixel to measure ads for the free Safety Stock Simulator. That Pixel uses an advertising cookie. It does not load unless you accept it. Cookie choices in the footer opens the same choice again. On the Practical Stock Planner page, Paddle may use cookies and device information for the checkout."
   },
   {
     "question": "How do I contact you?",
