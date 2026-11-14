@@ -2,9 +2,8 @@
 
 _Practical Stock Planner – Time-phased inventory planning. One short guide for one file. No IT skills needed – just a WordPress login with the Administrator or Shop Manager role, and Excel._
 
-**Checked:** against WooCommerce's official docs (woocommerce.com/document, read 2 Oct 2026) and in a live test on a WooCommerce 11.1.2 test site (2 Oct 2026).
 **Tags:** **[T]** = tested on screen or in the exported file. **[V]** = checked against WooCommerce's official docs (link given), not tested. **[U]** = unverified – check on screen.
-Excel tips are general Excel and are not tagged. If a WooCommerce label differs slightly, pick the closest match.
+If a WooCommerce label differs slightly, pick the closest match.
 
 **What this file is:** customer orders you haven't shipped yet. Columns: `Sales Order ID`, `SKU`, `Open SO Qty`, `Ship Date`.
 
@@ -15,7 +14,7 @@ Excel tips are general Excel and are not tagged. If a WooCommerce label differs 
 1. **Download the Open_SO template** from the Practical Stock Planner sidebar (*📥 Templates*). Practical Stock Planner accepts **CSV files only** – one CSV file per input file; this one starts from `template_Open_SO.csv`. **Keep the template's header row exactly as it is.** After filling it in Excel, save it with **File › Save As › CSV UTF-8 (Comma delimited)**.
 2. **Log in as an Administrator or Shop Manager.** Orders can be viewed by "Admin and Shop Manager" roles [V] ([Managing orders](https://woocommerce.com/document/managing-orders/)).
 3. **Match your SOH choice.** WooCommerce has already reduced stock for Processing and On hold orders. If you used *Stock as it is* for SOH (option (b) in the WooCommerce SOH guide), **leave those orders out of this file** – they are already deducted. Only build this file if you added them back to SOH (option (a)).
-4. **Set Analytics › Settings › Date type to Date created** and click **Save settings** [T]. The default is **Date paid**; with it, **On hold orders (not paid yet) did not appear** in the Orders report on the test site [T].
+4. **Set Analytics › Settings › Date type to Date created** and click **Save settings** [T]. The default is **Date paid**. With that setting, **On hold** orders that are not paid yet do not appear in the Orders report [T].
 5. **Refresh Analytics first.** Analytics updates every 12 hours by default [T]. Click **Update now** in the *Data status* box at the top of the report before you download [T] ([Analytics](https://woocommerce.com/document/woocommerce-analytics/) [V]).
 6. **Duplicate rows are fine.** Rows for the same SKU and date are simply added up (the app sums by SKU per week, with weeks starting Monday).
 
@@ -35,7 +34,7 @@ Excel tips are general Excel and are not tagged. If a WooCommerce label differs 
 | 3 | **Show** › **Advanced filters** › **Order status** › **Is** › tick **Processing** and **On hold**. | [T] (filter values seen: Pending payment, Processing, On hold, Completed, Cancelled, Refunded, Failed, Draft; *Is / Is Not*; *All / Any*) |
 | 4 | Click **Update now**, then **Download**. | [T] |
 
-⚠ If the data runs to **more than one page** (25 rows by default), the CSV is **not downloaded – it's emailed** to the logged-in admin [V]; on the test site a 32-row report showed "Your Revenue Report will be emailed to you." [T].
+⚠ If the data runs to **more than one page** (25 rows by default), the CSV is **not downloaded – it's emailed** to the logged-in admin [V]. A longer report can say "Your Revenue Report will be emailed to you." [T].
 Set the rows-per-page menu at the bottom of the table to 100 first – the choices are 25/50/75/100 [T]; whether this avoids the email is [U].
 
 Exact header row [T]: `Date,"Order #",Status,Customer,"Customer type",Product(s),"Items sold",Coupon(s),"Net sales",Attribution`
@@ -66,7 +65,7 @@ It exports orders to CSV/XML "manually or on an automated schedule", with a **De
 | 2 | In **Export Options**, target the orders – the marketplace page mentions filtering by "order status" [V]; pick Processing and On hold (labels [U]). Don't tick **Mark as exported** (it excludes them from future exports [V]). | [V] / [U] |
 | 3 | Click **Export**; download from the admin notice or **WooCommerce › Exports › Export List** (kept 14 days) [V]. | [V] |
 
-One row per order line gives order number, SKU and quantity per row – exact column names [U] (not tested – paid).
+One row per order line gives order number, SKU and quantity per row. Check the column names in your file; a paid export can name them differently.
 Not needed if you have few open orders – Option A works for free.
 
 > **Keep leading zeros in SKUs.** Format the SKU column as *Text* before you type or paste SKUs, then save with *File › Save As › CSV UTF-8 (Comma delimited)*. If you open a CSV directly in Excel (e.g. by double-clicking it), Excel can strip leading zeros (`00123` becomes `123`) – import it via *Data › From Text/CSV* instead and set the SKU column to *Text*. In Google Sheets: select the SKU column and choose *Format › Number › Plain text* before you type or paste, then save with *File › Download › Comma-separated values (.csv)*.
@@ -78,7 +77,7 @@ Not needed if you have few open orders – Option A works for free.
 - [ ] Only Processing and On hold orders; one row per product, with the SKU looked up.
 - [ ] Matches your SOH choice: orders listed here **only** if you added them back to SOH.
 - [ ] SKUs exactly match your SKU_Details file.
-- [ ] At least one data row. No open orders at all? Contact support@practicalsupplychainplanning.com about an "empty" Open_SO file.
+- [ ] No open orders? Keep the header row and add no data rows. That means none are open.
 
 **If an upload fails:** the message *"Please upload a CSV file... Save As CSV UTF-8"* means you uploaded an Excel workbook (`.xlsx`). Open it in Excel, choose *File › Save As › CSV UTF-8 (Comma delimited)*, and upload the `.csv` file instead.
 

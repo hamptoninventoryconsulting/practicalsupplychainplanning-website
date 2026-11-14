@@ -2,9 +2,8 @@
 
 _Practical Stock Planner – Time-phased inventory planning. One short guide for one file. No IT skills needed – just a QuickBooks Online login with access to reports, and Excel._
 
-**Checked:** against Intuit's help (US and AU, read 2 Oct 2026) and in a live test in the QuickBooks Online AU test drive (3 Oct 2026). Screen labels are the **Australian** ones; US labels were not tested.
-**Tags:** **[T]** = tested on screen or in the exported file. **[V]** = stated in Intuit's official help (link given), not separately tested. **[U]** = unverified – check on screen. **Not yet checked** = couldn't be tested in the test drive.
-Excel tips are general Excel and are not tagged. If a QuickBooks label differs slightly, pick the closest match.
+**Tags:** **[T]** = tested on screen or in the exported file. **[V]** = stated in Intuit's official help (link given), not separately tested. **[U]** = unverified – check on screen.
+If a QuickBooks label differs slightly, pick the closest match.
 
 **What this file is:** the product master. One row per SKU. Every other file links to it by SKU.
 
@@ -30,12 +29,12 @@ Excel tips are general Excel and are not tagged. If a QuickBooks label differs s
 |---|---|---|
 | 1 | Go to **All apps › Sales & Get Paid › Products & services**. | [T] · [Export your QuickBooks Online data](https://quickbooks.intuit.com/learn-support/en-us/help-article/list-management/export-reports-lists-data-quickbooks-online/L1xleDrLp_US_en_US) |
 | 2 | Select **More ▼ › Run report** (opens the **Product/Service List** report). | [T] |
-| 3 | Click **Customize** and add the columns you need: **SKU**, **Preferred supplier name**, **Purchase description**, **Reorder point**. (*Type*, *Purchase price* and *Quantity on hand* are already shown.) | [T] |
+| 3 | Click **Customize** and add the columns you need: **SKU**, **Preferred supplier name**, **Purchase description**. (*Type*, *Purchase price* and *Quantity on hand* are already shown.) | [T] |
 | 4 | **Export ▼ › Export to Excel** (or *Export as CSV*). | [T] |
 | *Alt.* | The **Products and services** page itself also has an **Export to Excel** button – but it exports that screen's columns, not your customised report. | [T] |
 
 Actual header row of the export (row 4, after customising) [T]:
-`Product/Service full name, Type, Memo/Description, Sales price, Purchase price, Quantity on hand, SKU, Preferred supplier name, Purchase description, Reorder point`
+`Product/Service full name, Type, Memo/Description, Sales price, Purchase price, Quantity on hand, SKU, Preferred supplier name, Purchase description`
 
 ## Column mapping
 
@@ -46,7 +45,7 @@ Actual header row of the export (row 4, after customising) [T]:
 | **Memo/Description** (or **Purchase description**) | **Description** | [T] |
 | *(no field)* | **UoM** | Unit of measure: the unit you count and sell stock in. `EA` means "each", one single item. No unit field [T] – type `EA` (or leave blank – Practical Stock Planner fills `EA`). |
 | *(no Category column)* | **Group** | No separate category column in the export [T]. The first part of *Product/Service full name* (before the first `:`, e.g. `General services`) can serve as a group – whether that prefix is a category or a parent item depends on your setup [U]. Blank → "Group TBD". |
-| **Reorder point** | **Safety Stock Weeks** *(optional)* | "the minimum quantity you want to have on hand" [V] ([Set and use reorder points](https://plugin-qbo.intuit.com/qbo-ush/helpcontent/production/157/en_US/QBO_Plus/Content/Topics/inventory/help_inventory_reorder_pt_set.htm)). The report column is **Reorder point** in AU too [T] (the AU Products and services *screen* shows a **Low stock alert** column instead [T]). Convert: reorder point ÷ average weekly sales. Or leave blank to use the default Safety Stock Weeks you set in the app. |
+| *(your choice)* | **Safety Stock Weeks** *(optional)* | How many weeks of extra cover you want held for this product. Leave blank to use the default Safety Stock Weeks you set in the app. |
 | **Purchase price** | **Cost Price** | [T]. For the cost QuickBooks values stock at, use **Calc. Avg** from the Inventory Valuation Summary (steps in the QuickBooks SOH guide) [T]. Enter costs **excluding sales tax** (e.g. GST or VAT) – whether *Purchase price* includes tax depends on how you set up the item [U]. |
 | *(your currency)* | **Cost Price Currency** | No currency column [T]. Type your currency, e.g. `USD`, on every row. Only one currency is allowed. ⚠ Blank → Practical Stock Planner assumes **USD**. |
 | *(your decision)* | **Status** *(optional column)* | Type `Obsolete` for any product you won't buy again. Practical Stock Planner still shows its stock and demand, but creates no planned supply for it. Leave blank (or type `Active`) for everything else. |

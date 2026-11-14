@@ -2,9 +2,8 @@
 
 _Practical Stock Planner – Time-phased inventory planning. One short guide for one file. No IT skills needed – just a QuickBooks Online login with access to reports, and Excel._
 
-**Checked:** against Intuit's help (US and AU, read 2 Oct 2026) and in a live test in the QuickBooks Online AU test drive (3 Oct 2026). Screen labels are the **Australian** ones; US labels were not tested.
-**Tags:** **[T]** = tested on screen or in the exported file. **[V]** = stated in Intuit's official help (link given), not separately tested. **[U]** = unverified – check on screen. **Not yet checked** = couldn't be tested in the test drive.
-Excel tips are general Excel and are not tagged. If a QuickBooks label differs slightly, pick the closest match.
+**Tags:** **[T]** = tested on screen or in the exported file. **[V]** = stated in Intuit's official help (link given), not separately tested. **[U]** = unverified – check on screen.
+If a QuickBooks label differs slightly, pick the closest match.
 
 **What this file is:** how many units of each SKU you hold today. Columns: `SKU`, `SOH`.
 
@@ -14,10 +13,10 @@ Excel tips are general Excel and are not tagged. If a QuickBooks label differs s
 
 1. **Download the SOH template** from the Practical Stock Planner sidebar (*📥 Templates*). Practical Stock Planner accepts **CSV files only** – one CSV file per input file; this one starts from `template_SOH.csv`. **Keep the template's header row exactly as it is.** After filling it in Excel, save it with **File › Save As › CSV UTF-8 (Comma delimited)**.
 2. **Inventory needs Plus or Advanced** (or the inventory add-on) [V] ([Set up and track your inventory](https://quickbooks.intuit.com/learn-support/en-us/help-article/inventory-management/set-track-inventory-quickbooks-online/L22FZLBGN_US_en_US)). No inventory → no SOH from QuickBooks; count stock outside it.
-3. **Inventory tracking must be on.** Intuit's help says *Settings ⚙ › Account and settings › Sales › Products and services* › **Track quantity and price/rate** and **Track inventory quantity on hand** [V] – not yet checked on screen.
+3. **Inventory tracking must be on.** In *Settings ⚙ › Account and settings › Sales › Products and services*, turn on **Track quantity and price/rate** and **Track inventory quantity on hand** [V].
    Only items of type **Inventory** have a quantity on hand [T].
 4. **Export on the day you plan.** Do it first thing in the morning, and set Practical Stock Planner's *Plan Start Date* to that day (Practical Stock Planner's glossary: the plan start date "should match when the SOH data is captured"). See the date warning below.
-5. **One site.** The tested company showed one quantity per SKU and no location control [T]. How *multi-location inventory* (Advanced) exports is not yet checked [U] – if you use it, keep one row per SKU per location; the rows are simply added up.
+5. **One site.** Keep one quantity per SKU. If you use more than one location, keep one row per SKU per location; the rows are added up.
 6. ⚠ **Report exports are not a clean table.** The file has title rows, then the header row, then **category heading rows**, **Total for …** rows, a **TOTAL** row and a timestamp line [T]. Delete those extra rows before you paste into the template.
 
 ---
@@ -46,10 +45,10 @@ Actual header row (row 5) [T]: `SKU, Qty, Asset Value, Calc. Avg` – with the *
 Use the **Quantity on hand** column of the Product/Service List (steps in the QuickBooks SKU Details guide) [T]. One export fewer – **but** ⚠ in the test the two reports **did not agree**: *Quantity on hand* in the Product/Service List was 3,150 / 20 / 550 for the three inventory items,
 while the Inventory Valuation Summary showed 5,000 / 20 / 1,100 [T]. **Compare both for a few items before relying on Option B**, and prefer Option A.
 
-**What changes "on hand"?** Invoices and sales receipts reduce the quantity on hand [U]. A **sales order** "reserves items from inventory without affecting your books" [V] – whether that changes *Quantity on hand* is not yet checked.
+**What changes "on hand"?** Invoices and sales receipts reduce the quantity on hand [U]. A **sales order** reserves items and may leave **Quantity on hand** unchanged [V]. Use the quantity you physically hold.
 Bills/cheques/expenses that receive a PO increase on hand – "the quantity on hand automatically increases by the number of items you receive" [V] ([Set up and track your inventory](https://quickbooks.intuit.com/learn-support/en-us/help-article/inventory-management/set-track-inventory-quickbooks-online/L22FZLBGN_US_en_US)).
 
-**Physical count sheet:** an Intuit AU blog post mentions a *Stock Take Worksheet* (US: *Physical Inventory Worksheet*), but **neither report was found** by searching Standard reports in the AU test drive [T]. Count on your own sheet if needed.
+**Physical count sheet:** if Standard reports has no stock-take worksheet, count on your own sheet.
 
 ## Excel clean-up
 

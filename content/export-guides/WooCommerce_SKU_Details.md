@@ -2,9 +2,8 @@
 
 _Practical Stock Planner – Time-phased inventory planning. One short guide for one file. No IT skills needed – just a WordPress login with the Administrator or Shop Manager role, and Excel._
 
-**Checked:** against WooCommerce's official docs (woocommerce.com/document, wordpress.org, read 2 Oct 2026) and in a live test on a WooCommerce 11.1.2 test site (2 Oct 2026).
 **Tags:** **[T]** = tested on screen or in the exported file. **[V]** = checked against WooCommerce's official docs (link given), not tested. **[U]** = unverified – check on screen.
-Excel tips are general Excel and are not tagged. If a WooCommerce label differs slightly, pick the closest match.
+If a WooCommerce label differs slightly, pick the closest match.
 
 **What this file is:** the product master. One row per SKU. Every other file links to it by SKU.
 

@@ -31,6 +31,6 @@ Practical Stock Planner needs **7 input files**. Each short guide covers **one s
 - **Upload refused?** The message *"Please upload a CSV file... Save As CSV UTF-8"* means the file is an Excel workbook (`.xlsx`). Save it with *File › Save As › CSV UTF-8 (Comma delimited)* and upload the `.csv`.
 - **Google Sheets:** save each file with *File › Download › Comma-separated values (.csv)*.
 - **Date format:** on the Load Data page, set **Date format in your files** to **Day/Month/Year** (default) or **Month/Day/Year** (US-style) to match your files. Dates like 2026-10-05, 2026/10/05 and 13-Apr-2026 always work. Change it? Upload the file again.
-- **All 7 files are needed**, each with at least one data row. Nothing to enter? Contact support@practicalsupplychainplanning.com.
+- **All 7 files are needed.** Open sales orders and open supply may be a header row only, when none are open. The other five files need at least one data row. Stock on hand with nothing in the warehouse is a row with quantity 0. Anything else you cannot fill in: email support@practicalsupplychainplanning.com.
 - **Single units** everywhere (UoM = unit of measure, e.g. `EA` = each), except the buying terms in SKU_Supplier_Details (e.g. `CTN` = carton).
 - **Export everything on one day** and make it the *Plan Start Date*. Weeks start Monday; rows for the same SKU and date are added up.

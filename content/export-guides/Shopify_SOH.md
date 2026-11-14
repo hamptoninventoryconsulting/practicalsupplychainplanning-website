@@ -2,9 +2,8 @@
 
 _Practical Stock Planner – Time-phased inventory planning. One short guide for one file. No IT skills needed – just Shopify admin access and Excel._
 
-**Checked:** against Shopify Help Center pages (read 25 Sep 2026) and in a live test in a Shopify development store (2 Oct 2026).
 **Tags:** **[T]** = tested on screen or in the exported file. **[V]** = checked against Shopify's official Help Center (link given), not separately tested. **[U]** = unverified – check on screen.
-Excel tips are general Excel and are not tagged. If a Shopify label differs slightly, pick the closest match.
+If a Shopify label differs slightly, pick the closest match.
 
 **What this file is:** how many units of each SKU you hold today. Columns: `SKU`, `SOH`.
 
@@ -47,7 +46,7 @@ The *All states* file has one row per variant **per location** (column **Locatio
 
 ## Excel clean-up
 
-1. Add a column `SOH` = `On hand (current)` − `Unavailable (not editable)`. If a cell says `not stocked`, treat it as 0 (or delete that row).
+1. Add a column `SOH` = `On hand (current)` − `Unavailable (not editable)`. If a cell says `not stocked`, enter 0. An item with no stock is a row with quantity 0.
 2. Several locations? No need to add them up. Rows for the same SKU are simply added up – Practical Stock Planner **sums SOH per SKU automatically**. Paste one row per SKU per location.
 3. Delete rows with a blank SKU (products without a SKU can't be planned).
 4. Paste **SKU** and **SOH** into the **SOH** template.
@@ -58,7 +57,7 @@ The *All states* file has one row per variant **per location** (column **Locatio
 
 - [ ] Template header row unchanged, saved as a CSV file (*File › Save As › CSV UTF-8 (Comma delimited)*).
 - [ ] SOH = On hand (current) − Unavailable (not *Available*).
-- [ ] `not stocked` cells set to 0 or removed; blank-SKU rows removed.
+- [ ] `not stocked` cells set to 0; blank-SKU rows removed.
 - [ ] SKUs exactly match your SKU_Details file.
 - [ ] Plan Start Date in Practical Stock Planner = the day you exported this file.
 

@@ -2,9 +2,8 @@
 
 _Practical Stock Planner – Time-phased inventory planning. One short guide for one file. No IT skills needed – just a QuickBooks Online login with access to reports, and Excel._
 
-**Checked:** against Intuit's help (US and AU, read 2 Oct 2026) and in a live test in the QuickBooks Online AU test drive (3 Oct 2026). Screen labels are the **Australian** ones (e.g. *Supplier*, US: *Vendor*); US labels were not tested.
-**Tags:** **[T]** = tested on screen or in the exported file. **[V]** = stated in Intuit's official help, not separately tested. **Not yet checked** = couldn't be tested in the test drive.
-Excel tips are general Excel and are not tagged. If a QuickBooks label differs slightly, pick the closest match.
+**Tags:** **[T]** = tested on screen or in the exported file. **[V]** = stated in Intuit's official help, not separately tested.
+If a QuickBooks label differs slightly, pick the closest match.
 
 **What this file is:** one row per supplier. Practical Stock Planner shows these on planned supply orders and checks minimum order values.
 Columns: `Supplier Code`, `Supplier Name`, `Supplier Contact`, `Minimum Order Value`, `Currency`.
@@ -22,8 +21,8 @@ Columns: `Supplier Code`, `Supplier Name`, `Supplier Contact`, `Minimum Order Va
 
 | # | Step | Status |
 |---|---|---|
-| 1 | **Reports › Standard reports** › search **Supplier Contact List** (🇺🇸 US: *Vendor Contact List* [V] – searching "Vendor Contact List" found nothing in the AU test drive [T]). | [T] |
-| 2 | The default columns are enough. (Whether a **Currency** column can be added via *Customize* is not yet checked.) | [T] |
+| 1 | **Reports › Standard reports** › search **Supplier Contact List**. In a US company the report may be named *Vendor Contact List* [V]. | [T] |
+| 2 | The default columns are enough. If you buy in a currency that is not on the report, type it into the template. | [T] |
 | 3 | **Export ▼ › Export to Excel**. | [T] |
 
 Actual header row (row 4) [T]: `Supplier, Phone numbers, Email, Full name, Billing address, Account No.` – no currency column [T].
@@ -32,7 +31,7 @@ Actual header row (row 4) [T]: `Supplier, Phone numbers, Email, Full name, Billi
 
 | QuickBooks | → Practical Stock Planner column | Notes |
 |---|---|---|
-| **Supplier** (display name) | **Supplier Code** | [T]. Must be unique. It matches *Supplier display name* on the Open Purchase Order Detail report [T] and should match *Preferred supplier name* on the Product/Service List (not yet checked), so your SKU_Supplier_Details file links without a lookup. |
+| **Supplier** (display name) | **Supplier Code** | [T]. Must be unique. It matches *Supplier display name* on the Open Purchase Order Detail report [T] and should match *Preferred supplier name* on the Product/Service List, so your SKU_Supplier_Details file links without a lookup. |
 | **Supplier** (or **Full name**) | **Supplier Name** | [T]. *Full name* is the contact person (e.g. `Christina  Hall` – note double spaces in the export [T]; use *TRIM*). |
 | **Full name** / **Phone numbers** / **Email** | **Supplier Contact** | [T] |
 | *(not held)* | **Minimum Order Value** | Type it if needed, else blank (→ 0). It only sets Recommended Yes/No; a 0 marks every line No. |

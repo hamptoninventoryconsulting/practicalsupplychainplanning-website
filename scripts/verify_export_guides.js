@@ -17,6 +17,20 @@ const LOAD_DATA = "Open <strong>Load Data</strong>, then open <strong>Templates<
 const CSV_ONLY = "Practical Stock Planner imports CSV only.";
 const UTF8 = "Save it as UTF-8 or UTF-8 with BOM";
 
+const BANNED = [
+  /not yet checked/i,
+  /test login/i,
+  /test drive/i,
+  /test site/i,
+  /delete that row/i,
+  /reorder point/i,
+  /\bROP\b/,
+  /min\/max/i,
+  /min-max/i,
+  /"empty" Open_/,
+  /At least one data row\. No open/,
+];
+
 const pages = buildGuidePages();
 assert.strictEqual(pages.length, 18, "expected the index and 17 guides");
 
@@ -35,6 +49,10 @@ assert.ok(index.prepared.includes("Time-phased stock planning"), "subtitle shoul
 
 for (const page of pages) {
   assert.ok(!TAG_RE.test(page.prepared), `${page.id} still has a verification mark in the public markdown`);
+  for (const banned of BANNED) {
+    assert.ok(!banned.test(page.prepared), `${page.id} public text matches ${banned}`);
+    assert.ok(!banned.test(page.html), `${page.id} HTML matches ${banned}`);
+  }
   assert.ok(!page.prepared.includes("**Tags"), `${page.id} still explains the verification marks`);
   assert.ok(!page.html.includes("[T]"), `${page.id} HTML still shows [T]`);
   assert.ok(!page.html.includes("[V]"), `${page.id} HTML still shows [V]`);

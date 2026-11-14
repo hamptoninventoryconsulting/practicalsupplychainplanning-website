@@ -2,9 +2,8 @@
 
 _Practical Stock Planner – Time-phased inventory planning. One short guide for one file. No IT skills needed – just Shopify admin access and Excel._
 
-**Checked:** against Shopify Help Center pages (read 25 Sep 2026) and in a live test in a Shopify development store (2 Oct 2026).
 **Tags:** **[T]** = tested on screen or in the exported file. **[V]** = checked against Shopify's official Help Center (link given), not separately tested. **[U]** = unverified – check on screen.
-Excel tips are general Excel and are not tagged. If a Shopify label differs slightly, pick the closest match.
+If a Shopify label differs slightly, pick the closest match.
 
 **What this file is:** the product master. One row per SKU. Every other file links to it by SKU.
 

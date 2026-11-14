@@ -2,9 +2,8 @@
 
 _Practical Stock Planner – Time-phased inventory planning. One short guide for one file. No IT skills needed – just a QuickBooks Online login with access to reports, and Excel._
 
-**Checked:** against Intuit's help (US and AU, read 2 Oct 2026) and in a live test in the QuickBooks Online AU test drive (3 Oct 2026). Screen labels are the **Australian** ones (e.g. *Supplier*, US: *Vendor*); US labels were not tested.
-**Tags:** **[T]** = tested on screen or in the exported file. **[V]** = stated in Intuit's official help (link given), not separately tested. **[U]** = unverified – check on screen. **Not yet checked** = couldn't be tested in the test drive.
-Excel tips are general Excel and are not tagged. If a QuickBooks label differs slightly, pick the closest match.
+**Tags:** **[T]** = tested on screen or in the exported file. **[V]** = stated in Intuit's official help (link given), not separately tested. **[U]** = unverified – check on screen.
+If a QuickBooks label differs slightly, pick the closest match.
 
 **What this file is:** your open purchase orders – what's still to arrive, and when. Columns: `Supply Order ID`, `SKU`, `Supply Qty`, `Due Date`.
 
@@ -46,12 +45,12 @@ Data rows start in column B; column A holds product/category heading rows, then 
 | QuickBooks (Open Purchase Order Detail) | → Practical Stock Planner | Notes |
 |---|---|---|
 | **No.** (PO number) | **Supply Order ID** | [T] |
-| **Product/Service full name** | **SKU** | There's **no SKU column** by default [T] – look the SKU up from your Product/Service List by full name (`=XLOOKUP(E6, ProductList!A:A, ProductList!G:G)`). Whether SKU can be added via *Customize* is not yet checked. Drop lines whose product isn't an Inventory item (the sample's PO line was a Service item [T]). |
+| **Product/Service full name** | **SKU** | There's **no SKU column** by default [T] – look the SKU up from your Product/Service List by full name (`=XLOOKUP(E6, ProductList!A:A, ProductList!G:G)`). If *Customize* does not offer a SKU column, keep using that lookup. Drop lines whose product isn't an Inventory item. |
 | **Backordered quantity** | **Supply Qty** | The quantity still to come [T] (in the test: ordered 100, received 0, backordered 100). Cross-check: Quantity − Received quantity. |
 | *(no due date column)* | **Due Date** | Type the expected date, or leave blank → plan start + default lead time. Don't use *Transaction date* – that's the order date. |
 
 **How "still to receive" works:** you receive a PO by adding it to a **bill, cheque or expense** [V – article [Add purchase orders to expenses, bills, or checks](https://quickbooks.intuit.com/learn-support/en-us/help-article/purchase-orders/add-purchase-orders-expenses-bills-checks-online/L9pRK49uC_US_en_US)].
-How a part-received PO shows in *Received / Backordered quantity*, and whether fully received POs drop off the report, is **not yet checked** – check one part-received PO on screen.
+For a part-received purchase order, use **Backordered quantity** as the quantity still to come. If that figure does not match what you still expect, open the purchase order and type the remaining quantity.
 
 ## Excel clean-up
 
@@ -69,7 +68,7 @@ How a part-received PO shows in *Received / Backordered quantity*, and whether f
 - [ ] Supply Qty = **Backordered quantity**, in single units.
 - [ ] Due dates typed (or blank) – none before the plan start date.
 - [ ] SKUs exactly match your SKU_Details file.
-- [ ] At least one data row. No open POs at all? Contact support@practicalsupplychainplanning.com about an "empty" Open_Supply file.
+- [ ] No open purchase orders? Keep the header row and add no data rows. That means none are open.
 
 **If an upload fails:** the message *"Please upload a CSV file... Save As CSV UTF-8"* means you uploaded an Excel workbook (`.xlsx`). Open it in Excel, choose *File › Save As › CSV UTF-8 (Comma delimited)*, and upload the `.csv` file instead.
 

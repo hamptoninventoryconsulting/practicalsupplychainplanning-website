@@ -2109,8 +2109,17 @@ a.home-button--secondary:is(:link, :visited, :hover, :focus, :focus-visible, :ac
   border-left: 3px solid var(--color-border);
 }
 
+.guide-body {
+  min-width: 0;
+}
+
 .guide-body code {
   font-size: 0.92em;
+  overflow-wrap: anywhere;
+}
+
+.guide-body .content-table-scroll {
+  max-width: 100%;
 }
 
 .guide-body pre {

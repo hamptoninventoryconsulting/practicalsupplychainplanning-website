@@ -2,9 +2,8 @@
 
 _Practical Stock Planner – Time-phased inventory planning. One short guide for one file. No IT skills needed – just Shopify admin access and Excel._
 
-**Checked:** against Shopify Help Center pages (read 25 Sep 2026) and in a live test in a Shopify development store (2 Oct 2026).
 **Tags:** **[T]** = tested on screen or in the exported file. **[V]** = checked against Shopify's official Help Center (link given), not separately tested. **[U]** = unverified – check on screen.
-Excel tips are general Excel and are not tagged. If a Shopify label differs slightly, pick the closest match.
+If a Shopify label differs slightly, pick the closest match.
 
 **What this file is:** customer orders you haven't shipped yet. Columns: `Sales Order ID`, `SKU`, `Open SO Qty`, `Ship Date`.
 
@@ -53,7 +52,7 @@ Always check that the number of orders in the file matches the count shown in Sh
 |---|---|---|
 | **Name** (order number, e.g. #1052) | **Sales Order ID** | Orders with several lines have one row per line; many order-level fields (e.g. *Fulfillment Status*) are blank on the extra rows [T] – *Name* is repeated on every row [T]. |
 | **Lineitem sku** | **SKU** | Exact header is `Lineitem sku` (lower-case "sku") [T]. Blank for products without a SKU – delete those rows. |
-| **Lineitem quantity** | **Open SO Qty** | [T] Keep only lines whose **Lineitem fulfillment status** is not `fulfilled` (unshipped lines show `pending` [T]). ⚠ Partly shipped lines were not tested [U]: check the quantity against the order and adjust by hand, or use Option A. |
+| **Lineitem quantity** | **Open SO Qty** | [T] Keep only lines whose **Lineitem fulfillment status** is not `fulfilled` (unshipped lines show `pending` [T]). For a partly shipped line, check the quantity against the order and adjust by hand, or use Option A. |
 | **Created at** | **Ship Date** | No promised date in Shopify. Format is e.g. `2026-10-01 22:54:40 -0400` [T] – use `=DATEVALUE(LEFT(P2,10))` to turn it into a date. Older orders become "past due" demand, which Practical Stock Planner deducts straight away (correct – the customer is waiting). |
 
 Also remove cancelled orders (**Cancelled at** not blank – note the spelling) [T column].
@@ -66,7 +65,7 @@ Also remove cancelled orders (**Cancelled at** not blank – note the spelling) 
 - [ ] Option A: zero and `not stocked` rows removed. **Or** Option B: fulfilled, cancelled and blank-SKU rows removed, and the order count matches Shopify.
 - [ ] *Ship Date* is a real date (or blank).
 - [ ] SKUs exactly match your SKU_Details file.
-- [ ] At least one data row. No open orders at all? Contact support@practicalsupplychainplanning.com about an "empty" Open_SO file.
+- [ ] No open orders? Keep the header row and add no data rows. That means none are open.
 
 **If an upload fails:** the message *"Please upload a CSV file... Save As CSV UTF-8"* means you uploaded an Excel workbook (`.xlsx`). Open it in Excel, choose *File › Save As › CSV UTF-8 (Comma delimited)*, and upload the `.csv` file instead.
 

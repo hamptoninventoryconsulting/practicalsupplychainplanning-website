@@ -2,9 +2,8 @@
 
 _Practical Stock Planner – Time-phased inventory planning. One short guide for one file. No IT skills needed – just a WordPress login with the Administrator or Shop Manager role, and Excel._
 
-**Checked:** against WooCommerce's official docs (woocommerce.com/document, read 2 Oct 2026) and in a live test on a WooCommerce 11.1.2 test site (2 Oct 2026).
 **Tags:** **[T]** = tested on screen or in the exported file. **[V]** = checked against WooCommerce's official docs (link given), not tested. **[U]** = unverified – check on screen.
-Excel tips are general Excel and are not tagged. If a WooCommerce label differs slightly, pick the closest match.
+If a WooCommerce label differs slightly, pick the closest match.
 
 **What this file is:** how many units of each SKU you hold today. Columns: `SKU`, `SOH`.
 
@@ -48,7 +47,7 @@ Exact header row [T]: `"Product / Variation",SKU,Status,Stock`
 ## ⚠ Avoid double counting open orders
 
 WooCommerce reduces stock when an order becomes **Processing** or **On hold** – before you ship [T] [V] ([Order statuses](https://woocommerce.com/document/managing-orders/order-statuses/)).
-On the test site stock fell as soon as orders were set to Processing **or On hold** (e.g. Polo 30 → 25 for an On hold order) [T]. Practical Stock Planner deducts open orders itself (File 3 – Open_SO). Choose **one** of:
+Stock falls as soon as orders are set to Processing **or On hold** [T]. Practical Stock Planner deducts open orders itself (File 3 – Open_SO). Choose **one** of:
 
 - **(a) Recommended – dated demand:** **SOH = WooCommerce Stock + quantity on Processing and On hold orders** (the orders not yet shipped), and list those orders in your Open_SO file.
   In the test, Belt showed 23 = 28 on the shelf − 3 (Processing) − 2 (Completed, shipped) [T]; the physical stock for planning is 23 + 3 = 26.

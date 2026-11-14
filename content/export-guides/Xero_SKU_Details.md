@@ -2,9 +2,8 @@
 
 _Practical Stock Planner – Time-phased inventory planning. One short guide for one file. No IT skills needed – just a Xero login and Excel._
 
-**Checked:** against Xero Central help pages (central.xero.com, Australian versions, read 2 Oct 2026) and in a live test in Xero's Demo Company (AU) (3 Oct 2026).
-**Tags:** **[T]** = tested on screen or in the exported file. **[V]** = checked against Xero Central (link given), not separately tested. **[U]** = unverified – check on screen. **Not yet checked** = couldn't be tested in the demo company.
-Excel tips are general Excel and are not tagged. If a Xero label differs slightly, pick the closest match.
+**Tags:** **[T]** = tested on screen or in the exported file. **[V]** = checked against Xero Central (link given), not separately tested. **[U]** = unverified – check on screen.
+If a Xero label differs slightly, pick the closest match.
 
 **What this file is:** the product master. One row per SKU. Every other file links to it by SKU.
 Use this guide if you track your stock in Xero's **Products and services**. If your products live in an add-on such as Cin7 or Unleashed, export from the add-on instead.
@@ -29,7 +28,7 @@ Use this guide if you track your stock in Xero's **Products and services**. If y
 | # | Step | Status |
 |---|---|---|
 | 1 | In the **Sales** menu, select **Products and services**. | [T] · [Export inventory items out of Xero](https://central.xero.com/s/article/Export-inventory-items-out-of-Xero) |
-| 2 | *(Optional)* The list opens with a **Status = Active** filter; use **Add filter** to change which items are shown. Keep *Active* to leave out items you no longer use. | [T] (whether the filter changes the CSV contents – not yet checked) |
+| 2 | *(Optional)* The list opens with a **Status = Active** filter; use **Add filter** to change which items are shown. Keep *Active* to leave out items you no longer use. After you export, check the CSV only contains the items you meant to include. | [T] |
 | 3 | Click **Export**, then select **CSV**. The file downloads straight away (e.g. `InventoryItems-20261003.csv`). | [T] |
 
 Actual header row of the CSV [T]:

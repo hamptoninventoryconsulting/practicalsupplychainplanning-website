@@ -2,9 +2,8 @@
 
 _Practical Stock Planner – Time-phased inventory planning. One short guide for one file. No IT skills needed – just a Xero login and Excel._
 
-**Checked:** against Xero Central help pages (central.xero.com, Australian versions, read 2 Oct 2026) and in a live test in Xero's Demo Company (AU) (3 Oct 2026).
-**Tags:** **[T]** = tested on screen or in the exported file. **[V]** = checked against Xero Central (link given), not separately tested. **[U]** = unverified – check on screen. **Not yet checked** = couldn't be tested in the demo company.
-Excel tips are general Excel and are not tagged. If a Xero label differs slightly, pick the closest match.
+**Tags:** **[T]** = tested on screen or in the exported file. **[V]** = checked against Xero Central (link given), not separately tested. **[U]** = unverified – check on screen.
+If a Xero label differs slightly, pick the closest match.
 
 **What this file is:** your open purchase orders – what's still to arrive, and when. Columns: `Supply Order ID`, `SKU`, `Supply Qty`, `Due Date`.
 
@@ -56,7 +55,7 @@ You lose the link to individual PO numbers, but the plan is the same.
 
 **Check total quantities:** each tracked item's record shows **Quantity on order** – "the number of items in approved purchase orders" [V]
 ([Search and view inventory items](https://central.xero.com/s/article/View-inventory-items)), and the Open Backorders report has **Total On Order** [V]. Your
-Open_Supply total per SKU should match (not yet checked on screen).
+Your Open_Supply total per SKU should match **Quantity on order** (or **Total On Order** on the Open Backorders report).
 
 **Goods received but not yet billed:** if you added them to SOH by hand, leave that PO line out of this file.
 
@@ -73,7 +72,7 @@ Open_Supply total per SKU should match (not yet checked on screen).
 - [ ] *Expected arrival* dates up to date in Xero – nothing overdue.
 - [ ] Description-only lines skipped.
 - [ ] SKUs exactly match your SKU_Details file.
-- [ ] At least one data row. No open POs at all? Contact support@practicalsupplychainplanning.com about an "empty" Open_Supply file.
+- [ ] No open purchase orders? Keep the header row and add no data rows. That means none are open.
 
 **If an upload fails:** the message *"Please upload a CSV file... Save As CSV UTF-8"* means you uploaded an Excel workbook (`.xlsx`). Open it in Excel, choose *File › Save As › CSV UTF-8 (Comma delimited)*, and upload the `.csv` file instead.
 

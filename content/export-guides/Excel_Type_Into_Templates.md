@@ -9,7 +9,7 @@ _Practical Stock Planner – Time-phased inventory planning. One short guide for
 ## Before you start
 
 1. **Download the template you need** from the Practical Stock Planner sidebar (*📥 Templates*). Practical Stock Planner accepts **CSV files only** – one CSV file per input file, from the templates `template_SKU_Details.csv`, `template_SOH.csv`, `template_Open_SO.csv`, `template_Open_Supply.csv`, `template_Supplier_Details.csv`, `template_SKU_Supplier_Details.csv` and `template_Forecast.csv`. **Keep the header row exactly as it is.** After filling a template in Excel, save it with **File › Save As › CSV UTF-8 (Comma delimited)**. Extra columns are ignored.
-2. **All 7 files are needed**, and each needs at least one data row. Nothing to enter in a file? Contact support@practicalsupplychainplanning.com.
+2. **All 7 files are needed.** Open sales orders and open supply may be a header row only, when none are open. The other five files need at least one data row. Stock on hand with nothing in the warehouse is a row with quantity 0. Anything else you cannot fill in: email support@practicalsupplychainplanning.com.
 3. **SKUs must match exactly** across all files (upper/lower case, spaces and leading zeros count). Format SKU columns as *Text* before you type or paste SKUs, then save with *File › Save As › CSV UTF-8 (Comma delimited)*. If you open a CSV directly in Excel, it can strip leading zeros (`00123` becomes `123`) – import it via *Data › From Text/CSV* instead and set the SKU column to *Text*.
 4. **Single units.** Quantities in SOH, Open_SO, Open_Supply and Forecast are in each SKU's UoM (unit of measure, e.g. `EA` = each). Only the buying terms in SKU_Supplier_Details are in supplier packs.
 5. **Dates** must be real Excel dates, not text. Practical Stock Planner moves every date to the Monday of its week.
@@ -88,7 +88,7 @@ One row per SKU per week. Full details: the *Excel – Forecast* guide.
 ## Checklist
 
 - [ ] Header rows unchanged; each file saved as its own CSV (*File › Save As › CSV UTF-8 (Comma delimited)*).
-- [ ] Every file has at least one data row.
+- [ ] Open sales orders and open supply may be a header row only, when none are open. The other five files each have at least one data row. Stock on hand with nothing in the warehouse is a row with quantity 0.
 - [ ] SKUs identical across files; every SKU is in SKU_Details.
 - [ ] Supplier Codes identical in Supplier_Details and SKU_Supplier_Details.
 - [ ] One currency in *Cost Price Currency*; currency filled in for every supplier.

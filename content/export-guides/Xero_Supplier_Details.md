@@ -2,8 +2,7 @@
 
 _Practical Stock Planner – Time-phased inventory planning. One short guide for one file. No IT skills needed – just a Xero login and Excel._
 
-**Checked:** against Xero Central help pages (central.xero.com, Australian versions, read 2 Oct 2026) and in a live test in Xero's Demo Company (AU) (3 Oct 2026).
-**Tags:** **[T]** = tested on screen or in the exported file. **[V]** = checked against Xero Central (link given), not separately tested. **Not yet checked** = couldn't be tested in the demo company.
+**Tags:** **[T]** = tested on screen or in the exported file. **[V]** = checked against Xero Central (link given), not separately tested.
 
 **What this file is:** one row per supplier. Practical Stock Planner shows these on planned supply orders and checks minimum order values.
 Columns: `Supplier Code`, `Supplier Name`, `Supplier Contact`, `Minimum Order Value`, `Currency`.
@@ -14,7 +13,7 @@ Columns: `Supplier Code`, `Supplier Name`, `Supplier Contact`, `Minimum Order Va
 
 1. **Download the Supplier_Details template** from the Practical Stock Planner sidebar (*📥 Templates*). Practical Stock Planner accepts **CSV files only** – one CSV file per input file; this one starts from `template_Supplier_Details.csv`. **Keep the template's header row exactly as it is.** After filling it in Excel, save it with **File › Save As › CSV UTF-8 (Comma delimited)**.
 2. **There's no supplier export on the current screen** [T]. **Contacts › Suppliers** lists your suppliers, but its **Actions** menu has no Export option, and no CSV could be downloaded [T].
-   (Xero Central's *Export contacts* article describes a menu-icon › Export route [V] ([Export contacts](https://central.xero.com/s/article/Export-contacts-out-of-Xero)), but it wasn't there in the test.) Whether any other contact screen offers an export is **not yet checked**.
+   Xero Central's *Export contacts* article describes a menu-icon › Export route [V] ([Export contacts](https://central.xero.com/s/article/Export-contacts-out-of-Xero)). If you don't see Export, type the supplier list in (step 3).
 3. **So you type it in.** Most small businesses buy from a handful of suppliers, so this is quick. Type it once and keep it.
 
 ---
