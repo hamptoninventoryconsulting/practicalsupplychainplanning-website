@@ -5,7 +5,7 @@
   },
   {
     "question": "What files does it use? Does it connect to Shopify, Xero or Cin7?",
-    "answer": "No direct connection is needed. The app works from CSV files you export from your current systems, or save from Excel or Google Sheets, using the app’s templates: SKU Details, Supplier Details, SKU Supplier Details, stock on hand, open sales orders, open supply and forecast. Save them as CSV UTF-8. Practical Stock Planner does not place orders with your suppliers or change anything in your other systems. It gives you a plan; you decide."
+    "answer": "No direct connection is needed. The app works from CSV files you export from your current systems, or save from Excel or Google Sheets, using the app’s templates: SKU Details, Supplier Details, SKU Supplier Details, stock on hand, open sales orders, open supply and forecast. Save them as CSV UTF-8. Step-by-step export guides are in [Getting your data in](https://practicalsupplychainplanning.com/guides/getting-your-data-in/). Practical Stock Planner does not place orders with your suppliers or change anything in your other systems. It gives you a plan; you decide."
   },
   {
     "question": "How does the licence work?",
@@ -41,7 +41,7 @@
   },
   {
     "question": "Can I get help with setup?",
-    "answer": "Yes. Email support is included, from Daniel, with a reply within 2 business days (Brisbane time, UTC+10). There are also how-to videos and guides on getting your data out of different systems.\n\nIf you’d rather not set up your first plan alone, Guided setup is a separate one-off purchase at US$199 (A$299 including GST in Australia). It is not included in the founding price. You send your CSV files, they are checked, and there is one 30–45 minute video call to run your first plan on your own PC. That call is setup help. It is not the founding feedback questionnaire."
+    "answer": "Yes. Email support is included, from Daniel, with a reply within 2 business days (Brisbane time, UTC+10). There are also how-to videos and [guides on getting your data out of different systems](https://practicalsupplychainplanning.com/guides/getting-your-data-in/).\n\nIf you’d rather not set up your first plan alone, Guided setup is a separate one-off purchase at US$199 (A$299 including GST in Australia). It is not included in the founding price. You send your CSV files, they are checked, and there is one 30–45 minute video call to run your first plan on your own PC. That call is setup help. It is not the founding feedback questionnaire."
   },
   {
     "question": "How do I ask a question that isn’t covered here?",

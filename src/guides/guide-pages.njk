@@ -1,0 +1,38 @@
+---
+layout: layouts/page.njk
+pagination:
+  data: exportGuidePages
+  size: 1
+  alias: guide
+permalink: "{{ guide.permalink }}"
+eleventyComputed:
+  title: "{{ guide.title }}"
+  description: "{{ guide.description }}"
+  canonical: "https://practicalsupplychainplanning.com{{ guide.permalink }}"
+---
+{%- if guide.slug %}
+<p class="learn-back"><a href="/guides/getting-your-data-in/">← Getting your data in</a></p>
+{%- endif %}
+<article class="card">
+  <div class="content guide-body">
+    {{ guide.html | safe }}
+    <aside class="guide-note">
+      {%- if guide.note == "index" %}
+      <p>
+        Some steps in these guides were checked against the vendor’s help pages, not in a live account.
+        If a screen looks different, email
+        <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a>.
+      </p>
+      {%- else %}
+      <p>
+        Some steps were checked against the vendor’s help pages, not in a live account.
+        If a screen looks different, email
+        <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a>.
+      </p>
+      {%- endif %}
+    </aside>
+    <p class="guide-download">
+      <a href="{{ guide.pdfHref }}" download="{{ guide.pdf }}">Download PDF ({{ guide.pdf }})</a>
+    </p>
+  </div>
+</article>

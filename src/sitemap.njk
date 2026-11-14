@@ -52,6 +52,11 @@ eleventyExcludeFromCollections: true
   <url>
     <loc>{{ site.url }}/faq/</loc>
   </url>
+  {%- for guide in exportGuidePages %}
+  <url>
+    <loc>{{ site.url }}{{ guide.permalink }}</loc>
+  </url>
+  {%- endfor %}
   {%- for post in collections.postsByDate %}
   <url>
     <loc>{{ site.url }}/blog/{{ post.fileSlug }}/</loc>

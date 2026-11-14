@@ -21,6 +21,10 @@ module.exports = function (eleventyConfig) {
   // _site). Do not copy that directory into the static output.
   eleventyConfig.addPassthroughCopy("assets");
   eleventyConfig.addPassthroughCopy("images");
+  eleventyConfig.addPassthroughCopy({
+    "content/export-guides/pdf": "guides/getting-your-data-in/files",
+  });
+  eleventyConfig.addWatchTarget("content/export-guides");
   eleventyConfig.addPassthroughCopy({ "assets/brand/favicon.ico": "favicon.ico" });
   eleventyConfig.addPassthroughCopy("_redirects");
   eleventyConfig.addPassthroughCopy("robots.txt");
