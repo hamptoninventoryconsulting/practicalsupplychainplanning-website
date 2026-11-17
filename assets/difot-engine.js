@@ -61,10 +61,10 @@
     "Lines",
     "On Time Lines",
     "In Full Lines",
-    "DIFOT Lines",
+    "OTIF Lines",
     "On Time %",
     "In Full %",
-    "DIFOT %",
+    "OTIF %",
     "Avg Days Late",
     "Freight On Time Lines",
     "Freight On Time %",
@@ -86,7 +86,7 @@
     "Days Late",
     "On Time",
     "In Full",
-    "DIFOT",
+    "OTIF",
     "Reason",
     "Counted",
     "Rows Combined",
@@ -2064,7 +2064,7 @@
       freightRows.push(stats);
     });
     if (freightRows.length) {
-      notes.push("Freight performance is separate. It does not change a supplier's DIFOT.");
+      notes.push("Freight performance is separate. It does not change a supplier's OTIF.");
     }
 
     var overallFields = tallyFields(overall);
@@ -2271,7 +2271,7 @@
       monthNote: monthNote,
       freight: freightRows,
       freightNote: freightRows.length
-        ? "Freight performance is separate. It does not change a supplier's DIFOT."
+        ? "Freight performance is separate. It does not change a supplier's OTIF."
         : "",
       summaryCsv: summaryCsv,
       linesCsv: linesCsv,

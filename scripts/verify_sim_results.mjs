@@ -500,6 +500,9 @@ const difotMail = JSON.parse(
   }).body
 );
 assert.strictEqual(difotMail.subject, DIFOT_SUBJECT);
+assert.strictEqual(difotMail.subject, "Your OTIF results are ready to download");
+assert.match(difotMail.text, /Your OTIF \(DIFOT in Australia\) results are ready to download/);
+assert.match(difotMail.html, /Open the OTIF Calculator/);
 assert.match(difotMail.text, /https:\/\/practicalsupplychainplanning\.com\/learn\/difot-calculator\//);
 assert.match(
   difotMail.text,
