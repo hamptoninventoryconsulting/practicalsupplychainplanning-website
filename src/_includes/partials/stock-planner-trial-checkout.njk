@@ -1,0 +1,29 @@
+    <p class="trial-consent" id="trial-consent">
+      By starting your trial you agree to our <a href="/terms/">Terms</a> and <a href="/refunds/">Refund Policy</a>. Your order is processed by our online reseller Paddle.com, the Merchant of Record, which handles payment, tax and receipts.
+    </p>
+    <p class="trial-action">
+      <button
+        type="button"
+        class="trial-button"
+        id="trial-button"
+        disabled
+        aria-describedby="trial-consent"
+      >
+        Start your free trial
+      </button>
+    </p>
+    <p class="trial-note" id="trial-note"{% if checkoutConfigured %} hidden{% endif %}>
+      Checkout is not available on this page yet. Email
+      <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a>.
+    </p>
+    <p class="trial-note" id="trial-load-note" hidden>
+      Checkout couldn&rsquo;t load. Please refresh, or email
+      <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a>.
+    </p>
+    <noscript>
+      <p>
+        Checkout needs JavaScript. Email
+        <a class="support-email" href="mailto:support@practicalsupplychainplanning.com">support@practicalsupplychainplanning.com</a>
+        and we will help you start a trial.
+      </p>
+    </noscript>

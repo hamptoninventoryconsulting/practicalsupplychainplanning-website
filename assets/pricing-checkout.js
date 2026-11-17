@@ -1,5 +1,5 @@
 /**
- * Overlay checkout for /products/practical-stock-planner/.
+ * Overlay checkout for /products/practical-stock-planner/ and /start/plan-ahead/.
  * Uses the Paddle config in src/_data/paddle.js.
  * Quantity is fixed at 1.
  * While checkoutOpen is true, pass one founding code as discountCode.
