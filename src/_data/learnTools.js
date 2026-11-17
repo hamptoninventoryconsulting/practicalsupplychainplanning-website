@@ -22,7 +22,7 @@ module.exports = [
     href: "/learn/starter-forecast/",
   },
   {
-    title: "DIFOT Calculator",
+    title: "OTIF Calculator (DIFOT in Australia)",
     description:
       "On time and in full for each purchase order line. The files stay in your browser.",
     href: "/learn/difot-calculator/",

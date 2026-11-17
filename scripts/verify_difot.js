@@ -255,7 +255,7 @@ assert.strictEqual(lineOf(freight, "ON").freightOnTime, "Y");
 assert.strictEqual(freight.freight[0].measurable, 2);
 assert.strictEqual(freight.freight[0].onTimePct, "50.0");
 assert.match(freight.freight[0].note, /1 line not measurable/);
-assert.match(freight.notes.join(" "), /does not change a supplier's DIFOT/);
+assert.match(freight.notes.join(" "), /does not change a supplier's OTIF/);
 assert.match(freight.summaryCsv, /Supplier,Shenzhen Widgets,,3,/);
 assert.match(freight.summaryCsv, /Supplier-Month,Shenzhen Widgets,2026-03,/);
 assert.doesNotMatch(freight.summaryCsv, /^Freight,/m);
@@ -947,7 +947,7 @@ const article = fs.readFileSync(
   path.join(ROOT, "src", "blog", "posts", "supplier-difot-measure-the-delivery-that-actually-matters.html"),
   "utf8"
 );
-assert.match(page, /<h1 class="page-title">DIFOT Calculator<\/h1>/);
+assert.match(page, /<h1 class="page-title">OTIF Calculator \(DIFOT in Australia\)<\/h1>/);
 assert.match(page, /id="df-days-early"[^>]*value="2"/);
 assert.match(page, /id="df-days-late"[^>]*value="0"/);
 assert.match(page, /id="df-shortfall"/);
@@ -963,21 +963,21 @@ assert.ok(page.includes(engine.HELP_LINE));
 assert.match(page, /supplier's invoice date/);
 assert.match(page, /Arrived at Your Site Date/);
 assert.match(page, /Handed to Freight Date/);
-assert.match(page, /does not change the supplier's DIFOT/);
+assert.match(page, /does not change the supplier's OTIF/);
 assert.match(page, /handed over but have not arrived yet/);
 assert.match(page, /leave Received Qty blank/);
 assert.match(page, /handover date is after the arrival date/);
 assert.match(page, /Freight days use only the rows that have arrived/);
 assert.match(page, /rest of the ordered quantity/);
-assert.match(page, /difot-engine\.js\?v=10/);
-assert.match(page, /difot-calculator\.js\?v=5/);
+assert.match(page, /difot-engine\.js\?v=11/);
+assert.match(page, /difot-calculator\.js\?v=6/);
 const css = fs.readFileSync(path.join(ROOT, "assets", "styles.css"), "utf8");
 assert.match(css, /\.difot-month__label\s*\{[^}]*white-space:\s*nowrap/);
 assert.match(css, /\.difot-month--freight \.sim-table\s*\{[^}]*width:\s*100%/);
-assert.match(page, /<summary>What DIFOT is and why it matters<\/summary>/);
+assert.match(page, /<summary>What OTIF is and why it matters<\/summary>/);
 assert.match(page, /<summary>Your files<\/summary>/);
 assert.match(page, /<summary>How the calculation works<\/summary>/);
-assert.match(page, /Delivered In Full, On Time/);
+assert.match(page, /On Time In Full/);
 assert.match(page, /sliding scale/);
 assert.match(page, /Agree the allowance with each supplier/);
 assert.match(page, /percentage on\s+this page applies to the whole file/);
@@ -1010,13 +1010,14 @@ assert.match(ui, /result\.monthNote/);
 assert.doesNotMatch(ui, /older months are/);
 assert.match(
   article,
-  /<a href="\/learn\/difot-calculator\/">DIFOT Calculator<\/a>/
+  /<a href="\/learn\/difot-calculator\/">OTIF Calculator \(DIFOT in Australia\)<\/a>/
 );
+assert.match(article, /<a href="\/learn\/difot-calculator\/">OTIF Calculator<\/a>/);
 assert.doesNotMatch(article, /Calculate your suppliers' DIFOT free/);
 assert.doesNotMatch(article, /Stock Planner|Xero/);
 const sentPage = fs.readFileSync(path.join(SITE, "learn", "difot-calculator", "sent", "index.html"), "utf8");
 assert.match(sentPage, /noindex/);
-assert.match(sentPage, /The download is unlocked on the DIFOT Calculator page/);
+assert.match(sentPage, /The download is unlocked on the OTIF Calculator page/);
 assert.ok(!fs.readFileSync(path.join(SITE, "sitemap.xml"), "utf8").includes("/learn/difot-calculator/sent/"));
 assert.match(fs.readFileSync(path.join(SITE, "sitemap.xml"), "utf8"), /\/learn\/difot-calculator\//);
 assert.match(fs.readFileSync(path.join(ROOT, "src", "_data", "learnTools.js"), "utf8"), /\/learn\/difot-calculator\//);
@@ -1164,6 +1165,8 @@ function settingsKeepDownload() {
   assert.doesNotMatch(cards, /2026-03/);
   assert.match(cards, /On time/);
   assert.match(cards, /In full/);
+  assert.match(cards, />OTIF</);
+  assert.match(page, /Worst OTIF first/);
   assert.match(cards, /1 of 1/);
   assert.doesNotMatch(cards, /Freight on time/);
   assert.strictEqual(ids["df-downloads"].hidden, true);

@@ -181,9 +181,9 @@
     return (
       "<h3 class=\"sf-subhead\">By month</h3><p class=\"sim-meta\">Month of the required date.</p><div class=\"sim-table-wrap difot-month" +
       (wide ? " difot-month--freight" : "") +
-      "\"><table class=\"sim-table\"><caption class=\"visually-hidden\">DIFOT by month for " +
+      "\"><table class=\"sim-table\"><caption class=\"visually-hidden\">OTIF by month for " +
       escapeHtml(group.supplier) +
-      "</caption><thead><tr><th scope=\"col\" class=\"difot-month__label\">Month</th><th scope=\"col\">Lines</th><th scope=\"col\">On time</th><th scope=\"col\">In full</th><th scope=\"col\">DIFOT</th><th scope=\"col\">Late lines</th><th scope=\"col\">Short lines</th><th scope=\"col\">Average days late</th>" +
+      "</caption><thead><tr><th scope=\"col\" class=\"difot-month__label\">Month</th><th scope=\"col\">Lines</th><th scope=\"col\">On time</th><th scope=\"col\">In full</th><th scope=\"col\">OTIF</th><th scope=\"col\">Late lines</th><th scope=\"col\">Short lines</th><th scope=\"col\">Average days late</th>" +
       freightHead +
       "</tr></thead><tbody>" +
       body +

@@ -746,7 +746,7 @@
           },
           {
             "type": "p",
-            "text": "DIFOT (Delivered In Full, On Time) helps check whether planned lead times are realistic. The \"On Time\" part measures whether deliveries arrive by the agreed date. If orders placed with the planned lead time regularly arrive late, compare actual lead times with the planned figure and discuss the difference with your supplier."
+            "text": "OTIF (DIFOT in Australia) helps check whether planned lead times are realistic. The \"On Time\" part measures whether deliveries arrive by the agreed date. If orders placed with the planned lead time regularly arrive late, compare actual lead times with the planned figure and discuss the difference with your supplier."
           }
         ],
         "heading": "Planned vs Actual Lead Time",

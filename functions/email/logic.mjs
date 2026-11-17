@@ -82,7 +82,7 @@ export const STARTER_SUBJECT = "Your Starter Forecast is ready to download";
 export const STARTER_WORDING_VERSION = "starter-forecast-v1";
 export const STARTER_REQUIRED_WORDING = "Email me to unlock the download.";
 export const DIFOT_FORM_ID = "difot-calculator";
-export const DIFOT_SUBJECT = "Your DIFOT results are ready to download";
+export const DIFOT_SUBJECT = "Your OTIF results are ready to download";
 export const DIFOT_WORDING_VERSION = "difot-calculator-v1";
 export const DIFOT_REQUIRED_WORDING = "Email me to unlock the download.";
 export const FROM_ADDRESS =
@@ -1185,7 +1185,7 @@ async function buildDifotMessage(submission, token, signingKey) {
   const kept =
     "Your files were read in your browser. They were not sent to us. This email does not include your suppliers or orders.";
   const blocks = [
-    "Your DIFOT results are ready to download on the page where you built them.",
+    "Your OTIF (DIFOT in Australia) results are ready to download on the page where you built them.",
     page,
     "",
     kept,
@@ -1203,8 +1203,8 @@ async function buildDifotMessage(submission, token, signingKey) {
   const text = blocks.join("\n");
   const html = [
     "<!DOCTYPE html><html><body style=\"font-family:Georgia,serif;color:#1c1917;\">",
-    "<p>Your DIFOT results are ready to download on the page where you built them.</p>",
-    "<p><a href=\"" + escapeHtml(page) + "\">Open DIFOT Calculator</a></p>",
+    "<p>Your OTIF (DIFOT in Australia) results are ready to download on the page where you built them.</p>",
+    "<p><a href=\"" + escapeHtml(page) + "\">Open the OTIF Calculator</a></p>",
     "<p>" + escapeHtml(kept) + "</p>",
     "<p>" + escapeHtml(DIFOT_NOTE) + "</p>",
     "<p>" +

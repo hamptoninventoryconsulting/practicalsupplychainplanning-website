@@ -1,19 +1,19 @@
 ---json
 {
   "layout": "layouts/simulator.njk",
-  "title": "DIFOT Calculator — Practical Supply Chain Planning",
+  "title": "OTIF Calculator (DIFOT in Australia) — Practical Supply Chain Planning",
   "description": "See which supplier lines were on time and in full. The files stay in your browser and are never uploaded.",
   "canonical": "https://practicalsupplychainplanning.com/learn/difot-calculator/",
   "nav": "learn",
   "permalink": "/learn/difot-calculator/",
   "scripts": [
-    "/assets/difot-engine.js?v=10",
+    "/assets/difot-engine.js?v=11",
     "/assets/sim-results-form.js?v=8",
-    "/assets/difot-calculator.js?v=5"
+    "/assets/difot-calculator.js?v=6"
   ]
 }
 ---
-<h1 class="page-title">DIFOT Calculator</h1>
+<h1 class="page-title">OTIF Calculator (DIFOT in Australia)</h1>
       <p class="tagline">
         On time and in full, for each purchase order line.
       </p>
@@ -23,10 +23,10 @@
         <div id="df-warnings" class="sim-warning" hidden></div>
 
         <details class="sim-details">
-          <summary>What DIFOT is and why it matters</summary>
+          <summary>What OTIF is and why it matters</summary>
           <div class="content">
             <p>
-              DIFOT stands for Delivered In Full, On Time. It is the share of order
+              OTIF (DIFOT in Australia) stands for On Time In Full. It is the share of order
               lines a supplier delivers with the full quantity, by the date you
               needed them. A line counts only if it is both on time and in full.
               Late, short or damaged is a miss.
@@ -34,7 +34,7 @@
             <p>
               Why it matters: every late or short delivery has to be covered by
               stock you hold. Unreliable suppliers push up safety stock, tie up
-              cash and cause stock-outs your customers notice. DIFOT turns
+              cash and cause stock-outs your customers notice. OTIF turns
               "they are usually fine" into a number you can track, compare
               between suppliers and raise in supplier reviews.
             </p>
@@ -46,7 +46,7 @@
               percentage to check one supplier.
             </p>
             <p>
-              DIFOT also shows whether agreed lead times are real. If the agreed
+              OTIF also shows whether agreed lead times are real. If the agreed
               lead time is 3 weeks but the supplier always delivers in 4, that
               gap needs to be addressed, either with the supplier or in your
               planning lead times.
@@ -114,11 +114,11 @@
               <li>On time, when the supplier delivers to you, compares Arrived at Your Site Date with the required date. A line that is too early is a miss, labelled Early.</li>
               <li>On time, when you arrange the freight, compares Handed to Freight Date with the required date. That is the date the supplier handed the goods to the freight company, which is the part the supplier controls.</li>
               <li>In full compares the accepted quantity with the ordered quantity. Accepted quantity is the received quantity minus any damaged or rejected quantity.</li>
-              <li>DIFOT is the lines that are both on time and in full. It is at most the lower of those two figures. It is not one multiplied by the other.</li>
+              <li>OTIF is the lines that are both on time and in full. It is at most the lower of those two figures. It is not one multiplied by the other.</li>
               <li>Lines are counted, not whole orders and not quantity.</li>
               <li>An unreceived line that is overdue on the as-at date counts as a miss. A line that is not due yet is left out.</li>
               <li>If the same PO number and SKU appears more than once, the rows are combined. Quantities are added. The latest Arrived at Your Site Date and the latest Handed to Freight Date are kept. The ordered quantity is the largest one in the group.</li>
-              <li>Freight you arrange is measured from Handed to Freight Date to Arrived at Your Site Date, and compared with the expected transit days. It does not change the supplier's DIFOT. Freight days use only the rows that have arrived. If the goods have been handed over but have not arrived yet, the line still counts for DIFOT and is left out of the freight figures. Leave Received Qty blank and the ordered quantity counts as delivered in full until you fill the quantity in. If the same line has goods already at your site and another handover with no quantity yet, that handover counts as the rest of the ordered quantity until you fill it in.</li>
+              <li>Freight you arrange is measured from Handed to Freight Date to Arrived at Your Site Date, and compared with the expected transit days. It does not change the supplier's OTIF. Freight days use only the rows that have arrived. If the goods have been handed over but have not arrived yet, the line still counts for OTIF and is left out of the freight figures. Leave Received Qty blank and the ordered quantity counts as delivered in full until you fill the quantity in. If the same line has goods already at your site and another handover with no quantity yet, that handover counts as the rest of the ordered quantity until you fill it in.</li>
               <li>If the handover date is after the arrival date, that line is left out of the freight figures. On time still uses the handover date.</li>
               <li>If you arrange the freight and a received line has no Handed to Freight Date, that line is left out. If the supplier delivers to you, a Handed to Freight Date on the line is not used.</li>
               <li>The shortfall setting is one percentage for every line in the file. Results are shown supplier by supplier, and by the month of the required date for each supplier. There is no overall total.</li>
@@ -218,7 +218,7 @@
           <div id="df-notes" class="sim-meta" hidden></div>
 
           <h3 class="sf-subhead">By supplier</h3>
-          <p class="sim-meta">Worst DIFOT first. Select a supplier to see on time, in full, freight, and each month.</p>
+          <p class="sim-meta">Worst OTIF first. Select a supplier to see on time, in full, freight, and each month.</p>
           <p id="df-month-note" class="sim-meta" hidden></p>
           <div id="df-supplier-cards" class="difot-suppliers"></div>
         </section>
