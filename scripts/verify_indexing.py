@@ -14,10 +14,10 @@ in the sitemap or in site menus. `/products/`,
 and `/contact/` are public pages: they are in the sitemap and are not noindex.
 
 `/buy/` and `/pricing/` are retired. Each 301s straight to
-`/products/practical-stock-planner/`. Paddle.js loads on that product page
-only while `checkoutOpen` is true. While it is false, that page does not load
-Paddle and `/welcome/` 302s to the product page. `/welcome/` must stay free
-of Paddle.js.
+`/products/practical-stock-planner/`. While `checkoutOpen` is true, Paddle.js
+loads on that product page and on `/start/plan-ahead/`, from the same checkout
+partials. While it is false, those pages do not load Paddle and `/welcome/`
+302s to the product page. `/welcome/` must stay free of Paddle.js.
 
 Usage:
   npm run build
@@ -881,6 +881,7 @@ def verify_sales_script_cache(errors: list[str]) -> None:
 
 
 PRODUCT_PAGE = SITE / "products" / "practical-stock-planner" / "index.html"
+PLAN_AHEAD_PAGE = SITE / "start" / "plan-ahead" / "index.html"
 PRODUCT_PATH = "/products/practical-stock-planner/"
 
 
@@ -969,14 +970,23 @@ def verify_buy(errors: list[str]) -> None:
     for path in sorted(SITE.rglob("*.html")):
         page = path.read_text(encoding="utf-8")
         relative = path.relative_to(SITE).as_posix()
-        if path.resolve() == PRODUCT_PAGE.resolve():
+        if path.resolve() in {PRODUCT_PAGE.resolve(), PLAN_AHEAD_PAGE.resolve()}:
+            label = (
+                "the product page"
+                if path.resolve() == PRODUCT_PAGE.resolve()
+                else "/start/plan-ahead/"
+            )
             if 'href="/buy/"' in page or 'href="/buy"' in page:
-                fail("the product page must not link to /buy/", errors)
+                fail(f"{label} must not link to /buy/", errors)
             if 'href="/pricing/"' in page or 'href="/pricing"' in page:
-                fail("the product page must not link to /pricing/", errors)
+                fail(f"{label} must not link to /pricing/", errors)
             continue
         if "cdn.paddle.com" in page or re.search(r"<script\b[^>]*paddle\.js", page, re.I):
-            fail(f"Paddle.js must load only on the product page, found in {relative}", errors)
+            fail(
+                "Paddle.js must load only on the product page and /start/plan-ahead/, "
+                f"found in {relative}",
+                errors,
+            )
         if 'href="/buy/"' in page or 'href="/buy"' in page:
             fail(f"/buy/ is linked from {relative}", errors)
         if 'href="/pricing/"' in page or 'href="/pricing"' in page:
@@ -1650,12 +1660,26 @@ def verify_start_pages(errors: list[str]) -> None:
                 fail(f"{relative} must keep utm_ and ref in the address bar", errors)
             if re.search(r"location\.(?:replace|assign|href)\s*=", text):
                 fail(f"{relative} must not send the browser to a URL that drops the query", errors)
+            scan = text
+            if relative == "start/plan-ahead/index.html":
+                # Reorder point is allowed only as the method being outgrown.
+                scan = re.sub(
+                    r"outgrown reorder-point planning",
+                    "outgrown that method",
+                    scan,
+                    flags=re.I,
+                )
             for banned in START_BANNED:
-                if re.search(banned, text, re.I):
+                if re.search(banned, scan, re.I):
                     fail(f"{relative} contains banned copy: {banned}", errors)
-            if "cdn.paddle.com" in text or "pricing-checkout.js" in text:
+            allows_founding_checkout = relative == "start/plan-ahead/index.html"
+            if not allows_founding_checkout and (
+                "cdn.paddle.com" in text or "pricing-checkout.js" in text
+            ):
                 fail(f"{relative} must not load Paddle", errors)
-            if re.search(r"FOUNDING|US\$|A\$|\bpri_|\blive_", text):
+            if not allows_founding_checkout and re.search(
+                r"FOUNDING|US\$|A\$|\bpri_|\blive_", text
+            ):
                 fail(f"{relative} must not add prices, tokens or discount codes", errors)
             if text.lower().count("<h1") != 1:
                 fail(f"{relative} must have exactly one h1", errors)
@@ -1689,7 +1713,7 @@ def verify_start_pages(errors: list[str]) -> None:
         "Reordering by gut feel or spreadsheet, and finding out too late.",
         "week by week from your forecast, open orders and lead times.",
         "Planned orders are timed to arrive before stock drops below safety stock.",
-        "Small product businesses with CSV exports, for example Shopify, Xero or Cin7.",
+        "Businesses that have outgrown reorder-point planning and need to see stock weeks ahead, working from CSV exports, for example Shopify, Xero or Cin7.",
         "Built by Daniel Hampton, a working supply chain planner.",
         "Your data stays in CSV files. No integration is needed.",
         "/images/IMG000009.webp",
@@ -1700,13 +1724,77 @@ def verify_start_pages(errors: list[str]) -> None:
             fail(f"/start/plan-ahead/ is missing approved copy: {phrase}", errors)
     if "paddle.checkoutOpen" not in plan_source or "Join the list" not in plan_source:
         fail("/start/plan-ahead/ must switch the sign-up CTA on checkoutOpen", errors)
-    if "/products/practical-stock-planner/#price" not in plan_source or "Start your free trial" not in plan_source:
-        fail("/start/plan-ahead/ must use the product trial path when checkout is open", errors)
+    for partial in (
+        "partials/stock-planner-founding-offer.njk",
+        "partials/stock-planner-trial-checkout.njk",
+        "partials/paddle-checkout-scripts.njk",
+    ):
+        if partial not in plan_source:
+            fail(f"/start/plan-ahead/ must reuse {partial}", errors)
+        if partial not in (ROOT / "src" / "products" / "practical-stock-planner.njk").read_text(
+            encoding="utf-8"
+        ):
+            fail(f"the product page must reuse {partial}", errors)
     if checkout_open():
-        if 'href="/products/practical-stock-planner/#price"' not in plan or "Start your free trial" not in plan:
-            fail("/start/plan-ahead/ must show the product trial path while checkout is open", errors)
+        if 'id="trial-button"' not in plan or "Start your free trial" not in plan:
+            fail("/start/plan-ahead/ must show the shared trial button while checkout is open", errors)
+        consent_at = plan.find("By starting your trial you agree")
+        button_at = plan.find('id="trial-button"')
+        if consent_at < 0 or button_at < 0 or consent_at > button_at:
+            fail("/start/plan-ahead/ trial consent must sit above the trial button", errors)
+        elif re.search(r"<h[1-6]\b", plan[consent_at:button_at], re.I):
+            fail("/start/plan-ahead/ must not put a heading between the trial consent and button", errors)
+        if PADDLE_JS_URL not in plan:
+            fail("/start/plan-ahead/ must load Paddle.js v2 from cdn.paddle.com", errors)
+        checkout_src = f"/assets/pricing-checkout.js?v={css_version()}"
+        if checkout_src not in plan:
+            fail(f"/start/plan-ahead/ must cache-bust the checkout script as {checkout_src}", errors)
+        if 'id="paddle-config"' not in plan:
+            fail("/start/plan-ahead/ must embed the same paddle-config as the product page", errors)
+        if "https://practicalsupplychainplanning.com/welcome/" not in plan:
+            fail("/start/plan-ahead/ must set the Paddle success URL to /welcome/", errors)
+        product_html = PRODUCT_PAGE.read_text(encoding="utf-8")
+        plan_config = re.search(
+            r'<script type="application/json" id="paddle-config">\s*(.*?)\s*</script>',
+            plan,
+            re.S,
+        )
+        product_config = re.search(
+            r'<script type="application/json" id="paddle-config">\s*(.*?)\s*</script>',
+            product_html,
+            re.S,
+        )
+        if not plan_config or not product_config or plan_config.group(1) != product_config.group(1):
+            fail("/start/plan-ahead/ paddle-config must match the product page", errors)
+        for phrase in (
+            "US$29 per month",
+            "A$45 per month including GST in Australia",
+            "US$49 per month",
+            "A$75 per month including GST in Australia",
+            "for the first 12 months",
+            "first 20 customers",
+            "31 Jan 2027",
+            "FOUNDING29",
+            "FOUNDINGAU",
+            FOUNDING_QUESTIONNAIRE,
+            "US$49 per month, including any applicable tax",
+            "A$75 per month including GST",
+        ):
+            if phrase not in plan:
+                fail(f"/start/plan-ahead/ is missing the product page founding offer: {phrase}", errors)
+        if plan.count(FOUNDING_QUESTIONNAIRE) != 1:
+            fail("/start/plan-ahead/ must use the founding questionnaire sentence once", errors)
+        if re.search(r"feedback\s+call|\bcall\b", plan, re.I):
+            fail("/start/plan-ahead/ must not mention a call", errors)
+        if re.search(r"small product business", plan, re.I):
+            fail("/start/plan-ahead/ must not position by company size", errors)
+        if not paddle_placeholders_block_checkout():
+            if not re.search(r'id="trial-note"[^>]*\bhidden\b', plan):
+                fail("/start/plan-ahead/ must hide the unconfigured note when Paddle config is set", errors)
         if 'id="signup"' in plan:
             fail("/start/plan-ahead/ must not show the email sign-up while checkout is open", errors)
+        if 'href="/products/practical-stock-planner/#price"' in plan:
+            fail("/start/plan-ahead/ must open checkout on this page, not link to the product price", errors)
     else:
         if plan.count("Join the list") != 1 or 'id="signup"' not in plan or "keep-in-touch.js" not in plan:
             fail("/start/plan-ahead/ must use one email sign-up while checkout is closed", errors)
@@ -1714,6 +1802,10 @@ def verify_start_pages(errors: list[str]) -> None:
             fail("/start/plan-ahead/ must not repeat Join the list as a link above the form", errors)
         if "Start your free trial" in plan:
             fail("/start/plan-ahead/ must not show the trial path while checkout is closed", errors)
+        if PADDLE_JS_URL in plan or "pricing-checkout.js" in plan or 'id="paddle-config"' in plan:
+            fail("/start/plan-ahead/ must not load Paddle while checkout is closed", errors)
+        if re.search(r"FOUNDING|US\$|A\$|\bpri_|\blive_", plan):
+            fail("/start/plan-ahead/ must not show prices or codes while checkout is closed", errors)
 
     guides = (SITE / "start" / "planning-guides" / "index.html").read_text(encoding="utf-8")
     for phrase in (

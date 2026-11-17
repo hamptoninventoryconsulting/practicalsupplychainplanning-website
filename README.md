@@ -36,7 +36,7 @@ Do not replace `assets/brand/daniel-hampton.png`. That file is the About page ph
 
 Checkout is open for the 16 Nov 2026 launch. `checkoutOpen` in `src/_data/paddle.js` is `true`. That:
 
-- loads Paddle and `pricing-checkout.js` on the Practical Stock Planner page
+- loads Paddle and `pricing-checkout.js` on the Practical Stock Planner page and on `/start/plan-ahead/`, from the same checkout partials
 - shows the "Start your free trial" button
 - applies the founding discount code `FOUNDING29` only when the price-preview currency is USD, or `FOUNDINGAU` only when it is AUD (`discountCode` on `Paddle.Checkout.open`). Any other currency, or a price preview that still fails after one retry, opens checkout with no discount code. The page does not guess the currency from the device time zone.
 - shows "Available now" and the trial link on the home page

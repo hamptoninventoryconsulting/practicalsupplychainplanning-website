@@ -1,0 +1,7 @@
+{%- if paddle.checkoutOpen %}
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+<script type="application/json" id="paddle-config">
+{{ paddle | dump | safe }}
+</script>
+<script src="/assets/pricing-checkout.js?v={{ site.cssVersion }}"></script>
+{%- endif %}

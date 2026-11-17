@@ -27,10 +27,10 @@
  * https://practicalsupplychainplanning.com/products/practical-stock-planner/
  *
  * Checkout is open for the 16 Nov 2026 launch. That loads Paddle on the
- * product page, shows "Start your free trial", applies FOUNDING29 when the
- * price-preview currency is USD, or FOUNDINGAU when it is AUD, and serves /welcome/
- * instead of redirecting it. Set checkoutOpen to false and redeploy to
- * close checkout again.
+ * product page and on /start/plan-ahead/, shows "Start your free trial",
+ * applies FOUNDING29 when the price-preview currency is USD, or FOUNDINGAU
+ * when it is AUD, and serves /welcome/ instead of redirecting it. Set
+ * checkoutOpen to false and redeploy to close checkout again.
  * Do not change the token, price, or successUrl.
  * Leave guidedSetupOpen false. There is no Guided setup buy link yet.
  */

@@ -2,13 +2,14 @@
 {
   "layout": "layouts/page.njk",
   "title": "See your stock position weeks ahead — Practical Supply Chain Planning",
-  "description": "Time-phased planning projects stock forward against your forecast, open orders and lead times. For small product businesses with CSV exports.",
+  "description": "Time-phased planning projects stock forward against your forecast, open orders and lead times. For businesses that have outgrown reorder-point planning and need to see stock weeks ahead.",
   "canonical": "https://practicalsupplychainplanning.com/start/plan-ahead/",
   "permalink": "/start/plan-ahead/"
 }
 ---
 {%- set photo = home.photoUrl | publicAsset -%}
 {%- set photoWebp = home.photoWebpUrl | publicAsset -%}
+{%- set checkoutConfigured = paddle.checkoutOpen and ("REPLACE_ME" not in paddle.clientToken) and (paddle.campaigns.default.priceId) and ("REPLACE_ME" not in paddle.campaigns.default.priceId) -%}
 <h1 class="page-title">See your stock position weeks ahead, before it runs short or piles up.</h1>
 <p class="tagline">Time-phased planning projects stock forward against your forecast, open orders and lead times.</p>
 
@@ -38,7 +39,7 @@
 <section class="card" aria-labelledby="who-heading">
   <h2 class="card__title" id="who-heading">Who it&rsquo;s for</h2>
   <div class="content">
-    <p>Small product businesses with CSV exports, for example Shopify, Xero or Cin7.</p>
+    <p>Businesses that have outgrown reorder-point planning and need to see stock weeks ahead, working from CSV exports, for example Shopify, Xero or Cin7.</p>
   </div>
 </section>
 
@@ -66,9 +67,13 @@
 </section>
 
 {%- if paddle.checkoutOpen %}
-<p class="home-actions">
-  <a class="home-button" href="/products/practical-stock-planner/#price">Start your free trial</a>
-</p>
+<section class="card" id="price" aria-labelledby="price-heading">
+  <h2 class="card__title" id="price-heading">Price</h2>
+  <div class="content">
+{% include "partials/stock-planner-founding-offer.njk" %}
+{% include "partials/stock-planner-trial-checkout.njk" %}
+  </div>
+</section>
 {%- else %}
 {% set kitTitle = "Join the list" %}
 {% include "partials/keep-in-touch.njk" %}
@@ -82,3 +87,4 @@
     <p>More answers are on the <a href="/faq/practical-stock-planner/">FAQ page</a>.</p>
   </div>
 </section>
+{%- include "partials/paddle-checkout-scripts.njk" -%}

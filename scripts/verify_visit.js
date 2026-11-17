@@ -220,7 +220,9 @@ assert.match(layout, /\/assets\/visit\.js\?v=\{\{ site\.cssVersion \}\}/);
 assert.doesNotMatch(layout, /history\.replaceState/);
 
 const plan = fs.readFileSync(path.join(ROOT, "src", "start", "plan-ahead.njk"), "utf8");
-assert.match(plan, /href="\/products\/practical-stock-planner\/#price"/);
+assert.match(plan, /partials\/stock-planner-trial-checkout\.njk/);
+assert.match(plan, /partials\/paddle-checkout-scripts\.njk/);
+assert.doesNotMatch(plan, /href="\/products\/practical-stock-planner\/#price"/);
 
 if (!fs.existsSync(SITE)) {
   console.error("Built site is missing. Run `npm run build` before scripts/verify_visit.js.");

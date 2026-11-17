@@ -53,7 +53,7 @@ assert.match(page, /id="ask-help"/);
 assert.match(ASK_SUCCESS, /2 business days/);
 
 const privacy = fs.readFileSync(path.join(ROOT, "src", "privacy.njk"), "utf8");
-assert.match(privacy, /Last updated: 16 November 2026/);
+assert.match(privacy, /Last updated: 17 November 2026/);
 assert.match(
   privacy,
   /If you use the question form on the FAQ page, we send that message to our support inbox\./

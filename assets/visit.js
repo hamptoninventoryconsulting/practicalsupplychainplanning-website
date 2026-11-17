@@ -4,7 +4,7 @@
  * A later URL in the same tab that carries utm_ or ref replaces them.
  * A page with none leaves the stored visit as it is.
  * The product checkout and the email form read the URL first, then this store.
- * The /start/plan-ahead/ trial link stays a plain path; this script is the carry.
+ * Checkout on /start/plan-ahead/ uses the same script, so this store is the carry.
  * Nothing here is written back into the address bar.
  */
 (function (root) {
