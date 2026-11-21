@@ -1,0 +1,98 @@
+---json
+{
+  "title": "Safety Stock Is a Planning Trigger, Not a Separate Pile of Inventory",
+  "seo_title": "Safety Stock Is a Planning Trigger, Not a Separate Pile of Inventory",
+  "summary": "Safety stock is the level that tells MRP when to plan more supply. It is not a reserved pile in the warehouse. If stock is building after sales run below forecast, the cause is usually the forecast and what has already been committed, not a heap of \"safety stock\" sitting to one side.\n\n*By Daniel Hampton, a working supply chain planner*",
+  "published_datetime": "2026-11-21 08:45:16.026953",
+  "featured_image": "IMG000012.webp",
+  "schema_image": "IMG000012.webp",
+  "author": "Daniel Hampton",
+  "reading_time": "11 minutes",
+  "keywords": "order quantity, safety stock, working capital, safety stock is a planning trigger, not a separate pile of inventory, inventory planning",
+  "about": "Inventory Planning",
+  "in_language": "English",
+  "publisher": "Practical Supply Chain Planning"
+}
+---
+<p>"Safety stock" sounds like a physical thing: a pile of stock kept aside just in case. That's how many people picture it, and it leads to the wrong conclusions when stock looks high.</p>
+<p>In a time-phased plan, safety stock isn't stock you can point to. It's an MRP trigger: the level that tells the plan when to bring in more supply. Every unit in the warehouse is ordinary stock, available to sell.</p>
+<h2>What safety stock actually protects against</h2>
+<p>Safety stock is protects against normal variation: demand that comes in a bit high, a supplier that is a bit days late, a shipment that is a little short. It is not there for a factory fire, a port shutdown or a sudden doubling of demand. Those are abnormal events, and you cannot hold enough inventory to cover every one of them.</p>
+<p>This matters more when lead times are long. Once you release a purchase order, a production order or a transfer, you are often committed before you know what demand will actually be. The trigger has to ride through the usual ups and downs during that wait. It should not be sized as if it can fund a rare disaster.</p>
+<h2>Safety stock and service level</h2>
+<p>The reason to hold safety stock is customer service: being in stock when customers order. Service level is usually measured as the share of orders, order lines or units you can supply from stock straight away, or the share of time an item is in stock.</p>
+<p>The relationship isn't a straight line. Moving from no safety stock to a modest buffer improves service a lot. Each extra week of cover after that adds less, while the cost keeps rising. Going from 95% to 98% can need noticeably more stock, and chasing 99.9% can need a lot more again.</p>
+<p>That's why the target service level should differ by item. A best-selling item, or one where a stockout stops production or loses a key customer, may justify a high target. A slow, low-value item may be fine at a lower one. Agree the service target first, then set safety stock to support it, not the other way round.</p>
+<h2>How MRP uses the level</h2>
+<p>In a time-phased plan, MRP projects stock forward period by period from stock on hand, the forecast, known orders and open supply. I have written before about <a href="https://practicalsupplychainplanning.com/blog/mrp-is-more-than-a-stock-calculation-why-time-phasing-matters/">how that calculation works in MRP</a>.</p>
+<p>When projected stock would fall below the safety stock level in a future period, MRP plans supply: a purchase order, a production order or a transfer, early enough, given the lead time, to prevent that position.</p>
+<p>Suppose you have 1,000 units on hand and safety stock is set at 300. All 1,000 units are ordinary stock. You can sell them. The 300 is not parked in a separate location. It is simply the level at which the plan starts requiring more supply.</p>
+<p>The question is not "have we reached the buffer yet?" It is "in which future week would projected stock fall below 300, and when do we need to release supply so that does not happen?"</p>
+<h2>When stock looks high, check the safety stock last</h2>
+<p>When stock is higher than expected, safety stock often gets the blame. Usually the cause is that sales have come in below forecast. Supply was planned to the forecast, so stock runs down more slowly than planned and stays high for longer.</p>
+<p>A working MRP system responds: as projected stock stays higher, it pushes out or removes planned supply. What it can't unwind is stock already received, or orders already committed to a supplier or to production. Those keep stock high until sales catch up.</p>
+<p>Before you change the safety stock setting, walk the timeline:</p>
+<ul>
+<li>What was the forecast when the supply was planned?</li>
+<li>When did sales fall below that forecast?</li>
+<li>What had already been committed or received by then?</li>
+<li>Has future planned supply been pushed out or removed?</li>
+</ul>
+<p>Those questions separate three different issues: a <a href="https://practicalsupplychainplanning.com/blog/forecast-bias-finding-the-direction-behind-forecast-errors/">forecast bias</a> problem, a commitment problem, and a genuine safety stock problem. They are not the same, and they need different actions.</p>
+<h2>Fixed versus forecast-based safety stock</h2>
+<p>A <strong>fixed</strong> safety stock is a set number of units that is entered. A demand-based, or dynamic, safety stock is expressed as weeks of forward forecast cover and the actual safety stock is calculated, so the safety stock changes as the forecast changes.</p>
+<p>The figures below are an illustration, not a real item. Suppose you set a dynamic trigger of three weeks of cover. When the forecast is 100 units a week, the trigger is 300 units. When the peak forecast is 200 units a week, the trigger rises to 600 units.</p>
+<p>A fixed 500 units looks generous in the quiet period: five weeks of cover. At the peak, the same 500 units is only two and a half weeks. In a more extreme season, a fixed figure can be months of cover in the quiet period and only days at the peak.</p>
+<p>Dynamic is not automatically better. Weeks of cover scales the trigger with the average forecast, but it doesn't look at how much demand varies around that average.</p>
+<p>Take two items that both average 100 units a week, each with a trigger of 2 weeks of cover, or 200 units:</p>
+<ul>
+<li>Item A has very variable demand: 20, 180, 100, 50, 150.</li>
+<li>Item B is steady: 80, 120, 90, 110, 100.</li>
+</ul>
+<p>The same 200 units gives the two items very different protection. For Item A, a couple of high weeks during the lead time could use up the buffer, so 200 may not be enough. For Item B, depending on the lead time, 200 may be more than it needs. Weeks of cover is a good starting point, but the number of weeks should reflect how variable each item's demand is.</p>
+<h2>Start with the uncertainty, not a round number</h2>
+<p>Do not start with a neat figure such as two or four weeks and hope it is close enough. Start with the uncertainty the trigger is meant to cover.</p>
+<p><strong>Lead time.</strong> The longer it takes from releasing supply to having stock available, the more variation you have to ride through.</p>
+<p><strong>Demand variability.</strong> Lumpy orders, promotions or a forecast that is regularly off need more cover than a steady, predictable item.</p>
+<p><strong>Supply reliability.</strong> If suppliers are often late or short, you may need more cover. That is one reason it is worth measuring <a href="https://practicalsupplychainplanning.com/blog/supplier-difot-measure-the-delivery-that-actually-matters/">OTIF (DIFOT in Australia)</a>. </p>
+<p>Review the setting when those conditions change. A lead time that has grown, a forecast that has become less reliable, or an OTIF result that has worsened is a reason to look again. A round number that has not been touched in two years is not a policy. It is a habit.</p>
+<h2>Safety stock adds up across a DRP network</h2>
+<p>Distribution requirements planning, or DRP, is the time-phased method for planning stock across a network of warehouses. If every site holds its own safety stock, the buffers add up.</p>
+<p>Five regional warehouses, each holding three weeks of cover, can mean fifteen weeks of cover in the network before the central warehouse has held a single extra unit.</p>
+<p>The theory behind a better approach is called risk pooling. Demand at each site varies, but the sites rarely all have a high week at the same time. A busy week in one region is often offset by a quiet week in another. When you add the demand together at the source, the total varies much less, relative to its size, than each site does on its own. So the total safety stock needed at the source is smaller than the sum of the safety stocks at every destination.</p>
+<p>The more sites you pool, the bigger the saving, because more of the ups and downs cancel each other out. In practice the saving is smaller than the theory suggests, because demand between regions is often linked, for example through national promotions or the weather. But the principle holds: one shared buffer at the source does the job of several separate buffers at the destinations, with less stock in total.</p>
+<p>In practice, that means:</p>
+<ul>
+<li>Hold most of the safety stock at the source (the central warehouse or the supplier-facing location), where variation is pooled.</li>
+<li>Keep a smaller local buffer at each destination, enough to cover the transfer lead time and local variation.</li>
+<li>Replenish destinations frequently from the source, so local stock can stay lean.</li>
+</ul>
+<p>There are exceptions. A remote site with a long or unreliable transfer lead time, or customers who need immediate availability, may need more local cover. The point is not to strip protection out of the network. It is to avoid paying for the same uncertainty several times.</p>
+<h2>It becomes real stock, and real cash</h2>
+<p>A safety stock setting is not just a number in the plan. If the plan plays out, it becomes physical stock. As a rough guide, average physical stock is about the safety stock level plus half the order quantity, because stock usually cycles between a high point just after a receipt and a low point around the trigger. That is the inventory you store, count, insure and fund.</p>
+<p>Two or three months of cover is a large commitment of space and working capital. Across a whole range, raising safety stock can add millions to the inventory on the balance sheet, which is a business decision, not just a planning setting. In most businesses a change that size needs sign-off from finance or senior management, so go in with the numbers: the extra stock value, the storage it needs, and the service improvement you expect in return.</p>
+<p>Before you ask, check whether you can reduce the uncertainty instead: a more reliable forecast, a shorter lead time, a more reliable supplier, or a more honest OTIF measure. Increasing safety stock is not the automatic answer.</p>
+<h2>Time-phased safety stock</h2>
+<p>Time-phased safety stock means the level of protection changes over the year, usually in line with peak sales seasons or promotional periods. It works with either method: a fixed quantity that changes by season, or weeks of cover that change by season.</p>
+<p>For example, an item might carry 200 units in its slow season and 600 during its peak, or 1 week of cover in the slow season and 3 weeks in the peak. In the slow season, demand is lower and a stockout is less costly, so a smaller buffer frees up space and cash. In the peak or a major promotion, demand is higher and harder to predict, and a stockout costs more in lost sales, so the extra protection is worth it.</p>
+<p>Because MRP projects stock forward period by period, it applies the trigger set for each period. Supply is planned to build up protection ahead of the peak, and less is planned as the season winds down.</p>
+<p>The trade-off is that someone has to set and review those seasonal levels, so it works best for items with a clear, repeatable seasonal or promotional pattern.</p>
+<h2>Questions to ask before you change a setting</h2>
+<ul>
+<li>Is the buffer meant to cover demand variation, supply variation, or both?</li>
+<li>Should it be a fixed quantity, or based on weeks of forward forecast?</li>
+<li>Has the lead time, demand variability or OTIF changed since the setting was last reviewed? If the safety stock is a fixed quantity, has the forecast changed too?</li>
+<li>What does the same setting add up to across the whole network, not just at one warehouse?</li>
+<li>What service risk is the business actually willing to accept?</li>
+</ul>
+<p>If you cannot answer those questions, changing the number is a guess.</p>
+<h2>Try it yourself</h2>
+<p>If you want to see how different buffers play out, I have built a free <a href="https://practicalsupplychainplanning.com/learn/safety-stock-simulator/">Safety Stock Simulator</a>. It is a teaching tool that runs in your browser: you can compare a fixed quantity with weeks of cover, change lead time and demand variability, and watch the effect on service and stock over a 52-week year. Nothing is uploaded to a server. It will not give you the right setting for a live item, but it will make the difference between a fixed trigger and a forecast-based one visible.</p>
+<h2>Key Takeaways</h2>
+<ul>
+<li>Safety stock is an MRP trigger, not a reserved pile. All stock on hand is ordinary available stock.</li>
+<li>It protects against normal variation during the lead time, not abnormal events.</li>
+<li>Fixed and dynamic-based methods behave differently through a peak. Dynamic is not automatically better; it depends on forecast reliability.</li>
+<li>Start from lead time, demand variability and supply reliability, and review the setting when those change. Safety stock also adds up across a DRP network.</li>
+<li>If the plan plays out, the setting becomes real stock and cash. Reducing uncertainty is often better than raising the safety stock.</li>
+</ul>
