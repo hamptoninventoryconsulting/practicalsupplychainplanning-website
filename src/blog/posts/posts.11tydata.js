@@ -7,8 +7,8 @@ module.exports = {
   og: true,
   deferScripts: ["/assets/article.js?v=3"],
   eleventyComputed: {
-    permalink: (data) => `/blog/${data.page.fileSlug}/`,
-    canonical: (data) => `${SITE_URL}/blog/${data.page.fileSlug}/`,
+    permalink: (data) => data.pin_permalink || `/blog/${data.page.fileSlug}/`,
+    canonical: (data) => `${SITE_URL}${data.pin_permalink || `/blog/${data.page.fileSlug}/`}`,
     description: (data) => data.description || data.summary,
     schemaJson: (data) => {
       const slug = data.page.fileSlug;
@@ -34,7 +34,7 @@ module.exports = {
           inLanguage: data.in_language || "English",
           keywords: data.keywords,
           image: schemaImage,
-          mainEntityOfPage: `${SITE_URL}/blog/${slug}/`,
+          mainEntityOfPage: `${SITE_URL}${data.pin_permalink || `/blog/${slug}/`}`,
           about: data.about,
         },
         null,
